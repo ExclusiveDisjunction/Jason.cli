@@ -81,11 +81,6 @@ pub fn flush_prev_num(result: &mut String, prev_num: &mut String) -> Result<(), 
     Ok(())
 }
 
-pub fn round_f64(a: f64, precis: u32) -> f64
-{
-    let y = 10i32.pow(precis) as f64;
-    (a * y).round() / y
-}
 
 pub fn to_postfix(infix: &str, ops: &Operators) -> Result<String, String> 
 {

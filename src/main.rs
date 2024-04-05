@@ -3,12 +3,15 @@ pub mod stack;
 pub mod operators;
 pub mod parsing;
 pub mod testing;
-//pub mod variables;
+pub mod variables;
+pub mod math_types;
+pub mod num_resolver;
 
 use std::io::{stdin as stdin, stdout as stdout, Write};
 
 use operators::Operators;
-use parsing::{to_postfix, evaluate_postfix, round_f64};
+use parsing::{to_postfix, evaluate_postfix};
+use num_resolver::round_f64;
 
 fn main() {
     let ops = Operators::new();
