@@ -1,7 +1,10 @@
 #[cfg(test)]
 pub mod tests {
-    use crate::parsing::{to_postfix, evaluate_postfix, round_f64};
+    use crate::parsing::{to_postfix, evaluate_postfix};
+    use crate::num_resolver::{round_f64, get_number_digits_count};
     use crate::operators::Operators as Operators;
+
+    use crate::math_types::{matrix::Matrix as Matrix};
 
     fn expect_pass(input: &str, expected: f64) {
         let ops = Operators::new();
@@ -125,5 +128,52 @@ pub mod tests {
     #[test]
     fn constant_expr1() {
         expect_pass("c", (3i32 * 10i32.pow(8)) as f64);
+    }
+
+    #[test]
+    fn test_count_digits() {
+        assert_eq!(get_number_digits_count(1.6f64, 3), 3);
+        assert_eq!(get_number_digits_count(16f64, 3), 2);
+        assert_eq!(get_number_digits_count(0.16f64, 3), 4);
+    }
+
+    #[test]
+    fn test_matrix_schematic() {
+        /*
+            [4 3 1 2]
+            [33 4 1 -2]
+            [5 -44.3 2 1]
+            [-33.1 -1.5, 2.6 1]
+
+            Which evaluates to:
+            [(true, 4), (true, 4), (false, 3), (true, 1)]
+
+            [ 4     3     1    2]
+            [ 33    4     1   -2]
+            [ 5    -44.3  2    1]
+            [-33.1 -1.5   2.6  1]
+
+         */
+        let mut mat = Matrix::new(4, 4);
+        mat[0][0] = 4f64;
+        mat[0][1] = 3f64;
+        mat[0][2] = 1f64;
+        mat[0][3] = 2f64;
+        mat[1][0] = 33f64;
+        mat[1][1] = 4f64;
+        mat[1][2] = 1f64;
+        mat[1][3] = -2f64;
+        mat[2][0] = 5f64;
+        mat[2][1] = -44.3f64;
+        mat[2][2] = 2f64;
+        mat[2][3] = 1f64;
+        mat[3][0] = -33.1f64;
+        mat[3][1] = -1.6f64;
+        mat[3][2] = 2.6f64;
+        mat[3][3] = 1f64;
+        println!("{}", mat.to_string());
+
+        assert_eq!(mat.get_column_width_schematic(), vec![(true, 4), (true, 4), (false, 3), (true, 1)]);
+
     }
 }

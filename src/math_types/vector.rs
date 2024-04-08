@@ -2,6 +2,7 @@ use std::ops::{Add, Index, IndexMut, Sub};
 
 use super::mt_base::VarComm;
 
+#[derive(Clone)]
 pub struct Vector {
     val: Vec<f64>,
     d: usize
@@ -15,7 +16,7 @@ impl VarComm for Vector {
     fn get_val(&self) -> &Self::StoredData {
         &self.val
     }
-    fn set_val(&mut self, new_data: Self::StoredData) {
+    fn set_val(&mut self, new_data: Self::StoredData) -> Result<(), String> {
         let mut proper_data: Self::StoredData;
         match new_data.len() {
             a if a < self.d => { //Less, we need to expand the values to match d. 
@@ -27,7 +28,7 @@ impl VarComm for Vector {
             a if a == self.d => { //All fine.
                 proper_data = new_data;
             }
-            a => { //a > self.d, greater. We need to shrink the values to match d.
+            _ => { //a > self.d, greater. We need to shrink the values to match d.
                 let result = new_data.get(0..self.d);
                 match result {
                     Some(a) => proper_data = Vec::<f64>::from(a),
@@ -38,10 +39,16 @@ impl VarComm for Vector {
 
         assert_eq!(self.d, proper_data.len());
         self.val = proper_data;
+        Ok(())
     }
 
     fn steralize(&self) -> String {
-        todo!()
+        let mut result = format!("VEC {} ", self.d);
+
+        for num in &self.val {
+            result += &format!("{} ", num);
+        }
+        result
     }
     fn from_steralize(&mut self, input_string: &str) -> Result<(), String> {
         todo!()
@@ -106,12 +113,28 @@ impl IndexMut<usize> for Vector {
         &mut self.val[index]
     }
 }
+impl PartialEq for Vector {
+    fn eq(&self, other: &Self) -> bool {
+        self.d == other.d && self.val == other.val
+    }
+    fn ne(&self, other: &Self) -> bool {
+        self.d != other.d || self.val != other.val
+    }
+}
 impl Vector {
     pub fn new(d: usize) -> Self {
-        assert!(d > 0);
+        let mut val = Vec::<f64>::new();
+        for _ in 0..d {
+            val.push(0f64);
+        }
+
         Self {
             d,
-            val: Vec::<f64>::new()
+            val
         }
+    }
+
+    pub fn dim(&self) -> usize {
+        self.d
     }
 }

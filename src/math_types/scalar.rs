@@ -11,8 +11,9 @@ impl VarComm for Scalar {
     fn get_val(&self) -> &Self::StoredData {
         &self.val
     }
-    fn set_val(&mut self, new_data: Self::StoredData) {
-        self.val = new_data
+    fn set_val(&mut self, new_data: Self::StoredData) -> Result<(), String>{
+        self.val = new_data;
+        Ok(())
     }
     fn val_eq(&self, other: &Self) -> bool {
         self.val == other.val
