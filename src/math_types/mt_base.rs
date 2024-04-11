@@ -7,5 +7,5 @@ pub trait VarComm {
     fn set_val(&mut self, new_data: Self::StoredData) -> Result<(), String>;
 
     fn sterilize(&self) -> String;
-    fn from_sterilize(&mut self, input_string: &str) -> Result<(), String>;
+    fn read_from_sterilize(&mut self, input_string: &str) -> Result<(), String>;
 }

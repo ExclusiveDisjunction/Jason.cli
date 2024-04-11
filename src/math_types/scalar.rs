@@ -22,7 +22,7 @@ impl VarComm for Scalar {
     fn sterilize(&self) -> String {
         String::from("SCA ") + &self.val.to_string()
     }
-    fn from_sterilize(&mut self, input_string: &str) -> Result<(), String> {
+    fn read_from_sterilize(&mut self, input_string: &str) -> Result<(), String> {
         if input_string.len() < 3 {
             return Err(String::from("Cannot resolve input string as the type specifier was not found."));
         }

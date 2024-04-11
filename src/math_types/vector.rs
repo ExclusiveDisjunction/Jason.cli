@@ -51,7 +51,7 @@ impl VarComm for Vector {
         }
         result
     }
-    fn from_sterilize(&mut self, input_string: &str) -> Result<(), String> {
+    fn read_from_sterilize(&mut self, input_string: &str) -> Result<(), String> {
         if input_string.len() < 3 || &input_string[0..3] != "VEC" {
             return Err(String::from("Input string not long enough."));
         }

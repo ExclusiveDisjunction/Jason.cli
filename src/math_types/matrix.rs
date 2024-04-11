@@ -176,7 +176,7 @@ impl VarComm for Matrix {
 
         result
     }
-    fn from_sterilize(&mut self, input: &str) -> Result<(), String> {
+    fn read_from_sterilize(&mut self, input: &str) -> Result<(), String> {
         if input.len() < 3 || &input[0..3] != "MAT" {
             return Err(String::from("Input string not long enough."));
         }
