@@ -287,6 +287,12 @@ impl Matrix {
     pub fn is_error(&self) -> bool {
         self.m != 0 && self.n != 0
     }
+    pub fn rows(&self) -> usize {
+        self.m
+    }
+    pub fn cols(&self) -> usize {
+        self.n
+    }
 
     pub fn extract(&self, rows: Range<usize>, cols: Range<usize>) -> Self {
         if rows.len() == 0 || cols.len() == 0 { Matrix::error_matrix(); }

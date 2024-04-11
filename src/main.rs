@@ -1,11 +1,10 @@
 
 pub mod stack;
-pub mod operators;
-pub mod parsing;
 pub mod testing;
 pub mod variables;
 pub mod math_types;
-pub mod num_resolver;
+pub mod ops;
+pub mod functions;
 
 /*
 use std::io::{stdin as stdin, stdout as stdout, Write};

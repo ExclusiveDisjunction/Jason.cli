@@ -171,6 +171,120 @@ impl Vector {
             val
         }
     }
+    pub fn from_list(vals: Vec<f64>) -> Self {
+        Self {
+            d: vals.len(),
+            val: vals
+        }
+    }
+    pub fn from_val(dim: usize, val: f64) -> Self {
+        return if dim == 0 {
+            Self::error_vector()
+        }
+        else {
+            let mut result = Vec::<f64>::new();
+            for _ in 0..dim {
+                result.push(val);
+            }
+
+            Self {
+                val: result,
+                d: dim
+            }
+        }
+    }
+    pub fn from_num(num: f64) -> Self {
+        Self {
+            val: vec!(num),
+            d: 1
+        }
+    }
+
+    pub fn error_vector() -> Self {
+        Self {
+            val: Vec::<f64>::new(),
+            d: 0
+        }
+    }
+    pub fn zero_vector(dim: usize) -> Self {
+        Self::from_val(dim, 0f64)
+    }
+
+    pub fn dim(&self) -> usize {
+        self.d
+    }
+    pub fn is_valid(&self) -> bool {
+        self.d != 0
+    }
+
+    pub fn magnitude(&self) -> Result<f64, String> {
+        if self.d == 0 {
+            Err(String::from("Cannot get magnitude from an error vector."))
+        }
+        else if self.d == 1 {
+            Ok(self.val[0])
+        }
+        else {
+            let mut sum = 0f64;
+            for e in &self.val {
+                sum += e.powf(2f64);
+            }
+
+            Ok(sum.sqrt())
+        }
+    }
+    pub fn angle(&self) -> Result<f64, String> {
+        if self.d == 0 {
+            Err(String::from("Cannot get angle from an error vector."))
+        }
+        else if self.d == 1 {
+            Err(String::from("Cannot evaluate the angle of a scalar."))
+        }
+        else {
+            Ok(self.magnitude()?.atan())
+        }
+    }
+
+    pub fn cross_product(&self, obj: &Self) -> Result<Self, String> {
+        if self.d != obj.d {
+            return Err(String::from("Dimension mismatch."));
+        }
+
+        match (self.d, obj.d) {
+            (1, 1) => Ok(Vector::from_num(self.val[0] * obj.val[0])),
+            (2, 2) => {
+                //Since we can just treat this 2d vector as a 3d vector by setting z to 0 for both, we can evaluate this.
+                //x & y both evaluate to zero.
+                let z = (self.val[0] * obj.val[1]) - (self.val[1] * obj.val[0]);
+
+                Ok(Self::from_list(vec![0f64, 0f64, z]))
+            }
+            (3, 3) => {
+                let x = (self.val[1] * obj.val[2]) - (self.val[2] * obj.val[1]);
+                let y = (self.val[2] * obj.val[0]) - (self.val[0] * obj.val[2]);
+                let z = (self.val[0] * obj.val[1]) - (self.val[1] * obj.val[0]);
+
+                Ok(Self::from_list(vec![x, y, z]))
+            }
+            (_, _) => Err(format!("Cannot cross vectors of dimensions {} and {}", self.d, obj.d))
+        }
+    }
+    pub fn dot_product(&self, obj: &Self) -> Result<f64, String> {
+        if !self.is_valid() || !obj.is_valid() {
+            Err(String::from("Empty vectors."))
+        }
+        else if self.d != obj.d {
+            Err(String::from("Dimension mismatch."))
+        }
+        else {
+            let mut result: f64 = 0f64;
+            for i in 0..self.d {
+                result += self.val[i] * obj.val[i];
+            }
+
+            Ok(result)
+        }
+    }
 
     fn resize(&mut self, new_d: usize)
     {
@@ -182,8 +296,5 @@ impl Vector {
                 self.val.push(0f64);
             }
         }
-    }
-    pub fn dim(&self) -> usize {
-        self.d
     }
 }

@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::ops::{Add, Div, Mul, Sub};
 
 use super::mt_base::VarComm;
@@ -8,15 +9,15 @@ pub struct Scalar {
 impl VarComm for Scalar {
     type StoredData = f64;
 
+    fn val_eq(&self, other: &Self) -> bool {
+        self.val == other.val
+    }
     fn get_val(&self) -> &Self::StoredData {
         &self.val
     }
     fn set_val(&mut self, new_data: Self::StoredData) -> Result<(), String>{
         self.val = new_data;
         Ok(())
-    }
-    fn val_eq(&self, other: &Self) -> bool {
-        self.val == other.val
     }
 
     fn sterilize(&self) -> String {
@@ -88,9 +89,9 @@ impl Div for Scalar {
         Scalar { val: self.val / rhs.val }
     }
 }
-impl ToString for Scalar {
-    fn to_string(&self) -> String {
-        self.val.to_string()
+impl Display for Scalar {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.val.to_string())
     }
 }
 impl Scalar {

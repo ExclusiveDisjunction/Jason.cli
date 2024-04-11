@@ -15,7 +15,7 @@ pub fn get_number_digits_count(num: f64, precis: u32) -> u32 {
     if dec > 0.00f64 {
         result += 1; //for the decimal
 
-        //There is at most precis digitis. We need to determine how many digits are after the period by multiplying the dec value by 10, and seeing if the result number still has digits. 
+        //There is at most 'precis' digits. We need to determine how many digits are after the period by multiplying the dec value by 10, and seeing if the result number still has digits.
 
         let mut temp_dec = dec;
         while temp_dec > 0f64 {
