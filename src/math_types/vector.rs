@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::ops::{Add, Index, IndexMut, Sub};
 
 use super::mt_base::VarComm;
@@ -42,7 +43,7 @@ impl VarComm for Vector {
         Ok(())
     }
 
-    fn steralize(&self) -> String {
+    fn sterilize(&self) -> String {
         let mut result = format!("VEC {} ", self.d);
 
         for num in &self.val {
@@ -50,8 +51,45 @@ impl VarComm for Vector {
         }
         result
     }
-    fn from_steralize(&mut self, input_string: &str) -> Result<(), String> {
-        todo!("Convert '{input_string}' to a vector");
+    fn from_sterilize(&mut self, input_string: &str) -> Result<(), String> {
+        if input_string.len() < 3 || &input_string[0..3] != "VEC" {
+            return Err(String::from("Input string not long enough."));
+        }
+
+        let splits: Vec<&str> = input_string.split(' ').into_iter().collect();
+        if splits.len() < 3 {
+            return Err(String::from("the input string does not contain enough information to extract"));
+        }
+
+        let d: usize;
+        {
+            let d_temp: Result<usize, _> = splits[1].parse();
+
+            match d_temp {
+                Ok(new_d) => d = new_d,
+                _ => return Err(String::from("The dimensions could not be resolved."))
+            }
+        }
+
+        self.resize(d);
+
+        for i in 0..d {
+            if i + 2 >= splits.len() {
+                return Err(String::from("There are more numbers expected, but not enough given."));
+            }
+
+            let target = splits[i+2];
+            assert!(i < self.d);
+
+            if let Ok(t) = target.parse::<f64>() {
+                self.val[i] = t;
+            }
+            else {
+                return Err(format!("{target} is not of proper format and could not be converted."));
+            }
+        }
+
+        Ok(())
     }
 }
 impl Add for Vector {
@@ -86,15 +124,15 @@ impl Sub for Vector {
         } 
     }
 }
-impl ToString for Vector {
-    fn to_string(&self) -> String {
+impl Display for Vector {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut result = String::from("{ ");
 
         for i in &self.val {
             result += &format!("{i} ");
         }
 
-        format!("{result}}}")
+        write!(f, "{}", format!("{result}}}"))
     }
 }
 impl Index<usize> for Vector {
@@ -134,6 +172,17 @@ impl Vector {
         }
     }
 
+    fn resize(&mut self, new_d: usize)
+    {
+        self.d = new_d;
+        self.val.clear();
+
+        if new_d > 0 {
+            for _ in 0..new_d {
+                self.val.push(0f64);
+            }
+        }
+    }
     pub fn dim(&self) -> usize {
         self.d
     }

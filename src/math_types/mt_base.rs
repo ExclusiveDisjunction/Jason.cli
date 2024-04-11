@@ -6,6 +6,6 @@ pub trait VarComm {
     fn get_val(&self) -> &Self::StoredData;
     fn set_val(&mut self, new_data: Self::StoredData) -> Result<(), String>;
 
-    fn steralize(&self) -> String;
-    fn from_steralize(&mut self, input_string: &str) -> Result<(), String>;
+    fn sterilize(&self) -> String;
+    fn from_sterilize(&mut self, input_string: &str) -> Result<(), String>;
 }

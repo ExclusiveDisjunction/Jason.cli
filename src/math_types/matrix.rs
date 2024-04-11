@@ -165,7 +165,7 @@ impl VarComm for Matrix {
         Ok(())
     }
 
-    fn steralize(&self) -> String {
+    fn sterilize(&self) -> String {
         let mut result = format!("MAT {} {} ", self.m, self.n);
 
         for i in 0..self.m {
@@ -176,7 +176,7 @@ impl VarComm for Matrix {
 
         result
     }
-    fn from_steralize(&mut self, input: &str) -> Result<(), String> {
+    fn from_sterilize(&mut self, input: &str) -> Result<(), String> {
         if input.len() < 3 || &input[0..3] != "MAT" {
             return Err(String::from("Input string not long enough."));
         }
@@ -273,7 +273,7 @@ impl Matrix {
         let mut result = Matrix::new(m, n);
         let upper = 10f64;
         let lower = -10f64;
-        let mut rng = rand::thread_rng();
+        let mut rng = thread_rng();
 
         for i in 0..m {
             for j in 0..n {
@@ -366,19 +366,18 @@ impl Matrix {
 
         let id = Self::identity_matrix(self.m);
         let aug = id.augment(&self);
-        match aug {
+        return match aug {
             Ok(a) => {
                 let left = a.extract(0..self.m, 0..self.m);
                 let right = a.extract(0..self.m, self.m..(self.m * 2));
 
                 if right != id {
-                    return None;
-                }
-                else {
-                    return Some(left);
+                    None
+                } else {
+                    Some(left)
                 }
             }
-            Err(_) => return None
+            Err(_) => None
         }
     }
     pub fn transpose(&self) -> Matrix {
@@ -393,7 +392,7 @@ impl Matrix {
     }
     pub fn augment(&self, obj: &Self) -> Result<Matrix, String> {
         if self.m != obj.m {
-            return Err(String::from("The dimensions for the matricies are not capactible for augmentation."));
+            return Err(String::from("The dimensions for the matrices are not compatible for augmentation."));
         }
 
         let rows = self.m;
@@ -434,7 +433,7 @@ impl Matrix {
                     self.val[current_row][col] /= pivot_value;
                 }
 
-                // Elinate entries below the pivot
+                // Eliminate entries below the pivot
                 for row in (current_row + 1)..rows {
                     let multiplier = self.val[row][current_col];
                     for col in current_col..cols {
@@ -540,8 +539,8 @@ impl Matrix {
 
         /*
             Convert the number to a string
-            If the length of that string is less than the maxinum of the column, then add extra spaces to the end till it meets the maximum.
-            If there is a negative in that column, and the current number is not negative, add one to the begining of the string, and remove one from the end. If it is negative, do not add any extra spaces.
+            If the length of that string is less than the maximum of the column, then add extra spaces to the end till it meets the maximum.
+            If there is a negative in that column, and the current number is not negative, add one to the beginning of the string, and remove one from the end. If it is negative, do not add any extra spaces.
             Repeat this for each number for each column and row, and put a space between columns. 
         */
 
