@@ -51,7 +51,7 @@ impl VarComm for Vector {
         result
     }
     fn from_steralize(&mut self, input_string: &str) -> Result<(), String> {
-        todo!()
+        todo!("Convert '{input_string}' to a vector");
     }
 }
 impl Add for Vector {

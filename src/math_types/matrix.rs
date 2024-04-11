@@ -1,5 +1,6 @@
 use std::ops::{Add, Index, IndexMut, Mul, Sub, Range};
 use std::cmp::max;
+use std::fmt::Display;
 use rand::prelude::*;
 
 use super::vector::Vector;
@@ -101,18 +102,17 @@ impl PartialEq for Matrix {
         self.m != other.m || self.n != other.n || self.val == other.val
     }
 }
-impl ToString for Matrix {
-    fn to_string(&self) -> String {
-
+impl Display for Matrix {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut result = String::new();
         let schema = self.get_column_width_schematic();
         match (self.m, self.n) {
             (1, _) => { //Only one row
                 if let Some(a) = self.get_row_string(0, &schema, '[', ']') {
                     result = a;
-                } 
+                }
             }
-            (_, _) => { //Mutiple rows
+            (_, _) => { //Multiple rows
                 // ⌊ ⌋ ⌈ ⌉ |
                 for i in 0..self.m {
                     let open;
@@ -120,12 +120,10 @@ impl ToString for Matrix {
                     if i == 0 {
                         open = '⌈';
                         close = '⌉';
-                    }
-                    else if i == self.val.len() - 1 {
+                    } else if i == self.val.len() - 1 {
                         open = '⌊';
                         close = '⌋';
-                    }
-                    else {
+                    } else {
                         open = '|';
                         close = open;
                     }
@@ -138,7 +136,7 @@ impl ToString for Matrix {
             }
         }
 
-        result
+        write!(f, "{result}")
     }
 }
 impl VarComm for Matrix {
@@ -552,7 +550,7 @@ impl Matrix {
         for i in 0..self.n {
             let this_schema = &schema[i];
             let has_negative = this_schema.0;
-            let width = this_schema.1;
+            let width: u32 = this_schema.1;
 
             let curr = host[i];
             let mut curr_str = curr.to_string();
@@ -560,14 +558,14 @@ impl Matrix {
                 curr_str = format!(" {curr_str}");
             }
 
-            if (curr_str.len() as u32) < width {
+            if (has_negative && (curr_str.len() as u32) < width + 1) || ((curr_str.len() as u32) < width) {
                 let mut diff = width - (curr_str.len() as u32);
                 let mut space_str = String::new();
-                if curr < 0f64 {
-                    diff += 1; //For the negative
+                if has_negative {
+                    diff += 1;
                 }
 
-                for _ in 0..=diff {
+                for _ in 0..diff {
                     space_str += " ";
                 }
 
