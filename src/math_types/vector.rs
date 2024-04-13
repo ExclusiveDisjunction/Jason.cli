@@ -1,15 +1,16 @@
 use std::fmt::Display;
-use std::ops::{Add, Index, IndexMut, Sub};
+use std::ops::{Index, IndexMut};
 
 use super::mt_base::VarComm;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Vector {
     val: Vec<f64>,
     d: usize
 }
 impl VarComm for Vector {
     type StoredData = Vec<f64>;
+    type SterilizedType = Self;
 
     fn val_eq(&self, other: &Self) -> bool {
         self.val == other.val
@@ -51,7 +52,7 @@ impl VarComm for Vector {
         }
         result
     }
-    fn read_from_sterilize(&mut self, input_string: &str) -> Result<(), String> {
+    fn from_sterilize(input_string: &str) -> Result<Self, String> {
         if input_string.len() < 3 || &input_string[0..3] != "VEC" {
             return Err(String::from("Input string not long enough."));
         }
@@ -71,7 +72,7 @@ impl VarComm for Vector {
             }
         }
 
-        self.resize(d);
+        let mut val = Vec::<f64>::new();
 
         for i in 0..d {
             if i + 2 >= splits.len() {
@@ -79,49 +80,20 @@ impl VarComm for Vector {
             }
 
             let target = splits[i+2];
-            assert!(i < self.d);
+            assert!(i < d);
 
             if let Ok(t) = target.parse::<f64>() {
-                self.val[i] = t;
+               val.push(t);
             }
             else {
                 return Err(format!("{target} is not of proper format and could not be converted."));
             }
         }
 
-        Ok(())
-    }
-}
-impl Add for Vector {
-    type Output = Result<Self, String>;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        if self.d != rhs.d { Err("Dimension mismatch.".to_string()) }
-        else {
-            let mut result = Vector::new(self.d);
-
-            for i in 0..self.d {
-                result.val[i] = self.val[i] + rhs.val[i];
-            }
-
-            Ok(result)
-        }   
-    }
-}
-impl Sub for Vector {
-    type Output = Result<Self, String>;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        if self.d != rhs.d { Err("Dimension mismatch.".to_string()) }
-        else {
-            let mut result = Vector::new(self.d);
-
-            for i in 0..self.d {
-                result.val[i] = self.val[i] - rhs.val[i];
-            }
-
-            Ok(result)
-        } 
+        Ok(Self {
+            val,
+            d
+        })
     }
 }
 impl Display for Vector {
@@ -286,15 +258,28 @@ impl Vector {
         }
     }
 
-    fn resize(&mut self, new_d: usize)
-    {
-        self.d = new_d;
-        self.val.clear();
+    pub fn add(&self, rhs: &Self) -> Result<Self, String> {
+        if self.d != rhs.d { Err("Dimension mismatch.".to_string()) }
+        else {
+            let mut result = Vector::new(self.d);
 
-        if new_d > 0 {
-            for _ in 0..new_d {
-                self.val.push(0f64);
+            for i in 0..self.d {
+                result.val[i] = self.val[i] + rhs.val[i];
             }
+
+            Ok(result)
+        }
+    }
+    pub fn sub(&self, rhs: &Self) -> Result<Self, String> {
+        if self.d != rhs.d { Err("Dimension mismatch.".to_string()) }
+        else {
+            let mut result = Vector::new(self.d);
+
+            for i in 0..self.d {
+                result.val[i] = self.val[i] - rhs.val[i];
+            }
+
+            Ok(result)
         }
     }
 }

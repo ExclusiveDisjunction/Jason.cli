@@ -1,13 +1,13 @@
 use std::fmt::Display;
-use std::ops::{Add, Div, Mul, Sub};
-
 use super::mt_base::VarComm;
 
+#[derive(PartialEq, PartialOrd, Debug)]
 pub struct Scalar {
     val: f64
 }
 impl VarComm for Scalar {
     type StoredData = f64;
+    type SterilizedType = Self;
 
     fn val_eq(&self, other: &Self) -> bool {
         self.val == other.val
@@ -23,7 +23,7 @@ impl VarComm for Scalar {
     fn sterilize(&self) -> String {
         String::from("SCA ") + &self.val.to_string()
     }
-    fn read_from_sterilize(&mut self, input_string: &str) -> Result<(), String> {
+    fn from_sterilize(input_string: &str) -> Result<Self, String> {
         if input_string.len() < 3 {
             return Err(String::from("Cannot resolve input string as the type specifier was not found."));
         }
@@ -47,46 +47,12 @@ impl VarComm for Scalar {
                 let result = trimmed.parse::<f64>();
 
                 match result {
-                    Ok(a) => {
-                        self.val = a;
-                        Ok(())
-                    }
+                    Ok(a) => Ok(Scalar::new(a)),
                     Err(_) => Err(String::from("Value is not of proper numeric format."))
                 }
             }
-            _ => {
-                self.val = 0.00f64;
-                Ok(())
-            }
+            _ => Ok(Scalar::new(0f64))
         }
-    }
-}
-impl Add for Scalar {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        Scalar { val: self.val + rhs.val }
-    }
-}
-impl Sub for Scalar {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        Scalar { val: self.val - rhs.val }
-    }
-}
-impl Mul for Scalar {
-    type Output = Self;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        Scalar { val: self.val * rhs.val }
-    }
-}
-impl Div for Scalar {
-    type Output = Self;
-
-    fn div(self, rhs: Self) -> Self::Output {
-        Scalar { val: self.val / rhs.val }
     }
 }
 impl Display for Scalar {
@@ -98,6 +64,32 @@ impl Scalar {
     pub fn new(val: f64) -> Self {
         Self {
             val
+        }
+    }
+
+    pub fn add(&self, obj: &Self) -> Self {
+        Self {
+            val: self.val + obj.val
+        }
+    }
+    pub fn sub(&self, obj: &Self) -> Self {
+        Self {
+            val: self.val - obj.val
+        }
+    }
+    pub fn mul(&self, obj: &Self) -> Self {
+        Self {
+            val: self.val * obj.val
+        }
+    }
+    pub fn div(&self, obj: &Self) -> Self {
+        Self {
+            val: self.val / obj.val
+        }
+    }
+    pub fn pow(&self, obj: &Self) -> Self {
+        Self {
+            val: self.val.powf(obj.val)
         }
     }
 }

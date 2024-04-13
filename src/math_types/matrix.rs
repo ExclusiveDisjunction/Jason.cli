@@ -1,13 +1,13 @@
-use std::ops::{Add, Index, IndexMut, Mul, Sub, Range};
+use std::ops::{Index, IndexMut, Range};
 use std::cmp::max;
 use std::fmt::Display;
 use rand::prelude::*;
 
 use super::vector::Vector;
 use super::mt_base::VarComm;
-use crate::num_resolver::*;
+use crate::ops::num_resolver::get_number_digits_count;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Matrix {
     val: Vec<Vector>,
     m: usize,
@@ -27,71 +27,6 @@ impl IndexMut<usize> for Matrix {
         assert!(index < self.m);
 
         &mut self.val[index]
-    }
-}
-impl Add for Matrix {
-    type Output = Result<Self, String>;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        if self.m == rhs.m && self.n == rhs.n {
-            let mut result = Matrix::new(self.m, self.n);
-
-            for row in 0..self.m {
-                for col in 0..self.n {
-                    result.val[row][col] = self.val[row][col] + rhs.val[row][col];
-                }
-            }
-
-            Ok(result)
-        }
-        else {
-            Err(String::from("Dimension Mismatch"))
-        }
-    }
-}
-impl Sub for Matrix {
-    type Output = Result<Self, String>;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        if self.m == rhs.m && self.n == rhs.n {
-            let mut result = Matrix::new(self.m, self.n);
-
-            for row in 0..self.m {
-                for col in 0..self.n {
-                    result.val[row][col] = self.val[row][col] - rhs.val[row][col];
-                }
-            }
-
-            Ok(result)
-        }
-        else {
-            Err(String::from("Dimension Mismatch"))
-        }
-    }
-}
-impl Mul for Matrix {
-    type Output = Result<Self, String>;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        if self.n != rhs.m || self.m == 0 || self.n == 0 || rhs.m == 0 || rhs.n == 0 {
-            return Err(String::from("Dimensional mismatch, or one matrix is empty."));
-        }
-
-        let r = self.m;
-        let c = rhs.n;
-        let mut result = Matrix::new(r, c);
-
-        for i in 0..r {
-            for j in 0..c {
-                result.val[i][j] = 0f64;
-
-                for k in 0..rhs.m {
-                    result.val[i][j] += self.val[i][k] * rhs.val[k][j];
-                }
-            }
-        }
-
-        Ok(result)
     }
 }
 impl PartialEq for Matrix {
@@ -141,6 +76,7 @@ impl Display for Matrix {
 }
 impl VarComm for Matrix {
     type StoredData = Vec<Vector>;
+    type SterilizedType = Self;
 
     fn val_eq(&self, obj: &Self) -> bool {
         self.val == obj.val
@@ -176,7 +112,7 @@ impl VarComm for Matrix {
 
         result
     }
-    fn read_from_sterilize(&mut self, input: &str) -> Result<(), String> {
+    fn from_sterilize(input: &str) -> Result<Self, String> {
         if input.len() < 3 || &input[0..3] != "MAT" {
             return Err(String::from("Input string not long enough."));
         }
@@ -201,7 +137,10 @@ impl VarComm for Matrix {
             }
         }
 
-        self.resize(m, n);
+        let mut val = Vec::<Vector>::new();
+        for _ in 0..m {
+            val.push(Vector::new(n));
+        }
 
         for k in 0..(m * n) {
             let i = k / m;
@@ -215,14 +154,18 @@ impl VarComm for Matrix {
             assert!(i < m && j < n);
 
             if let Ok(t) = target.parse::<f64>() {
-                self.val[i][j] = t;
+                val[i][j] = t;
             }
             else {
                 return Err(format!("{target} is not a proper number and could not be resolved, at index {i}, {j} (num {k})"));
             }
         }
 
-        Ok(())
+        Ok(Self {
+            val,
+            m,
+            n
+        })
     }
 }
 impl Matrix {
@@ -581,5 +524,59 @@ impl Matrix {
         }
 
         Some(format!("{result}{close_brace}"))
+    }
+
+    pub fn add(&self, rhs: &Self) -> Result<Self, String> {
+        if self.m == rhs.m && self.n == rhs.n {
+            let mut result = Matrix::new(self.m, self.n);
+
+            for row in 0..self.m {
+                for col in 0..self.n {
+                    result.val[row][col] = self.val[row][col] + rhs.val[row][col];
+                }
+            }
+
+            Ok(result)
+        }
+        else {
+            Err(String::from("Dimension Mismatch"))
+        }
+    }
+    pub fn sub(&self, rhs: &Self) -> Result<Self, String> {
+        if self.m == rhs.m && self.n == rhs.n {
+            let mut result = Matrix::new(self.m, self.n);
+
+            for row in 0..self.m {
+                for col in 0..self.n {
+                    result.val[row][col] = self.val[row][col] - rhs.val[row][col];
+                }
+            }
+
+            Ok(result)
+        }
+        else {
+            Err(String::from("Dimension Mismatch"))
+        }
+    }
+    pub fn mul(&self, rhs: &Self) -> Result<Self, String> {
+        if self.n != rhs.m || self.m == 0 || self.n == 0 || rhs.m == 0 || rhs.n == 0 {
+            return Err(String::from("Dimensional mismatch, or one matrix is empty."));
+        }
+
+        let r = self.m;
+        let c = rhs.n;
+        let mut result = Matrix::new(r, c);
+
+        for i in 0..r {
+            for j in 0..c {
+                result.val[i][j] = 0f64;
+
+                for k in 0..rhs.m {
+                    result.val[i][j] += self.val[i][k] * rhs.val[k][j];
+                }
+            }
+        }
+
+        Ok(result)
     }
 }

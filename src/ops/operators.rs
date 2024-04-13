@@ -63,7 +63,7 @@ pub struct Operators{
 
 impl Operators {
     pub fn new() -> Self {
-        let mut opers = Vec::<Operator>::new();
+        let mut op = Vec::<Operator>::new();
 
         op.push(Operator::new('+', 1, |a:f64, b:f64| a + b ));
         op.push(Operator::new('-', 1, |a:f64, b:f64| a - b ));
@@ -76,7 +76,7 @@ impl Operators {
         op.push(Operator::new('[', 4, |_:f64, _:f64| 0.00f64 ));
 
         Self {
-            opers
+            opers: op
         }
     }
 

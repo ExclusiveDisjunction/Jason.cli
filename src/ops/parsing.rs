@@ -1,5 +1,5 @@
-use crate::ops::operators::Operator;
-use crate::ops::operators::Operators;
+use super::operators::Operator;
+use super::operators::Operators;
 use crate::stack::Stack;
 
 pub fn is_balanced_string(obj: &str) -> bool {
@@ -241,12 +241,12 @@ pub fn to_postfix(infix: &str, ops: &Operators) -> Result<String, String> {
                 if !opers.is_empty() {
                     let mut last_oper: Operator = opers.peek().unwrap().clone(); //Since opers is not empty, we know this has a value.
 
-                    match (last_oper.get_precidence(), curr_oper.get_precidence())
+                    match (last_oper.get_precedence(), curr_oper.get_precedence())
                         {
                             (0, 0) => return Err(format!("The operators \'{curr_oper}\' or \'{last_oper}\' could not be determined.")),
                             (mut p1, p2) =>
                                 {
-                                    while !opers.is_empty() && p1 != ops.get_brace_precidence() && (p2 < p1 || (p1 == p2 && item != '^'))
+                                    while !opers.is_empty() && p1 != ops.get_brace_precedence() && (p2 < p1 || (p1 == p2 && item != '^'))
                                     {
                                         result += &format!("{} ", last_oper.to_string());
 
@@ -257,7 +257,7 @@ pub fn to_postfix(infix: &str, ops: &Operators) -> Result<String, String> {
                                         if !opers.is_empty()
                                         {
                                             last_oper = opers.peek().unwrap().clone();
-                                            p1 = last_oper.get_precidence();
+                                            p1 = last_oper.get_precedence();
                                         }
                                     }
                                     opers.push(curr_oper.clone());
