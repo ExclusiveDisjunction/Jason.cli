@@ -1,7 +1,8 @@
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use crate::math_types::{matrix::Matrix as Matrix, vector::Vector as Vector, scalar::Scalar as Scalar};
 use crate::math_types::mt_base::VarComm;
 
+#[derive(Debug)]
 pub enum VariableType {
     Scalar(Scalar),
     Vector(Vector),
@@ -9,15 +10,25 @@ pub enum VariableType {
     None
 }
 
+impl PartialEq for VariableType{
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (VariableType::Scalar(a), VariableType::Scalar(b)) => a == b,
+            (VariableType::Vector(a), VariableType::Vector(b)) => a == b,
+            (VariableType::Matrix(a), VariableType::Matrix(b)) => a == b,
+            (VariableType::None, VariableType::None) => true,
+            (_, _) => false
+        }
+    }
+}
 impl Display for VariableType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let str = match self {
-            VariableType::Scalar(x) => x.to_string(),
-            VariableType::Vector(x) => x.to_string(),
-            VariableType::Matrix(x) => x.to_string(),
-            VariableType::None => String::from("None")
-        };
-        write!(f, "{}", str)
+        match self {
+            VariableType::Scalar(x) => Display::fmt(&x, f),
+            VariableType::Vector(x) => Display::fmt(&x, f),
+            VariableType::Matrix(x) => Display::fmt(&x, f),
+            VariableType::None => write!(f, "None")
+        }
     }
 }
 impl VariableType {
@@ -28,6 +39,13 @@ impl VariableType {
             VariableType::Matrix(m) => format!("(Matrix: {}x{})", m.rows(), m.cols()),
             VariableType::None => String::from("(None)"),
         }
+    }
+
+    pub fn is_none(&self) -> bool {
+        self == &VariableType::None
+    }
+    pub fn is_val(&self) -> bool {
+        self != &VariableType::None
     }
 
     pub fn add(&self, rhs: Self) -> Result<Self, String> {
@@ -117,7 +135,7 @@ impl VariableType {
             return Err(String::from("Not enough characters."));
         }
 
-        return match &input[0..3] {
+        match &input[0..3] {
             "SCA" => Ok(VariableType::Scalar(Scalar::from_sterilize(input)?)),
             "VEC" => Ok(VariableType::Vector(Vector::from_sterilize(input)?)),
             "MAT" => Ok(VariableType::Matrix(Matrix::from_sterilize(input)?)),

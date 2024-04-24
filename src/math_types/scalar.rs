@@ -57,7 +57,7 @@ impl VarComm for Scalar {
 }
 impl Display for Scalar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.val.to_string())
+        write!(f, "{}", self.val)
     }
 }
 impl Scalar {

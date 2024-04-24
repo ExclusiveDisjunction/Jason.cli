@@ -9,9 +9,6 @@ impl<T: PartialEq + ToString> PartialEq for Stack<T> {
     fn eq(&self, other: &Self) -> bool{
         self.data == other.data
     }
-    fn ne(&self, other: &Self) -> bool {
-        self.data != other.data
-    }
 }
 impl<T: PartialEq + ToString> Display for Stack<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
@@ -19,15 +16,13 @@ impl<T: PartialEq + ToString> Display for Stack<T> {
             0 => { write!(f, "Empty Stack") }
             k => {
                 let mut result_str: String = "{ ".to_string();
-                let mut j: usize = 0;
-                for i in self.data.iter().rev() {
+                for (j, i) in self.data.iter().rev().enumerate() {
                     let data_as_str: String = i.to_string();
                     result_str += &data_as_str;
 
                     if j + 1 != k {
                         result_str += " -> ";
                     }
-                    j += 1;
                 }
 
                 result_str += " }";
@@ -35,6 +30,11 @@ impl<T: PartialEq + ToString> Display for Stack<T> {
                 write!(f, "{}", result_str)
             }
         }
+    }
+}
+impl<T: PartialEq + ToString> Default for Stack<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 impl<T: PartialEq + ToString> Stack<T> {

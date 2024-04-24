@@ -33,9 +33,6 @@ impl PartialEq for Matrix {
     fn eq(&self, other: &Self) -> bool {
         self.m == other.m && self.n == other.n && self.val == other.val
     }
-    fn ne(&self, other: &Self) -> bool {
-        self.m != other.m || self.n != other.n || self.val == other.val
-    }
 }
 impl Display for Matrix {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -85,13 +82,13 @@ impl VarComm for Matrix {
         &self.val
     }
     fn set_val(&mut self, new_data: Self::StoredData) -> Result<(), String> {
-        if new_data.len() == 0 || new_data[0].dim() == 0 {
+        if new_data.is_empty() || !new_data[0].is_valid() {
             self.resize(0, 0);
         }
 
-        for i in 0..self.m {
-            if new_data[i].dim() != self.n {
-                return Err(format!("At row {i}, there is a dimension mismatch. ({} != {})", new_data[i].dim(), self.n));
+        for (i , item) in new_data.iter().enumerate().take(self.m) {
+            if item.dim() != self.n {
+                return Err(format!("At row {i}, there is a dimension mismatch. ({} != {})", item.dim(), self.n));
             }
         }
 
@@ -117,7 +114,7 @@ impl VarComm for Matrix {
             return Err(String::from("Input string not long enough."));
         }
 
-        let splits:Vec<&str> = input.split(' ').into_iter().collect();
+        let splits:Vec<&str> = input.split(' ').collect();
         if splits.len() < 3 {
             return Err(String::from("The input string does not contain enough information."));
         }
@@ -238,7 +235,7 @@ impl Matrix {
     }
 
     pub fn extract(&self, rows: Range<usize>, cols: Range<usize>) -> Self {
-        if rows.len() == 0 || cols.len() == 0 { Matrix::error_matrix(); }
+        if rows.is_empty() || cols.is_empty() { Matrix::error_matrix(); }
         
         let mut result = Matrix::new(rows.len(), cols.len());
         let mut ip = 0;
@@ -314,8 +311,8 @@ impl Matrix {
         }
 
         let id = Self::identity_matrix(self.m);
-        let aug = id.augment(&self);
-        return match aug {
+        let aug = id.augment(self);
+        match aug {
             Ok(a) => {
                 let left = a.extract(0..self.m, 0..self.m);
                 let right = a.extract(0..self.m, self.m..(self.m * 2));
@@ -352,10 +349,8 @@ impl Matrix {
             for j in 0..cols1 {
                 result.val[i][j] = self.val[i][j];
             }
-            let mut jp:usize = 0;
-            for j in cols1..cols2 {
+            for (jp,j) in (cols1..cols2).enumerate() {
                 result.val[i][j] = obj.val[i][jp];
-                jp += 1;
             }
         }
 
@@ -481,7 +476,7 @@ impl Matrix {
 
         result
     }
-    pub fn get_row_string(&self, row: usize, schema: &Vec<(bool, u32)>, open_brace: char, close_brace: char) -> Option<String> {
+    pub fn get_row_string(&self, row: usize, schema: &[(bool, u32)], open_brace: char, close_brace: char) -> Option<String> {
         if row > self.m {
             return None;
         }

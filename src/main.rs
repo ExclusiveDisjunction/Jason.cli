@@ -14,28 +14,24 @@ use parsing::{to_postfix, evaluate_postfix};
 use num_resolver::round_f64;
 */
 
-use math_types::matrix::Matrix as Matrix;
+use math_types::{scalar::Scalar as Scalar};
+use variables::{variable_storage::VarStorage, variable_types::VariableType};
+
 
 fn main() {
+    let storage_r = VarStorage::new("run_variables/");
+    if let Some(mut storage) = storage_r {
+        if !storage.index_variables() {
+            println!("Could not index variables.");
+        }
 
-    let mut mat = Matrix::new(4, 4);
-    mat[0][0] = 4f64;
-    mat[0][1] = 3f64;
-    mat[0][2] = 1f64;
-    mat[0][3] = 2f64;
-    mat[1][0] = 33f64;
-    mat[1][1] = 4f64;
-    mat[1][2] = 1f64;
-    mat[1][3] = -2f64;
-    mat[2][0] = 5f64;
-    mat[2][1] = -44.3f64;
-    mat[2][2] = 2f64;
-    mat[2][3] = 1f64;
-    mat[3][0] = -33.1f64;
-    mat[3][1] = -1.6f64;
-    mat[3][2] = 2.6f64;
-    mat[3][3] = 1f64;
-    println!("{}", mat.to_string());
+        println!("Ans = {}", storage.get_ans());
+        storage.set_ans(VariableType::Scalar(Scalar::new(3.)));
+        println!("Ans = {}", storage.get_ans());
+    }
+    else {
+        println!("Could not load storage.");
+    }
 
     /*
     let ops = Operators::new();

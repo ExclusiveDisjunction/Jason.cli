@@ -11,9 +11,6 @@ impl PartialEq for Operator {
     fn eq(&self, other: &Self) -> bool {
         self.symbol == other.symbol && self.precedence == other.precedence
     }
-    fn ne(&self, other: &Self) -> bool {
-        self.symbol != other.symbol || self.precedence != other.precedence
-    }
 }
 impl PartialEq<char> for Operator {
     fn eq(&self, other: &char) -> bool {
@@ -61,38 +58,33 @@ pub struct Operators{
     opers: Vec<Operator>
 }
 
+impl Default for Operators {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl Operators {
     pub fn new() -> Self {
-        let mut op = Vec::<Operator>::new();
-
-        op.push(Operator::new('+', 1, |a:f64, b:f64| a + b ));
-        op.push(Operator::new('-', 1, |a:f64, b:f64| a - b ));
-        op.push(Operator::new('*', 2, |a:f64, b:f64| a * b ));
-        op.push(Operator::new('/', 2, |a:f64, b:f64| a / b ));
-        op.push(Operator::new('%', 2, |a:f64, b:f64| a % b ));
-        op.push(Operator::new('^', 3, |a:f64, b:f64| a.powf(b) ));
-        op.push(Operator::new('(', 4, |_:f64, _:f64| 0.00f64 ));
-        op.push(Operator::new('{', 4, |_:f64, _:f64| 0.00f64 ));
-        op.push(Operator::new('[', 4, |_:f64, _:f64| 0.00f64 ));
-
         Self {
-            opers: op
+            opers: vec![
+                Operator::new('+', 1, |a:f64, b:f64| a + b ),
+                Operator::new('-', 1, |a:f64, b:f64| a - b ),
+                Operator::new('*', 2, |a:f64, b:f64| a * b ),
+                Operator::new('/', 2, |a:f64, b:f64| a / b ),
+                Operator::new('%', 2, |a:f64, b:f64| a % b ),
+                Operator::new('^', 3, |a:f64, b:f64| a.powf(b) ),
+                Operator::new('(', 4, |_:f64, _:f64| 0.00f64 ),
+                Operator::new('{', 4, |_:f64, _:f64| 0.00f64 ),
+                Operator::new('[', 4, |_:f64, _:f64| 0.00f64 )
+            ]
         }
     }
 
     pub fn get_operator(&self, oper: char) -> Option<&Operator> {
-        for item in &self.opers {
-            if item == &oper { return Some(item); }
-        }
-
-        None
+        self.opers.iter().find(|&item| item == &oper)
     }
     pub fn is_operator(&self, oper: char) -> bool {
-        let result = self.get_operator(oper);
-        match result {
-            Some(_) => true,
-            None => false
-        }
+        self.get_operator(oper).is_some()
     }
 
     pub fn get_brace_precedence(&self) -> i32 {

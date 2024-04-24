@@ -5,9 +5,9 @@ use crate::stack::Stack;
 pub fn is_balanced_string(obj: &str) -> bool {
     let mut st = Stack::<char>::new();
 
-    for (_, c) in obj.chars().enumerate() {
+    for c in obj.chars() {
         match c {
-            _ if c == '[' || c == '(' || c == '{' => st.push(c.clone()),
+            _ if c == '[' || c == '(' || c == '{' => st.push(c),
             _ if c == ']' || c == ')' || c == '}' => {
                 let top_t = st.peek();
                 if let Some(top) = top_t {
@@ -19,7 +19,7 @@ pub fn is_balanced_string(obj: &str) -> bool {
                         return false;
                     }
 
-                    if let Err(_) = st.pop() {
+                    if st.pop().is_err() {
                         return false;
                     } else {
                         continue;
@@ -174,9 +174,6 @@ pub fn to_postfix(infix: &str, ops: &Operators) -> Result<String, String> {
                 let target_brace: Operator;
 
                 {
-                    let stack_oper_t = opers.peek();
-                    let target_brace_t;
-
                     let match_open_char;
                     if item == ')' {
                         match_open_char = '('
@@ -188,7 +185,9 @@ pub fn to_postfix(infix: &str, ops: &Operators) -> Result<String, String> {
                         return Err("Unmatched brace".to_string());
                     }
 
-                    target_brace_t = ops.get_operator(match_open_char);
+                    let stack_oper_t = opers.peek();
+                    let target_brace_t = ops.get_operator(match_open_char);
+        
                     match (stack_oper_t, target_brace_t) {
                         (Some(a), Some(b)) => {
                             stack_oper = a.clone();
@@ -248,7 +247,7 @@ pub fn to_postfix(infix: &str, ops: &Operators) -> Result<String, String> {
                                 {
                                     while !opers.is_empty() && p1 != ops.get_brace_precedence() && (p2 < p1 || (p1 == p2 && item != '^'))
                                     {
-                                        result += &format!("{} ", last_oper.to_string());
+                                        result += &format!("{} ", last_oper);
 
                                         if !opers.is_empty() { //Evaluated before getting the next one.
                                             opers.pop()?;
@@ -308,10 +307,11 @@ pub fn evaluate_postfix(postfix: &str, ops: &Operators) -> Result<f64, String> {
     let literals: Vec<&str> = postfix.split(' ').collect();
     let mut results = Stack::<f64>::new();
     for curr in literals {
-        if curr.len() == 1 && ops.is_operator(curr.chars().nth(0).unwrap()) {
+        let first_char = curr.chars().next().unwrap();
+        if curr.len() == 1 && ops.is_operator(first_char) {
             let operator;
             {
-                let oper_temp = ops.get_operator(curr.chars().nth(0).unwrap());
+                let oper_temp = ops.get_operator(first_char);
                 if let Some(a) = oper_temp {
                     operator = a;
                 } else {
@@ -326,9 +326,9 @@ pub fn evaluate_postfix(postfix: &str, ops: &Operators) -> Result<f64, String> {
                 );
             }
 
-            let b = results.peek().unwrap().clone();
+            let b = *results.peek().unwrap();
             results.pop()?;
-            let a = results.peek().unwrap().clone();
+            let a = *results.peek().unwrap();
             results.pop()?;
 
             results.push(operator.evaluate(a, b));
@@ -350,5 +350,5 @@ pub fn evaluate_postfix(postfix: &str, ops: &Operators) -> Result<f64, String> {
         );
     }
 
-    Ok(results.peek().unwrap().clone())
+    Ok(*results.peek().unwrap())
 }
