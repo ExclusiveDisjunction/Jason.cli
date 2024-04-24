@@ -19,7 +19,7 @@ impl Display for VarStorageEntry {
     }
 }
 impl VarStorageEntry {
-    pub fn new(n: &str, data: VarType) -> Option<Self> {
+    fn new(n: &str, data: VarType) -> Option<Self> {
         if n.is_empty() {
             None
         }
@@ -30,13 +30,6 @@ impl VarStorageEntry {
             })
         }
 
-    }
-
-    pub fn get_value(&self) -> &VarType {
-        &self.data
-    }
-    pub fn set_value(&mut self, new_data: VariableType) {
-        self.data = new_data;
     }
 }
 
@@ -250,6 +243,38 @@ impl VarStorage {
 
         target.data = new_value;
         true
+    }
+
+    pub fn get_temporary_value(&self, name: &str) -> Option<&VariableType> {
+        let target = self.temporaries.iter().find(|x| x.name == name);
+
+        if let Some(t) = target {
+            Some(&t.data)
+        }
+        else {
+            None
+        }
+    }   
+    pub fn get_temporary_value_mut(&mut self, name: &str) -> Option<&mut VariableType> {
+        let target = self.temporaries.iter_mut().find(|x| x.name == name);
+
+        if let Some(t) = target {
+            Some(&mut t.data)
+        }
+        else {
+            None
+        }
+    }
+    pub fn set_temporary_value(&mut self, name: &str, new_data: VariableType) -> bool {
+        let target = self.temporaries.iter_mut().find(|x| x.name == name);
+
+        if let Some(t) = target {
+            t.data = new_data;
+            true
+        }
+        else {
+            false
+        }
     }
 
     pub fn get_ans(&self) -> &VariableType {

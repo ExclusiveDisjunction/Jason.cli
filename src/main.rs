@@ -6,15 +6,16 @@ pub mod math_types;
 pub mod ops;
 pub mod functions;
 
-/*
 use std::io::{stdin as stdin, stdout as stdout, Write};
+
+/*;
 
 use operators::Operators;
 use parsing::{to_postfix, evaluate_postfix};
 use num_resolver::round_f64;
 */
 
-use math_types::{scalar::Scalar as Scalar};
+use math_types::scalar::Scalar as Scalar;
 use variables::{variable_storage::VarStorage, variable_types::VariableType};
 
 
@@ -26,7 +27,25 @@ fn main() {
         }
 
         println!("Ans = {}", storage.get_ans());
-        storage.set_ans(VariableType::Scalar(Scalar::new(3.)));
+
+        print!("Please enter a new value of ans: ");
+        if stdout().flush().is_err() {
+            return;
+        }
+
+        let mut input_val: String = String::new();
+        if stdin().read_line(&mut input_val).is_err() {
+            println!("Could not read value.");
+            return;
+        }
+
+        let new_ans = input_val.trim().parse::<f64>();
+        if new_ans.is_err() {
+            println!("Input could not be formated because \"{}\"", new_ans.err().unwrap());
+            return;
+        }
+
+        storage.set_ans(VariableType::Scalar(Scalar::new(new_ans.unwrap())));
         println!("Ans = {}", storage.get_ans());
     }
     else {
