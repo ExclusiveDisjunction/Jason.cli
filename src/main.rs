@@ -29,27 +29,17 @@ fn main() {
         println!("Ans = {}", storage.get_ans());
 
         print!("Please enter a new name of a varaible: ");
-        if stdout().flush().is_err() {
-            return;
-        }
+        stdout().flush().expect("Could not flush.");
 
         let mut input_val: String = String::new();
         let mut input_name: String = String::new();
 
-        if stdin().read_line(&mut input_name).is_err() {
-            println!("Could not read value.");
-            return;
-        }
+        stdin().read_line(&mut input_name).expect("Could not read value.");
 
         print!("Please enter a new value of the variable: ");
-        if stdout().flush().is_err() {
-            return;
-        }
+        stdout().flush().expect("Could not flush.");
 
-        if stdin().read_line(&mut input_val).is_err() {
-            println!("Could not read value.");
-            return;
-        }
+        stdin().read_line(&mut input_val).expect("Could not read value.");
 
         let new_ans = input_val.trim().parse::<f64>();
         if new_ans.is_err() {

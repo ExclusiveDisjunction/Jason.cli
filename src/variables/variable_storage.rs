@@ -75,7 +75,7 @@ impl VarStorage {
                         return false;
                     }
                 }
-                else if file_name.chars().next().unwrap() == '$' {
+                else if file_name.starts_with('$') {
                     //Load variable
                     if !self.load_variable_from_file(&path, &file_name[1..]) {
                         return false;
@@ -228,7 +228,7 @@ impl VarStorage {
 
         let target = target_r.unwrap();
 
-        let file_t = File::create(&path);
+        let file_t = File::create(path);
         match file_t {
             Ok(mut file) => {
                 let sterilized = new_value.sterilize();
