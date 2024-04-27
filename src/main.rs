@@ -8,67 +8,49 @@ pub mod functions;
 
 use std::io::{stdin as stdin, stdout as stdout, Write};
 
-/*;
-
-use operators::Operators;
-use parsing::{to_postfix, evaluate_postfix};
-use num_resolver::round_f64;
-*/
-
-use math_types::{scalar::Scalar as Scalar, vector::Vector as Vector};
-use variables::{variable_storage::VarStorage, variable_types::VariableType};
+use variables::variable_storage::VarStorage;
+//use ops::operators::Operators;
+use log::{debug, info, warn, LevelFilter};
 
 
-fn main() {
+fn main() -> Result<(), String> {
+    if simple_logging::log_to_file("run.log", LevelFilter::Info).is_err() {
+        return Err(String::from("Could not start logger."));
+    }
+    info!("Starting up calc-cmd");
+
+    debug!("Indexing variables...");
     let storage_r = VarStorage::new("run_variables/");
-    if let Some(mut storage) = storage_r {
-        if !storage.index_variables() {
-            println!("Could not index variables.");
-        }
-
-        println!("Ans = {}", storage.get_ans());
-
-        print!("Please enter a new name of a varaible: ");
-        stdout().flush().expect("Could not flush.");
-
-        let mut input_val: String = String::new();
-        let mut input_name: String = String::new();
-
-        stdin().read_line(&mut input_name).expect("Could not read value.");
-
-        print!("Please enter a new value of the variable: ");
-        stdout().flush().expect("Could not flush.");
-
-        stdin().read_line(&mut input_val).expect("Could not read value.");
-
-        let new_ans = input_val.trim().parse::<f64>();
-        if new_ans.is_err() {
-            println!("Input could not be formated because \"{}\"", new_ans.err().unwrap());
-            return;
-        }
-
-        {
-            let prev_val = storage.get_variable_value(&input_name);
-            if let Some(t) = prev_val {
-                println!("Previous value of this variable: {t}");
-            }
-            else {
-                println!("No previous value in this variable.");
-            }
-        }
-        let new_value = new_ans.unwrap();
-
-        let mut new_core = Vector::new(2);
-        new_core[0] = new_value;
-        new_core[1] = new_value;
-
-        let new_data = VariableType::Vector(new_core);
-        storage.set_variable_value(&input_name, new_data);
-        println!("Ans = {}", storage.get_variable_value(&input_name).unwrap());
+    if storage_r.is_none() {
+        debug!("Indexing could not be completed because the storage could not be loaded.");
+        return Err(String::from("Storage could not be loaded!"));
     }
-    else {
-        println!("Could not load storage.");
+    let mut storage = storage_r.unwrap();
+    if !storage.index_variables() {
+        warn!("Variables could not be indexed, asking user for their choice...");
+
+        print!("Variables could not be indexed. Operating without indexing could cause undefined behavior. Quit program? (Y/n) ");
+        stdout().flush().expect("Could not flush!");
+        let mut choice = String::new();
+        stdin().read_line(&mut choice).expect("Could not resolve input.");
+
+        if choice.trim().to_lowercase() == "y" {
+            warn!("User chose to not have indexing.");
+            println!("Continuing without indexing, all previous variable values (including ans) are not loaded. Saving of variables is also disabled.");
+        }
+        else {
+            warn!("User chose to exit.");
+            println!("Goodbye!");
+            return Ok(());
+        }
     }
+    storage.save_to_files(false);
+
+    info!("All storage loaded.");
+    //debug!("Loading operators.");
+    //let ops = Operators::new();
+
+    Ok(())
 
     /*
     let ops = Operators::new();

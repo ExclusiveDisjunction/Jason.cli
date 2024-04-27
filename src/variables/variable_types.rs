@@ -1,5 +1,5 @@
 use std::fmt::{Debug, Display};
-use crate::math_types::{matrix::Matrix as Matrix, vector::Vector as Vector, scalar::Scalar as Scalar};
+pub use crate::math_types::{matrix::Matrix as Matrix, vector::Vector as Vector, scalar::Scalar as Scalar};
 use crate::math_types::mt_base::VarComm;
 
 #[derive(Debug)]
