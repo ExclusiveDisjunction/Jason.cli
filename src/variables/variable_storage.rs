@@ -75,7 +75,7 @@ impl VarStorage {
                         return false;
                     }
                 }
-                else if file_name == "$" {
+                else if file_name.chars().next().unwrap() == '$' {
                     //Load variable
                     if !self.load_variable_from_file(&path, &file_name[1..]) {
                         return false;
@@ -219,10 +219,7 @@ impl VarStorage {
         }
     }
     pub fn set_variable_value(&mut self, name: &str, new_value: VariableType) -> bool {
-        let mut path = format!("{}/$", &self.root);
-        if !Path::new(&path).exists() {
-            return false;
-        }
+        let path = format!("{}/${}", &self.root, name);
 
         let target_r = self.get_variable_mut(name);
         if target_r.is_none() {
@@ -230,7 +227,6 @@ impl VarStorage {
         }
 
         let target = target_r.unwrap();
-        path += &target.name;
 
         let file_t = File::create(&path);
         match file_t {

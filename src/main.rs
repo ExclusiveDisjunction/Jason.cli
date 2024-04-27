@@ -15,7 +15,7 @@ use parsing::{to_postfix, evaluate_postfix};
 use num_resolver::round_f64;
 */
 
-use math_types::scalar::Scalar as Scalar;
+use math_types::{scalar::Scalar as Scalar, vector::Vector as Vector};
 use variables::{variable_storage::VarStorage, variable_types::VariableType};
 
 
@@ -28,12 +28,24 @@ fn main() {
 
         println!("Ans = {}", storage.get_ans());
 
-        print!("Please enter a new value of ans: ");
+        print!("Please enter a new name of a varaible: ");
         if stdout().flush().is_err() {
             return;
         }
 
         let mut input_val: String = String::new();
+        let mut input_name: String = String::new();
+
+        if stdin().read_line(&mut input_name).is_err() {
+            println!("Could not read value.");
+            return;
+        }
+
+        print!("Please enter a new value of the variable: ");
+        if stdout().flush().is_err() {
+            return;
+        }
+
         if stdin().read_line(&mut input_val).is_err() {
             println!("Could not read value.");
             return;
@@ -45,8 +57,24 @@ fn main() {
             return;
         }
 
-        storage.set_ans(VariableType::Scalar(Scalar::new(new_ans.unwrap())));
-        println!("Ans = {}", storage.get_ans());
+        {
+            let prev_val = storage.get_variable_value(&input_name);
+            if let Some(t) = prev_val {
+                println!("Previous value of this variable: {t}");
+            }
+            else {
+                println!("No previous value in this variable.");
+            }
+        }
+        let new_value = new_ans.unwrap();
+
+        let mut new_core = Vector::new(2);
+        new_core[0] = new_value;
+        new_core[1] = new_value;
+
+        let new_data = VariableType::Vector(new_core);
+        storage.set_variable_value(&input_name, new_data);
+        println!("Ans = {}", storage.get_variable_value(&input_name).unwrap());
     }
     else {
         println!("Could not load storage.");
