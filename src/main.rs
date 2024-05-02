@@ -44,11 +44,17 @@ fn main() -> Result<(), String> {
             return Ok(());
         }
     }
-    storage.save_to_files(false);
 
     info!("All storage loaded.");
     //debug!("Loading operators.");
     //let ops = Operators::new();
+
+    if let Some(v) = storage.get_variable_value("your mom") {
+        println!("@ your mom: {v}");
+    }
+    else {
+        println!("Could not get your mom!!");
+    }
 
     Ok(())
 

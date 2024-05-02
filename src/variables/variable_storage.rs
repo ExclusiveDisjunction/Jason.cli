@@ -1,5 +1,5 @@
 use std::fmt::{Display, Formatter};
-use std::fs::{File, read_dir, create_dir_all};
+use std::fs::{File, read_dir, create_dir_all, remove_file};
 use std::io::{Read, Write};
 use std::path::Path;
 pub use super::variable_types::{VariableType as VarType, VariableType};
@@ -7,7 +7,8 @@ use log::{info, warn, error, debug};
 
 struct VarStorageEntry {
     name: String,
-    data: VarType
+    data: VarType,
+    write_to_files: bool
 }
 impl PartialEq for VarStorageEntry {
     fn eq(&self, other: &Self) -> bool {
@@ -20,30 +21,99 @@ impl Display for VarStorageEntry {
     }
 }
 impl VarStorageEntry {
-    fn new(n: &str, data: VarType) -> Option<Self> {
+    fn new(n: &str, data: VarType, write_to_files: bool) -> Option<Self> {
         if n.is_empty() {
             None
         }
         else {
             Some(Self {
                 name: n.to_string(),
-                data
+                data,
+                write_to_files
             })
         }
 
+    }
+
+    fn set_writing_to_files(&mut self, new: bool) {
+        self.write_to_files = new;
+    }
+
+    fn save_to_path(&self, path: &str) -> bool {
+        if !self.write_to_files {
+            error!("Attempting to write to file '{path}', but 'write_to_files' is false!");
+            return false;
+        }
+
+        let file_t = File::create(path);
+        match file_t {
+            Ok(mut file) => {
+                let sterilized = self.data.sterilize();
+                file.write(sterilized.as_bytes()).is_ok()
+            }
+            Err(e) => {
+                error!("Save to Path: Could not save to path because of '{}'!", e.to_string());
+                false
+            }
+        }
+    }
+    fn load_from_path(&mut self, path: &str) -> bool {
+        info!("Load Data from File: Loading variable at '{path}'");
+
+        let file_t = File::open(path);
+        let result: VariableType;
+        match file_t {
+            Ok(mut file) => {
+                let mut contents: String = String::new();
+                if let Err(e) = file.read_to_string(&mut contents) { 
+                    error!("Load Data from File: Could not read from file because '{}'", e.to_string());
+                    return false; 
+                }
+
+                let sterilized_val = VariableType::from_sterilize(&contents);
+                if let Ok(val) = sterilized_val {
+                    debug!("Load Data from File: Value loaded.");
+                    result = val;
+                }
+                else { 
+                    debug!("Load Data from File: Could not serilize value.");
+                    return false; 
+                }
+            }
+            Err(e) => {
+                error!("Load Data from File: Could not open file because '{}'", e.to_string());
+                return false;
+            }
+        }
+
+        self.data = result;
+        true
+    }
+    
+    fn get_data(&self) -> &VariableType {
+        &self.data
+    }
+    fn get_data_mut(&mut self) -> &mut VariableType {
+        &mut self.data
+    }
+    //Returns false if path is_some and saving to a path failed.
+    fn set_data(&mut self, new_data: VariableType, path: Option<&str>) -> bool {
+        self.data = new_data;
+
+        path.is_none() || self.save_to_path(path.unwrap())
     }
 }
 
 pub struct VarStorage {
     variables: Vec<VarStorageEntry>,
     temporaries: Vec<VarStorageEntry>,
-    ans: VariableType,
+    ans: VarStorageEntry,
     root: String, 
     save_to_files: bool
 }
 impl VarStorage {
     pub fn new(root_directory: &str) -> Option<Self> {
-        debug!("VarStorage: Seeing if directory {root_directory} exists...");
+        debug!("VarStorage: Seeing if directory '{root_directory}' exists...");
         if !Path::new(root_directory).exists() {
             debug!("VarStorage: No, does not exist. Attempting to create...");
             if create_dir_all(root_directory).is_err(){
@@ -56,7 +126,7 @@ impl VarStorage {
         Some(Self {
             variables: Vec::<VarStorageEntry>::new(),
             temporaries: Vec::<VarStorageEntry>::new(),
-            ans: VariableType::None,
+            ans: VarStorageEntry::new("ans", VariableType::None, true).unwrap(),
             root: root_directory.to_string(),
             save_to_files: true
         })
@@ -65,21 +135,30 @@ impl VarStorage {
     pub fn is_saving_to_files(&self) -> bool {
         self.save_to_files
     }
-    pub fn save_to_files(&mut self, new: bool) {
+    pub fn set_save_to_files(&mut self, new: bool) {
         info!("VarStorage: Set save_to_files mode to {new}");
-        self.save_to_files = new;
+        if self.save_to_files != new {
+            self.save_to_files = new;
+
+            for v in &mut self.variables {
+                v.set_writing_to_files(new);
+            }
+            self.ans.set_writing_to_files(new);
+        }
+    }
+
+    fn get_variable_path(&self, name: &str) -> String {
+        if name == "ans" {
+            format!("{}ans", self.root)
+        }
+        else {
+            format!("{}v.{}", self.root, name)
+        }
     }
 
     pub fn index_variables(&mut self) -> bool {
         //This function will see what variables there are in the root directory
         info!("VarStorage Index: Attempting index.");
-        debug!("VarStorage Index: Clearing previous data.");
-
-        self.temporaries.clear();
-        self.variables.clear();
-        self.ans = VariableType::None;
-
-        debug!("VarStorage Index: Previous data cleared.");
 
         if !Path::new(&self.root).exists() {
             info!("VarStorage Index: Could not index because directory does not exist.");
@@ -87,11 +166,21 @@ impl VarStorage {
             return false;
         }
 
+        debug!("VarStorage Index: Clearing previous data.");
+
+        self.temporaries.clear();
+        self.variables.clear();
+        self.ans.set_data(VariableType::None, None);
+
+        debug!("VarStorage Index: Previous data cleared.");
+
         if let Ok(contents) = read_dir(&self.root) {
             for item in contents.flatten() {
                 let file_name = item.file_name().to_str().unwrap().trim().to_string();
                 let path = item.path().to_str().unwrap().trim().to_string();
+        
                 debug!("VarStorage Index: Indexing variable '{file_name}' at file '{path}'");
+
                 if file_name.len() < 3 {
                     warn!("VarStorage Index: File name is not of proper format, as it must be 3 characters. Skipping.");
                     continue;
@@ -101,20 +190,33 @@ impl VarStorage {
                     //Load ans
                     debug!("VarStorage Index: Loading ans...");
 
-                    let result = self.load_variable_data_from_file(&path);
-                    if let Some(a) = result {
-                        self.ans = a;
-                    }
-                    else {
-                        warn!("VarStorage Index: Ans could not be loaded, skipping ans.");
-                        self.ans = VariableType::None;
-                        continue;
+                    if !self.ans.load_from_path(&path) {
+                        warn!("VarStorage Index: Could not index 'Ans', skipping.");
                     }
                 }
                 else if let Some(stripped) = file_name.strip_prefix("v.") {
                     //Load variable
-                    if !self.load_variable_from_file(&path, stripped) {
-                        warn!("VarStorage Index: Could not index '{file_name}', skipping.");
+
+                    if self.variables.iter().any(|x| x.name == stripped) {
+                        error!("Duplicate variable found!!");
+                        continue;
+                    }
+
+                    let new_var: &mut VarStorageEntry;
+                    {
+                        let new = VarStorageEntry::new(stripped, VariableType::None, self.save_to_files);
+                        if let Some(n) = new {
+                            self.variables.push(n);
+                            new_var = self.variables.last_mut().unwrap();
+                        }
+                        else {
+                            error!("Could not parse variable, skipping.");
+                            continue;
+                        }
+                    }
+
+                    if !new_var.load_from_path(&path) {
+                        error!("Could not load variable '{stripped}'!");
                         continue;
                     }
                 }
@@ -125,11 +227,11 @@ impl VarStorage {
             }
 
             info!("VarStorage Index: Sucessfully indexed variables.");
-            self.save_to_files = true;
+            self.set_save_to_files(true);
             true
         }
         else {
-            self.save_to_files = false;
+            self.set_save_to_files(false);
             false
         }
     }
@@ -165,107 +267,25 @@ impl VarStorage {
             }
         }
 
-        if !self.save_to_files {
-            debug!("Get Var: Save to file is off, so adding to array...");
-
-            let new_entry = VarStorageEntry::new(name, VariableType::None);
-            self.variables.push(new_entry.unwrap());
-
-            let index = self.variables.len() - 1;
-            info!("Get Var: Variable found.");
-            return Some(&mut self.variables[index]);
-        }
-
         debug!("Get Var: Does not exist, attempting to create...");
-        //It does not exist in the list, so we will make one
         {
-            let path = format!("{}v.{}", &self.root, name);
-            debug!("Get Var: Attempting to write to file '{path}'...");
-            let file_t = File::create(path);
-            if let Ok(mut file) = file_t {
-                debug!("Get Var: File created, attempting to write...");
-                if file.write_all(VariableType::None.sterilize().as_bytes()).is_err() {
-                    error!("Get Var: Could not write to file.");
-                    return None;
-                }
-
-                debug!("Get Var: File written, variable returned.");
-                let new_entry = VarStorageEntry::new(name, VariableType::None);
-                self.variables.push(new_entry.unwrap());
-
-                let index = self.variables.len() - 1;
-                info!("Get Var: Variable found.");
-                Some(&mut self.variables[index])
+            let index = self.add_variable(name, VariableType::None);
+            if let Some(i) = index {
+                Some(&mut self.variables[i])
             }
             else {
-                info!("Get Var: Variable could not be found or created.");
                 None
-            } 
-        }
-    }
-
-    fn load_variable_data_from_file(&mut self, path: &str) -> Option<VariableType> {
-        info!("Load Data from File: Loading variable at '{path}'");
-
-        let file_t = File::open(path);
-        let result: VariableType;
-        match file_t {
-            Ok(mut file) => {
-                let mut contents: String = String::new();
-                if let Err(e) = file.read_to_string(&mut contents) { 
-                    error!("Load Data from File: Could not read from file because '{}'", e.to_string());
-                    return None; 
-                }
-
-                let sterilized_val = VariableType::from_sterilize(&contents);
-                if let Ok(val) = sterilized_val {
-                    debug!("Load Data from File: Value loaded.");
-                    result = val;
-                }
-                else { 
-                    debug!("Load Data from File: Could not serilize value.");
-                    return None; 
-                }
-            }
-            Err(e) => {
-                error!("Load Data from File: Could not open file because '{}'", e.to_string());
-                return None;
-            }
-        }
-
-        Some(result)
-    }
-    fn load_variable_from_file(&mut self, path: &str, name: &str) -> bool {
-        info!("Load from File: Attempting to load variable '{name}' from file '{path}'");
-
-        debug!("Load from File: Extracting from file...");
-        let extracted = self.load_variable_data_from_file(path);
-        if extracted.is_none() { 
-            error!("Load from File: Extraction failed!");
-            return false; 
-        }
-
-        debug!("Load from File: Attempting to load variable in memory...");
-        match self.get_variable_mut(name) {
-            Some(target) => {
-                debug!("Load from File: Target aquired, filling with data.");
-                target.data = extracted.unwrap();
-
-                info!("Load from File: Variable '{name}' has been loaded with '{}'", target.data.display_type());
-                true
-            }
-            None => {
-                error!("Load from File: Unable to load from memory!");
-                false
             }
         }
     }
+
     pub fn load_variable(&mut self, name: &str) -> bool {
-        let path = format!("{}/v.{}", &self.root, &name);
+        let path = self.get_variable_path(name);
+        let var = self.get_variable_mut(name);
 
-        self.load_variable_from_file(&path, name)
+        var.is_some() && var.unwrap().load_from_path(&path)
     }
-    pub fn release_variable(&mut self, name: &str) -> bool {
+    pub fn reset_variable(&mut self, name: &str) -> bool {
         let target_r = self.get_variable_mut(name);
         if target_r.is_none() {
             return false;
@@ -276,62 +296,94 @@ impl VarStorage {
 
         true
     }
-    pub fn get_variable_value(&self, name: &str) -> Option<&VariableType> {
-        let target = self.get_variable(name);
-        match target {
-            Some(v) => Some(&v.data),
-            None => None
+    //Removes from the current instance.
+    pub fn drop_variable(&mut self, name: &str) -> bool {
+        let index = self.get_variable_index(name);
+
+        if let Some(i) = index {
+            self.variables.remove(i);
+
+            true
+        }
+        else {
+            false
         }
     }
+    //Removes from file system and drops
+    pub fn delete_variable(&mut self, name: &str) -> bool {
+        self.drop_variable(name) && remove_file(self.get_variable_path(name)).is_ok()
+    }
+
+    pub fn get_variable_value(&self, name: &str) -> Option<&VariableType> {
+        Some(&self.get_variable(name)?.data)
+    }
     pub fn get_variable_value_mut(&mut self, name: &str) -> Option<&mut VariableType> {
-        let target = self.get_variable_mut(name);
-        match target {
-            Some(v) => Some(&mut v.data),
-            None => None
-        }
+        Some(&mut self.get_variable_mut(name)?.data)
     }
     pub fn set_variable_value(&mut self, name: &str, new_value: VariableType) -> bool {
         let path = format!("{}/v.{}", &self.root, name);
 
         let target_r = self.get_variable_mut(name);
-        if target_r.is_none() {
-            return false;
+        if let Some(target) = target_r {
+            target.data = new_value;
+
+            target.save_to_path(&path)
+        }
+        else {
+            false
+        }
+    }
+    pub fn add_variable(&mut self, name: &str, value: VariableType) -> Option<usize> {
+        if let Some(i) = self.get_variable_index(name){
+            return Some(i);
         }
 
-        let target = target_r.unwrap();
-
-        let file_t = File::create(path);
-        match file_t {
-            Ok(mut file) => {
-                let sterilized = new_value.sterilize();
-                if file.write(sterilized.as_bytes()).is_err() { return false; }
+        if !self.save_to_files {
+            let new_entry = VarStorageEntry::new(name, value, self.save_to_files);
+            if new_entry.is_none() {
+                error!("The new variable could not be created.");
+                return None;
             }
-            _ => return false
+
+            self.variables.push(new_entry.unwrap());
+
+            let index = self.variables.len() - 1;
+            info!("Get Var: Variable found.");
+            return Some(index);
         }
 
-        target.data = new_value;
-        true
+        {
+            let path = self.get_variable_path(name);
+            debug!("Get Var: Attempting to write to file '{path}'...");
+
+            let file_t = File::create(path);
+            if let Ok(mut file) = file_t {
+                debug!("Get Var: File created, attempting to write...");
+                if file.write_all(value.sterilize().as_bytes()).is_err() {
+                    error!("Get Var: Could not write to file.");
+                    return None;
+                }
+
+                debug!("Get Var: File written, variable returned.");
+                let new_entry = VarStorageEntry::new(name, value, self.save_to_files);
+                self.variables.push(new_entry.unwrap());
+
+                let index = self.variables.len() - 1;
+                info!("Get Var: Variable found.");
+                Some(index)
+            }
+            else {
+                info!("Get Var: Variable could not be found or created.");
+                None
+            } 
+        }
     }
 
     pub fn get_temporary_value(&self, name: &str) -> Option<&VariableType> {
-        let target = self.temporaries.iter().find(|x| x.name == name);
-
-        if let Some(t) = target {
-            Some(&t.data)
-        }
-        else {
-            None
-        }
+        Some(&self.temporaries.iter().find(|x| x.name == name)?.data)
     }   
     pub fn get_temporary_value_mut(&mut self, name: &str) -> Option<&mut VariableType> {
-        let target = self.temporaries.iter_mut().find(|x| x.name == name);
-
-        if let Some(t) = target {
-            Some(&mut t.data)
-        }
-        else {
-            None
-        }
+        Some(&mut self.temporaries.iter_mut().find(|x| x.name == name)?.data)
     }
     pub fn set_temporary_value(&mut self, name: &str, new_data: VariableType) -> bool {
         let target = self.temporaries.iter_mut().find(|x| x.name == name);
@@ -344,21 +396,30 @@ impl VarStorage {
             false
         }
     }
-
-    pub fn get_ans(&self) -> &VariableType {
-        &self.ans
-    }
-    pub fn set_ans(&mut self, new_ans: VariableType) -> bool {
-        self.ans = new_ans;
-        let path = format!("{}ans", &self.root);
-
-        if let Ok(mut file)=  File::create(path) {
-            let sterilized = self.ans.sterilize();
-            if file.write(sterilized.as_bytes()).is_ok() { 
-                return true; 
+    pub fn drop_temporary(&mut self, name: &str) -> bool {
+        for (i, item) in self.variables.iter().enumerate(){
+            if item.name == name {
+                self.temporaries.remove(i);
+                return true;
             }
-        }  
+        }
 
         false
+    }
+
+    pub fn get_ans(&self) -> &VariableType {
+        self.ans.get_data()
+    }
+    pub fn get_ans_mut(&mut self) -> &mut VariableType {
+        self.ans.get_data_mut()
+    }
+    pub fn set_ans(&mut self, new_ans: VariableType) -> bool {
+        if self.save_to_files {
+            let path = self.get_variable_path("ans");
+            self.ans.set_data(new_ans, Some(&path))
+        }
+        else {
+            self.ans.set_data(new_ans, None)
+        }
     }
 }
