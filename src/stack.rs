@@ -52,12 +52,8 @@ impl<T: PartialEq + ToString> Stack<T> {
     pub fn push(&mut self, data: T) {
         self.data.push(data);
     }
-    pub fn pop(&mut self) -> Result<(), String> {
-        if self.is_empty() { return Err("Empty stack.".to_string()); }
-
-        self.data.pop();
-
-        Ok(())
+    pub fn pop(&mut self) -> Option<T> {
+        self.data.pop()
     }
     pub fn clear(&mut self) {
         self.data.clear();

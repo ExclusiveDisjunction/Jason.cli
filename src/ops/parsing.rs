@@ -1,6 +1,302 @@
+use std::fmt::Display;
+
 use super::operators::Operator;
 use super::operators::Operators;
 use crate::stack::Stack;
+use crate::math_types::scalar::Scalar;
+use crate::variables::variable_types::VariableType;
+
+pub enum ExpressionType {
+    NumericExpression(Scalar), //Returns the specified number.
+    VariableExpression(String), //Returns the name of the variable.
+    DeclorationExpression(String), //Returns the name of the temporary
+    EmptyExpression,
+    CompositeExpression(Vec<ExpressionType>), //A series of expressions together.
+    InvalidExpression(String) //Contains the error message. 
+}
+
+impl ExpressionType {
+    fn parse_expression(input: &str) -> Self {
+        if !is_balanced_string(input) {
+            return ExpressionType::InvalidExpression(String::from("Braces are not balanced"));
+        }
+        else if input.is_empty() {
+            return ExpressionType::EmptyExpression;
+        }
+
+        let num_result = Self::is_numeric_expression(input);
+        if let Ok(n) = num_result {
+            return ExpressionType::NumericExpression(n);
+        }
+
+        let dec_result = Self::is_decloration_expression(input);
+        if let Ok(d) = dec_result {
+            return ExpressionType::DeclorationExpression(d);
+        }
+
+        let var_result = Self::is_variable_expression(input);
+        if let Ok(v) = var_result {
+            return ExpressionType::VariableExpression(v);
+        }
+
+        //At this point, all cases have failed
+        let error_string = format!("Numeric type cannot be deduced because of '{}'\nDecloration type cannot be deduced because of '{}'\nVariable type cannot be deduced because of '{}'", num_result.unwrap_err(), dec_result.unwrap_err(), var_result.unwrap_err());
+
+        ExpressionType::InvalidExpression(error_string)
+    }
+
+    pub fn is_numeric_expression(obj: &str) -> Result<Scalar, String>  {
+        let mut last_was_number = false;
+        let mut last_was_space = false;
+        let mut has_period = false;
+    
+        for c in obj.chars() {
+            match c {
+                _ if c.is_numeric() => {
+                    if last_was_space {
+                        return Err(String::from("Last character was a space, but a number was provided"));
+                    } else {
+                        last_was_number = true;
+                    }
+                }
+                _ if c.is_whitespace() => {
+                    if last_was_space {
+                        continue;
+                    } else if last_was_number {
+                        last_was_space = true;
+                    }
+                }
+                _ if c == '.' => {
+                    if has_period {
+                        return Err(String::from("More than one period was provided"));
+                    }
+                    //period was found
+                    else {
+                        has_period = true;
+                    }
+                }
+                _ => {
+                    return Err(String::from("A character that was not a period, number, or white space was found"));
+                }
+            }
+        }
+    
+        Ok(Scalar::new(obj.parse::<f64>().unwrap()))
+    }
+    pub fn is_decloration_expression(input: &str) -> Result<String, String> {
+        Err(String::from("Not a decloration your mom"))
+    }
+    pub fn is_variable_expression(input: &str) -> Result<String, String> {
+        Err(String::from("not a variable your dad"))
+    }
+}
+impl Display for ExpressionType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+
+pub enum ExpressionElement {
+    SubExpr(ExpressionType),
+    Oper(Operator)
+}
+impl Display for ExpressionElement {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::SubExpr(s) => s.fmt(f),
+            Self::Oper(o) => o.fmt(f)
+        }
+    }
+}
+
+pub struct Expression {
+    elements: Vec<ExpressionElement>
+}
+impl Display for Expression{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut result = String::new();
+        for item in &self.elements {
+            result += &format!("{item} ");
+        }
+
+        write!(f, "{result}")
+    }
+}
+impl Expression {
+    fn new() -> Self {
+        Self { 
+            elements: Vec::<ExpressionElement>::new()
+        }
+    }
+
+    pub fn from_infix(input: &str, ops: &Operators) -> Result<Self, String> {
+        Self::infix_to_postfix(input, ops)
+    }
+    pub fn from_postfix(input: &str) -> Result<Self, String> {
+        todo!()
+    }
+
+    pub fn infix_to_postfix(infix: &str, ops: &Operators) -> Result<Self, String> {
+        if !is_balanced_string(infix) {
+            return Err(String::from("There is not a balance of braces."));
+        }
+    
+        let mut result = Self::new();
+        let mut prev_expr = String::new();
+        let mut prev_was_oper = false;
+        let mut prev_was_num = false;
+        let mut first_char = true;
+    
+        let mut opers = Stack::<&Operator>::new();
+    
+        for item in infix.chars() {
+            match item {
+                _ if item.is_whitespace() => {
+                    result.flush_prev_expr(&mut prev_expr)?;
+    
+                    prev_was_num = false;
+                }
+                '(' => {
+                    result.flush_prev_expr(&mut prev_expr)?;
+    
+                    prev_was_oper = true;
+                    prev_was_num = false;
+                    first_char = false;
+    
+                    let operator = ops.get_operator(item);
+                    match operator {
+                        Some(a) => opers.push(a),
+                        _ => {
+                            return Err(format!(
+                                "The operator \'{item}\' was not recognized in this context."
+                            ))
+                        }
+                    }
+                }
+                ')' => {
+                    result.flush_prev_expr(&mut prev_expr)?;
+    
+                    prev_was_oper = false;
+                    prev_was_num = false;
+                    first_char = false;
+    
+                    if opers.is_empty() {
+                        return Err(String::from("Found closing brace when no other operators have been supplied."));
+                    }
+    
+                    while !opers.is_empty() {
+                        let top = opers.pop();
+                        if let Some(t) = top {
+                            if t == &'(' { //We exit
+                                break;
+                            }
+
+                            result.elements.push(ExpressionElement::Oper(t.clone()));
+                        }
+                        else {
+                            break;
+                        }
+                    }
+    
+                    if !opers.is_empty() && *opers.peek().unwrap() == &'(' && opers.pop().is_none() { //This will check to see if there are any operators left, see if the top operator is the opening brace, and then pop it. If the pop fails, then we return an error.
+                            return Err(String::from("Could not pop starting brace."));
+                    }
+                }
+                _ if ops.is_operator(item) => {
+                    if first_char {
+                        return Err("The first character cannot be an operator.".to_string());
+                    } else if prev_was_oper {
+                        return Err(
+                            "The previous item was an operator, and a number was expected.".to_string(),
+                        );
+                    }
+                    
+                    result.flush_prev_expr(&mut prev_expr)?;
+    
+                    let curr_oper: &Operator;
+                    {
+                        let curr_oper_t = ops.get_operator(item);
+                        match curr_oper_t {
+                            Some(a) => curr_oper = a,
+                            _ => return Err(format!("Cannot understand operator \'{item}\'")),
+                        }
+                    }
+    
+                    if !opers.is_empty() {
+                        let mut last_oper: &Operator = opers.pop().unwrap(); //Since opers is not empty, we know this has a value.
+    
+                        match (last_oper.get_precedence(), curr_oper.get_precedence())
+                            {
+                                (0, 0) => return Err(format!("The operators \'{curr_oper}\' or \'{last_oper}\' could not be determined.")),
+                                (mut p1, p2) =>
+                                    {
+                                        while !opers.is_empty() && p1 != ops.get_brace_precedence() && (p2 < p1 || (p1 == p2 && item != '^'))
+                                        {
+                                            result.elements.push(ExpressionElement::Oper(last_oper.clone()));
+
+                                            if !opers.is_empty() {
+                                                last_oper = opers.pop().unwrap();
+                                                p1 = last_oper.get_precedence();
+                                            }
+                                        }
+                                        opers.push(curr_oper);
+                                    }
+                            }
+                    } else {
+                        opers.push(curr_oper);
+                    }
+    
+                    prev_was_oper = true;
+                    prev_was_num = false;
+                    first_char = false;
+                }
+                _ => { //We dont have to check for proper expressions because these are validated when flush_prev_expr is called
+                    if !first_char && !prev_was_oper && !prev_was_num {
+                        return Err(
+                            "An operator or brace was expected, but a number was given.".to_string()
+                        );
+                    }
+    
+                    prev_expr += &item.to_string();
+                    prev_was_num = true;
+                    prev_was_oper = false;
+                    first_char = false;
+                }
+            }
+        }
+    
+        //We expect that the last thing was a number or space, not an operator.
+        if prev_was_oper {
+            return Err("The string does not contain enough numbers to operators.".to_string());
+        }
+    
+        result.flush_prev_expr(&mut prev_expr)?;
+    
+        while !opers.is_empty() {
+            result.elements.push(ExpressionElement::Oper(opers.pop().unwrap().clone()));
+        }
+    
+        Ok(result)
+    }
+
+    fn flush_prev_expr(&mut self, prev_expr: &mut String) -> Result<(), String> {
+        if !prev_expr.is_empty() {
+            let parsed = ExpressionType::parse_expression(prev_expr);
+    
+            if let ExpressionType::InvalidExpression(e) = parsed {
+                return Err(format!("The expression '{prev_expr}' is not in proper format because of \"{}\"", &e));
+            }
+    
+            self.elements.push(ExpressionElement::SubExpr(parsed));
+        }
+    
+        Ok(())
+    }
+
+    pub fn evaluate(&self) -> VariableType {
+        todo!()
+    }
+}
 
 pub fn is_balanced_string(obj: &str) -> bool {
     let mut st = Stack::<char>::new();
@@ -19,7 +315,7 @@ pub fn is_balanced_string(obj: &str) -> bool {
                         return false;
                     }
 
-                    if st.pop().is_err() {
+                    if st.pop().is_none() {
                         return false;
                     } else {
                         continue;
@@ -35,264 +331,10 @@ pub fn is_balanced_string(obj: &str) -> bool {
     st.is_empty()
 }
 
-pub fn is_numeric_string(obj: &str) -> bool {
-    let mut last_was_number = false;
-    let mut last_was_space = false;
-    let mut has_period = false;
-
-    for c in obj.chars() {
-        match c {
-            _ if c.is_numeric() => {
-                if last_was_space {
-                    return false;
-                } else {
-                    last_was_number = true;
-                }
-            }
-            _ if c.is_whitespace() => {
-                if last_was_space {
-                    continue;
-                } else if last_was_number {
-                    last_was_space = true;
-                }
-            }
-            _ if c == '.' => {
-                if has_period {
-                    return false;
-                }
-                //period was found
-                else {
-                    has_period = true;
-                }
-            }
-            _ => {
-                return false;
-            }
-        }
-    }
-
-    true
-}
-
-pub fn flush_prev_num(result: &mut String, prev_num: &mut String) -> Result<(), String> {
-    if !prev_num.is_empty() {
-        if !is_numeric_string(prev_num) {
-            return Err(format!(
-                "The expression '{prev_num}' is not of proper format."
-            ));
-        }
-
-        result.push_str(&format!("{prev_num} "));
-        prev_num.clear();
-    }
-
-    Ok(())
-}
-
-pub fn to_postfix(infix: &str, ops: &Operators) -> Result<String, String> {
-    if !is_balanced_string(infix) {
-        return Err("There is not a balance of braces.".to_string());
-    }
-
-    let mut result = String::new();
-    let mut prev_num = String::new();
-    let mut prev_was_oper = false;
-    let mut prev_was_num = false;
-    let mut first_char = true;
-
-    let mut opers = Stack::<Operator>::new();
-
-    for item in infix.chars() {
-        match item {
-            _ if item.is_numeric() || item == '.' => {
-                if !first_char && !prev_was_oper && !prev_was_num {
-                    return Err(
-                        "An operator or brace was expected, but a number was given.".to_string()
-                    );
-                }
-
-                prev_num += &item.to_string();
-                prev_was_num = true;
-                prev_was_oper = false;
-                first_char = false;
-            }
-            _ if item.is_alphabetic() => {
-                if !first_char && !prev_was_oper && !prev_was_num {
-                    return Err(
-                        "An operator or brace was expected, but a number was given.".to_string()
-                    );
-                }
-
-                let constant_val_o: Option<f64>;
-                match item {
-                    'c' => constant_val_o = Some((3i32 * 10i32.pow(8)) as f64),
-                    _ => {
-                        return Err(format!(
-                            "The alphabetical character \'{item}\' is not allowed,"
-                        ))
-                    }
-                }
-
-                if let Some(constant_val) = constant_val_o {
-                    result += &constant_val.to_string();
-
-                    prev_was_oper = false;
-                    prev_was_num = false;
-                    first_char = false;
-                }
-            }
-            _ if item.is_whitespace() => {
-                flush_prev_num(&mut result, &mut prev_num)?;
-
-                prev_was_num = false;
-            }
-            '(' | '{' | '[' => {
-                flush_prev_num(&mut result, &mut prev_num)?;
-
-                prev_was_oper = true;
-                prev_was_num = false;
-                first_char = false;
-
-                let operator = ops.get_operator(item);
-                match operator {
-                    Some(a) => opers.push(a.clone()),
-                    _ => {
-                        return Err(format!(
-                            "The operator \'{item}\' was not recognized in this context."
-                        ))
-                    }
-                }
-            }
-            ')' | '}' | ']' => {
-                flush_prev_num(&mut result, &mut prev_num)?;
-
-                prev_was_oper = false;
-                prev_was_num = false;
-                first_char = false;
-
-                let mut stack_oper: Operator;
-                let target_brace: Operator;
-
-                {
-                    let match_open_char;
-                    if item == ')' {
-                        match_open_char = '('
-                    } else if item == '}' {
-                        match_open_char = '{'
-                    } else if item == ']' {
-                        match_open_char = '['
-                    } else {
-                        return Err("Unmatched brace".to_string());
-                    }
-
-                    let stack_oper_t = opers.peek();
-                    let target_brace_t = ops.get_operator(match_open_char);
-        
-                    match (stack_oper_t, target_brace_t) {
-                        (Some(a), Some(b)) => {
-                            stack_oper = a.clone();
-                            target_brace = b.clone();
-                        }
-                        (_, _) => {
-                            return Err("Unrecognized brace pattern.".to_string());
-                        }
-                    }
-                }
-
-                while !opers.is_empty() && stack_oper != target_brace {
-                    result += &format!("{stack_oper} ");
-
-                    opers.pop()?;
-
-                    let peeked = opers.peek();
-
-                    if let Some(a) = peeked {
-                        stack_oper = a.clone();
-                    } else {
-                        continue;
-                    }
-                }
-
-                if opers.peek() == Some(&target_brace) {
-                    opers.pop()?;
-                }
-            }
-            _ if ops.is_operator(item) => {
-                if first_char {
-                    return Err("The first character cannot be an operator.".to_string());
-                } else if prev_was_oper {
-                    return Err(
-                        "The previous item was an operator, and a number was expected.".to_string(),
-                    );
-                }
-
-                flush_prev_num(&mut result, &mut prev_num)?;
-
-                let curr_oper: Operator;
-                {
-                    let curr_oper_t = ops.get_operator(item);
-                    match curr_oper_t {
-                        Some(a) => curr_oper = a.clone(),
-                        _ => return Err(format!("Cannot understand operator \'{item}\'")),
-                    }
-                }
-
-                if !opers.is_empty() {
-                    let mut last_oper: Operator = opers.peek().unwrap().clone(); //Since opers is not empty, we know this has a value.
-
-                    match (last_oper.get_precedence(), curr_oper.get_precedence())
-                        {
-                            (0, 0) => return Err(format!("The operators \'{curr_oper}\' or \'{last_oper}\' could not be determined.")),
-                            (mut p1, p2) =>
-                                {
-                                    while !opers.is_empty() && p1 != ops.get_brace_precedence() && (p2 < p1 || (p1 == p2 && item != '^'))
-                                    {
-                                        result += &format!("{} ", last_oper);
-
-                                        if !opers.is_empty() { //Evaluated before getting the next one.
-                                            opers.pop()?;
-                                        }
-
-                                        if !opers.is_empty()
-                                        {
-                                            last_oper = opers.peek().unwrap().clone();
-                                            p1 = last_oper.get_precedence();
-                                        }
-                                    }
-                                    opers.push(curr_oper.clone());
-                                }
-                        }
-                } else {
-                    opers.push(curr_oper.clone());
-                }
-
-                prev_was_oper = true;
-                prev_was_num = false;
-                first_char = false;
-            }
-            _ => return Err(format!("Invalid character \'{}\'", item)),
-        }
-    }
-
-    //We expect that the last thing was a number or space, not an operator.
-    if prev_was_oper {
-        return Err("The string does not contain enough numbers to operators.".to_string());
-    }
-
-    flush_prev_num(&mut result, &mut prev_num)?;
-
-    while !opers.is_empty() {
-        result += &opers.peek().unwrap().to_string();
-        if opers.len() != 1 {
-            result += " ";
-        }
-        opers.pop()?;
-    }
-
-    Ok(result.trim().to_string())
-}
-
 pub fn evaluate_postfix(postfix: &str, ops: &Operators) -> Result<f64, String> {
+    todo!("Hi {postfix} using operators")
+
+    /*
     if postfix.is_empty() {
         return Ok(0.00f64);
     } else if is_numeric_string(postfix) {
@@ -351,4 +393,5 @@ pub fn evaluate_postfix(postfix: &str, ops: &Operators) -> Result<f64, String> {
     }
 
     Ok(*results.peek().unwrap())
+     */
 }
