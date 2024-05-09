@@ -4,8 +4,7 @@ pub mod tests {
     use crate::ops::num_resolver::{round_f64, get_number_digits_count};
     use crate::ops::operators::Operators as Operators;
 
-    use crate::math_types::{matrix::Matrix as Matrix, vector::Vector as Vector, scalar::Scalar as Scalar};
-    use crate::math_types::mt_base::VarComm;
+    use crate::math_types::{Matrix, Vector, Scalar, VarComm};
 
     fn expect_pass(input: &str, expected: f64) {
         /*

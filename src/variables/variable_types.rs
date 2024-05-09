@@ -1,6 +1,5 @@
 use std::fmt::{Debug, Display};
-pub use crate::math_types::{matrix::Matrix as Matrix, vector::Vector as Vector, scalar::Scalar as Scalar};
-use crate::math_types::mt_base::VarComm;
+pub use crate::math_types::{Matrix, Vector, Scalar, VarComm};
 
 #[derive(Debug)]
 pub enum VariableType {

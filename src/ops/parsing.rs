@@ -3,7 +3,7 @@ use std::fmt::Display;
 use super::operators::Operator;
 use super::operators::Operators;
 use crate::stack::Stack;
-use crate::math_types::scalar::Scalar;
+use crate::math_types::Scalar;
 use crate::variables::variable_types::VariableType;
 
 pub enum ExpressionType {
