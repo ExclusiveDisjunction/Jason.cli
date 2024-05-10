@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 use std::fs::{File, read_dir, create_dir_all, remove_file};
-use std::io::{Read, Write};
+use std::io::{Read, Write, BufRead};
+use std::collections::HashMap;
 use std::path::Path;
 pub use super::variable_types::{VariableType as VarType, VariableType};
 use log::{info, warn, error, debug};
@@ -421,5 +422,52 @@ impl VarStorage {
         else {
             self.ans.set_data(new_ans, None)
         }
+    }
+}
+
+fn read_lines<P>(filename: P) -> std::io::Result<std::io::Lines<std::io::BufReader<File>>>
+where P: AsRef<Path>, {
+    let file = File::open(filename)?;
+    Ok(std::io::BufReader::new(file).lines())
+}
+
+pub struct EnvironmentVariables {
+    vars: HashMap<String, VariableType>
+}
+impl EnvironmentVariables {
+    pub fn new(path: &str) -> Self {
+        //This function will not fail if it cannot open the path, it will just not load any variables.
+
+        let mut result = Self {
+            vars: HashMap::<String, VariableType>::new()
+        };
+
+        if Path::new(path).exists() {
+            if let Ok(open_file) = read_lines(path) {
+                for line in open_file.flatten() {
+                    let trimmed = line.trim().to_string();
+
+                    let mut name = String::new();
+                    for c in trimmed.chars() {
+                        if c.is_whitespace() {
+                            break;
+                        }
+
+                        name.push(c);
+                    }
+
+                    let var = VariableType::from_sterilize(&trimmed[trimmed.len()-name.len()-1..]);
+                    if let Ok(v) = var {
+                        result.vars.insert(name, v);
+                    }
+                }
+            }
+        }
+
+        result
+    }
+
+    pub fn get_var(&self, name: &str) -> Option<&VariableType> {
+        self.vars.get(name)
     }
 }

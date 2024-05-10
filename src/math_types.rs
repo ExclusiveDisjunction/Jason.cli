@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::{Display};
 use std::ops::{Index, IndexMut, Range};
 use std::cmp::max;
 use rand::prelude::*;
@@ -16,9 +16,42 @@ pub trait VarComm {
     fn from_sterilize(input_string: &str) -> Result<Self::SterilizedType, String>;
 }
 
-#[derive(PartialEq, PartialOrd, Debug)]
+#[derive(PartialEq, PartialOrd, Debug, Clone)]
 pub struct Scalar {
     val: f64
+}
+impl PartialEq<f64> for Scalar {
+    fn eq(&self, other: &f64) -> bool {
+        &self.val == other
+    }
+}
+impl PartialOrd<f64> for Scalar {
+    fn ge(&self, other: &f64) -> bool {
+        &self.val >= other
+    }
+    fn gt(&self, other: &f64) -> bool {
+        &self.val > other
+    }
+    fn le(&self, other: &f64) -> bool {
+        &self.val <= other
+    }
+    fn lt(&self, other: &f64) -> bool {
+        &self.val < other
+    }
+    fn partial_cmp(&self, other: &f64) -> Option<std::cmp::Ordering> {
+        if self.gt(other) {
+            Some(std::cmp::Ordering::Greater)
+        }
+        else if self.eq(other) {
+            Some(std::cmp::Ordering::Greater)
+        }
+        else if self.lt(other) {
+            Some(std::cmp::Ordering::Greater)
+        }
+        else {
+            None
+        }
+    }
 }
 impl VarComm for Scalar {
     type StoredData = f64;
@@ -75,6 +108,13 @@ impl Display for Scalar {
         write!(f, "{}", self.val)
     }
 }
+impl Default for Scalar {
+    fn default() -> Self {
+        Self {
+            val: 0.00f64
+        }
+    }
+}
 impl Scalar {
     pub fn new(val: f64) -> Self {
         Self {
@@ -102,7 +142,12 @@ impl Scalar {
             val: self.val / obj.val
         }
     }
-    pub fn pow(&self, obj: &Self) -> Self {
+    pub fn modulo(&self, obj: &Self) -> Self {
+        Self {
+            val: self.val % obj.val
+        }
+    }
+    pub fn powf(&self, obj: &Self) -> Self {
         Self {
             val: self.val.powf(obj.val)
         }
@@ -952,5 +997,23 @@ impl Matrix {
         }
 
         Ok(result)
+    }
+    pub fn pow(&self, rhs: &Scalar) -> Result<Self, String> {
+        if rhs < &0.0f64 {
+            Err(String::from("Cannot take the negative power of a matrix."))
+        }
+        else if rhs == &0.0f64 {
+            Ok(Self::identity_matrix(self.m))
+        }
+        else {
+            let times: i64 = rhs.get_val().floor() as i64;
+            let mut result = self.clone();
+            for _ in 1..times {
+                result = result.mul(self)?;
+            }
+
+            Ok(result)
+        }
+
     }
 }

@@ -1,17 +1,24 @@
 use std::fmt::Display;
 
+use log::{error, warn, info};
+
 use super::operators::Operator;
 use super::operators::Operators;
 use crate::stack::Stack;
 use crate::math_types::Scalar;
+use crate::variables::variable_storage::EnvironmentVariables;
+use crate::variables::variable_storage::VarStorage;
 use crate::variables::variable_types::VariableType;
 
+
+#[derive(Debug, Clone)]
 pub enum ExpressionType {
     NumericExpression(Scalar), //Returns the specified number.
     VariableExpression(String), //Returns the name of the variable.
     DeclorationExpression(String), //Returns the name of the temporary
     EmptyExpression,
-    CompositeExpression(Vec<ExpressionType>), //A series of expressions together.
+    AnsExpression,
+    EnvironmentVariable(String),
     InvalidExpression(String) //Contains the error message. 
 }
 
@@ -22,6 +29,10 @@ impl ExpressionType {
         }
         else if input.is_empty() {
             return ExpressionType::EmptyExpression;
+        }
+
+        if input.to_lowercase().trim() == "ans" {
+            return ExpressionType::AnsExpression;
         }
 
         let num_result = Self::is_numeric_expression(input);
@@ -40,7 +51,7 @@ impl ExpressionType {
         }
 
         //At this point, all cases have failed
-        let error_string = format!("Numeric type cannot be deduced because of '{}'\nDecloration type cannot be deduced because of '{}'\nVariable type cannot be deduced because of '{}'", num_result.unwrap_err(), dec_result.unwrap_err(), var_result.unwrap_err());
+        let error_string = format!("\tAns could not be deduced\n\tNumeric type cannot be deduced because of \"{}\"\n\tDecloration type cannot be deduced because of \"{}\"\n\tVariable type cannot be deduced because of \"{}\"", num_result.unwrap_err(), dec_result.unwrap_err(), var_result.unwrap_err());
 
         ExpressionType::InvalidExpression(error_string)
     }
@@ -96,11 +107,12 @@ impl Display for ExpressionType {
     }
 }
 
-pub enum ExpressionElement {
+#[derive(Debug)]
+pub enum ExpressionElement<'a> {
     SubExpr(ExpressionType),
-    Oper(Operator)
+    Oper(&'a Operator)
 }
-impl Display for ExpressionElement {
+impl<'a> Display for ExpressionElement<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::SubExpr(s) => s.fmt(f),
@@ -109,10 +121,11 @@ impl Display for ExpressionElement {
     }
 }
 
-pub struct Expression {
-    elements: Vec<ExpressionElement>
+#[derive(Debug)]
+pub struct Expression<'a> {
+    elements: Vec<ExpressionElement<'a>>
 }
-impl Display for Expression{
+impl<'a> Display for Expression<'a>{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let mut result = String::new();
         for item in &self.elements {
@@ -122,21 +135,21 @@ impl Display for Expression{
         write!(f, "{result}")
     }
 }
-impl Expression {
+impl<'a> Expression<'a> {
     fn new() -> Self {
         Self { 
             elements: Vec::<ExpressionElement>::new()
         }
     }
 
-    pub fn from_infix(input: &str, ops: &Operators) -> Result<Self, String> {
+    pub fn from_infix(input: &str, ops: &'a Operators) -> Result<Self, String> {
         Self::infix_to_postfix(input, ops)
     }
-    pub fn from_postfix(input: &str) -> Result<Self, String> {
+    pub fn from_postfix(input: &str, ops: &'a Operators) -> Result<Self, String> {
         todo!()
     }
 
-    pub fn infix_to_postfix(infix: &str, ops: &Operators) -> Result<Self, String> {
+    pub fn infix_to_postfix(infix: &str, ops: &'a Operators) -> Result<Self, String> {
         if !is_balanced_string(infix) {
             return Err(String::from("There is not a balance of braces."));
         }
@@ -191,7 +204,7 @@ impl Expression {
                                 break;
                             }
 
-                            result.elements.push(ExpressionElement::Oper(t.clone()));
+                            result.elements.push(ExpressionElement::Oper(t));
                         }
                         else {
                             break;
@@ -232,7 +245,7 @@ impl Expression {
                                     {
                                         while !opers.is_empty() && p1 != ops.get_brace_precedence() && (p2 < p1 || (p1 == p2 && item != '^'))
                                         {
-                                            result.elements.push(ExpressionElement::Oper(last_oper.clone()));
+                                            result.elements.push(ExpressionElement::Oper(last_oper));
 
                                             if !opers.is_empty() {
                                                 last_oper = opers.pop().unwrap();
@@ -273,7 +286,7 @@ impl Expression {
         result.flush_prev_expr(&mut prev_expr)?;
     
         while !opers.is_empty() {
-            result.elements.push(ExpressionElement::Oper(opers.pop().unwrap().clone()));
+            result.elements.push(ExpressionElement::Oper(opers.pop().unwrap()));
         }
     
         Ok(result)
@@ -284,17 +297,102 @@ impl Expression {
             let parsed = ExpressionType::parse_expression(prev_expr);
     
             if let ExpressionType::InvalidExpression(e) = parsed {
-                return Err(format!("The expression '{prev_expr}' is not in proper format because of \"{}\"", &e));
+                return Err(format!("The expression '{prev_expr}' is not in proper format because of:\n{}", &e));
             }
     
             self.elements.push(ExpressionElement::SubExpr(parsed));
+            prev_expr.clear();
         }
     
         Ok(())
     }
 
-    pub fn evaluate(&self) -> VariableType {
-        todo!()
+    pub fn evaluate(&self, vars: &VarStorage, env: &EnvironmentVariables) -> VariableType {
+        if self.elements.is_empty() {
+            return VariableType::Scalar(Scalar::new(0.00f64));
+        }
+
+        let mut result = Stack::<VariableType>::new();
+        for elem in &self.elements {
+            match elem {
+                ExpressionElement::Oper(o) => {
+                    let b_t = result.pop();
+                    let a_t = result.pop();
+
+                    match (a_t, b_t) {
+                        (Some(a), Some(b)) => {
+                            info!("Performing operation {o} on {} and {}", a.display_type(), b.display_type());
+                            let evaluation = o.evaluate(a, b);
+                            if let Ok(t) = evaluation {
+                                result.push(t);
+                            }
+                            else {
+                                error!("Evaluation failed");
+                                return VariableType::None;
+                            }
+                        }
+                        (_, _) => {
+                            error!("Could not pop two elements from stack, even though it was expected.");
+                            return VariableType::None;
+                        }
+                    }
+                }
+                ExpressionElement::SubExpr(expr) => {
+                    /*
+                        We need to either:
+                        1. Push the scalar value to the expressions
+                        2. Push the value of the variable
+                        3. Push the value of the temporary
+                        4. Throw an error for an error string
+                        5. Push 0.00 for an empty expression.
+                    */
+
+                    match expr {
+                        ExpressionType::AnsExpression => {
+                            result.push(vars.get_ans().clone());
+                        }
+                        ExpressionType::DeclorationExpression(tmp) => {
+                            let retrived = vars.get_temporary_value(tmp);
+                            if let Some(r) = retrived {
+                                result.push(r.clone());
+                            }
+                            else {
+                                error!("Could not resolve variable '{tmp}' while parsing.");
+                                return VariableType::None;
+                            }
+                        }
+                        ExpressionType::VariableExpression(name) => {
+                            let retrived = vars.get_variable_value(name);
+                            if let Some(r) = retrived {
+                                result.push(r.clone());
+                            }
+                            else {
+                                error!("Could not resolve variable '{name}' while parsing.");
+                                return VariableType::None;
+                            }
+                        }
+                        ExpressionType::EnvironmentVariable(var) => {
+                            if let Some(v) = env.get_var(var) {
+                                result.push(v.clone());
+                            }
+                            else {
+                                error!("Could not retrive the environment variable '{var}'.");
+                                return VariableType::None;
+                            }
+                        }
+                        ExpressionType::EmptyExpression => result.push(VariableType::Scalar(Scalar::default())),
+                        ExpressionType::InvalidExpression(_) => return VariableType::None,
+                        ExpressionType::NumericExpression(n) => result.push(VariableType::Scalar(n.clone()))
+                    }
+                }
+            }
+        }
+
+        if result.len() != 1 {
+            return VariableType::None;
+        }
+
+        result.pop().unwrap()
     }
 }
 

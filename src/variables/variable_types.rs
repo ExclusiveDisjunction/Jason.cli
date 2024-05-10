@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Display};
 pub use crate::math_types::{Matrix, Vector, Scalar, VarComm};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum VariableType {
     Scalar(Scalar),
     Vector(Vector),
@@ -47,77 +47,54 @@ impl VariableType {
         self != &VariableType::None
     }
 
-    pub fn add(&self, rhs: Self) -> Result<Self, String> {
+    pub fn add(&self, rhs: &Self) -> Result<Self, String> {
         match (self, rhs) {
-            (VariableType::Scalar(x), VariableType::Scalar(y)) => Ok(VariableType::Scalar(x.add(&y))),
-            (VariableType::Vector(x), VariableType::Vector(y)) => {
-                let comp = x.add(&y);
-                if let Ok(z) = comp {
-                    Ok(VariableType::Vector(z))
-                }
-                else {
-                    Err(comp.err().unwrap())
-                }
-            }
-            (VariableType::Matrix(x), VariableType::Matrix(y)) => {
-                let comp = x.add(&y);
-                if let Ok(z) = comp {
-                    Ok(VariableType::Matrix(z))
-                }
-                else {
-                    Err(comp.err().unwrap())
-                }
-            }
+            (VariableType::Scalar(x), VariableType::Scalar(y)) => Ok(VariableType::Scalar(x.add(y))),
+            (VariableType::Vector(x), VariableType::Vector(y)) => Ok(VariableType::Vector(x.add(y)?)),
+            (VariableType::Matrix(x), VariableType::Matrix(y)) => Ok(VariableType::Matrix(x.add(y)?)),
             (VariableType::None, VariableType::None) | (VariableType::None, _) | (_, VariableType::None) => Err(String::from("Cannot add None")),
             (_, _) => Err("Mismatched types.".to_string())
         }
     }
-    pub fn sub(&self, rhs: Self) -> Result<Self, String> {
+    pub fn sub(&self, rhs: &Self) -> Result<Self, String> {
         match (self, rhs) {
-            (VariableType::Scalar(x), VariableType::Scalar(y)) => Ok(VariableType::Scalar(x.sub(&y))),
-            (VariableType::Vector(x), VariableType::Vector(y)) => {
-                let comp = x.sub(&y);
-                if let Ok(z) = comp {
-                    Ok(VariableType::Vector(z))
-                }
-                else {
-                    Err(comp.err().unwrap())
-                }
-            }
-            (VariableType::Matrix(x), VariableType::Matrix(y)) => {
-                let comp = x.sub(&y);
-                if let Ok(z) = comp {
-                    Ok(VariableType::Matrix(z))
-                }
-                else {
-                    Err(comp.err().unwrap())
-                }
-            }
+            (VariableType::Scalar(x), VariableType::Scalar(y)) => Ok(VariableType::Scalar(x.sub(y))),
+            (VariableType::Vector(x), VariableType::Vector(y)) => Ok(VariableType::Vector(x.sub(y)?)),
+            (VariableType::Matrix(x), VariableType::Matrix(y)) => Ok(VariableType::Matrix(x.sub(y)?)),
             (VariableType::None, VariableType::None) | (VariableType::None, _) | (_, VariableType::None)  => Err(String::from("Cannot subtract None")),
             (_, _) => Err("Mismatched types.".to_string())
         }
     }
-    pub fn mul(&self, rhs: Self) -> Result<Self, String> {
+    pub fn mul(&self, rhs: &Self) -> Result<Self, String> {
         match (self, rhs) {
-            (VariableType::Scalar(x), VariableType::Scalar(y)) => Ok(VariableType::Scalar(x.mul(&y))),
-            (VariableType::Matrix(x), VariableType::Matrix(y)) => {
-                let comp = x.mul(&y);
-                if let Ok(z) = comp {
-                    Ok(VariableType::Matrix(z))
-                }
-                else {
-                    Err(comp.err().unwrap())
-                }
-            }
+            (VariableType::Scalar(x), VariableType::Scalar(y)) => Ok(VariableType::Scalar(x.mul(y))),
+            (VariableType::Matrix(x), VariableType::Matrix(y)) => Ok(VariableType::Matrix(x.mul(y)?)),
             (VariableType::None, VariableType::None) | (VariableType::None, _) | (_, VariableType::None)  => Err(String::from("Cannot multiply None")),
             (_, _) => Err(String::from("Type does not support multiplication, or mismatched types."))
         }
     }
-    pub fn div(&self, rhs: Self) -> Result<Self, String> {
+    pub fn div(&self, rhs: &Self) -> Result<Self, String> {
         match (self, rhs) {
-            (VariableType::Scalar(x), VariableType::Scalar(y)) => Ok(VariableType::Scalar(x.div(&y))),
+            (VariableType::Scalar(x), VariableType::Scalar(y)) => Ok(VariableType::Scalar(x.div(y))),
             (VariableType::None, VariableType::None) | (VariableType::None, _) | (_, VariableType::None)  => Err(String::from("Cannot divide None")),
             (_, _) => Err("Type does not support division.".to_string())
+        }
+    }
+    pub fn modulo(&self, rhs: &Self) -> Result<Self, String> {
+        match (self, rhs) {
+            (VariableType::Scalar(x), VariableType::Scalar(y)) => Ok(VariableType::Scalar(x.modulo(y)) ),
+            (VariableType::None, VariableType::None) | (VariableType::None, _) | (_, VariableType::None)  => Err(String::from("Cannot modulo None")),
+            (_, _) => Err("Type does not support modulo.".to_string())
+        }
+    }
+    pub fn powf(&self, rhs: &Self) -> Result<Self, String> {
+        match (self, rhs) {
+            (VariableType::Scalar(x), VariableType::Scalar(y)) => Ok(VariableType::Scalar(x.powf(y))),
+            (VariableType::Vector(_), _) | (_, VariableType::Vector(_)) => Err(String::from("Vectors do not support power raising.")),
+            (VariableType::Matrix(x), VariableType::Scalar(y)) => Ok(VariableType::Matrix(x.pow(y)?)),
+            (VariableType::Matrix(_), _) => Err(String::from("Cannot raise a matrix to any object that is not a scalar.")),
+            (VariableType::None, VariableType::None) | (VariableType::None, _) | (_, VariableType::None)  => Err(String::from("Cannot None to a power")),
+            (_, _) => Err("Type does not support pow.".to_string())
         }
     }
 

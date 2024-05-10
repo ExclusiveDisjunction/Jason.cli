@@ -1,10 +1,13 @@
 use std::{cmp::Ordering, fmt::Display};
 
-#[derive(Clone)]
+use crate::variables::variable_types::VariableType;
+use crate::math_types::Scalar;
+
+#[derive(Clone, Debug)]
 pub struct Operator {
     symbol: char,
     precedence: i32,
-    eval: fn(f64,f64)->f64
+    eval: fn(VariableType,VariableType)->Result<VariableType, String>
 }
 
 impl PartialEq for Operator {
@@ -43,11 +46,11 @@ impl Display for Operator {
     }
 }
 impl Operator {
-    pub fn new(s: char, p: i32, e : fn(f64, f64) -> f64) -> Self {
+    pub fn new(s: char, p: i32, e : fn(VariableType, VariableType) -> Result<VariableType, String>) -> Self {
         Self { symbol: s, precedence: p, eval: e }
     }
 
-    pub fn evaluate(&self, a: f64, b: f64) -> f64 {
+    pub fn evaluate(&self, a: VariableType, b: VariableType) -> Result<VariableType, String> {
         (self.eval)(a, b)
     }
 
@@ -67,15 +70,15 @@ impl Operators {
     pub fn new() -> Self {
         Self {
             opers: vec![
-                Operator::new('+', 1, |a:f64, b:f64| a + b ),
-                Operator::new('-', 1, |a:f64, b:f64| a - b ),
-                Operator::new('*', 2, |a:f64, b:f64| a * b ),
-                Operator::new('/', 2, |a:f64, b:f64| a / b ),
-                Operator::new('%', 2, |a:f64, b:f64| a % b ),
-                Operator::new('^', 3, |a:f64, b:f64| a.powf(b) ),
-                Operator::new('(', 4, |_:f64, _:f64| 0.00f64 ),
-                Operator::new('{', 4, |_:f64, _:f64| 0.00f64 ),
-                Operator::new('[', 4, |_:f64, _:f64| 0.00f64 )
+                Operator::new('+', 1, |a:VariableType, b:VariableType| a.add(&b) ),
+                Operator::new('-', 1, |a:VariableType, b:VariableType| a.sub(&b) ),
+                Operator::new('*', 2, |a:VariableType, b:VariableType| a.mul(&b) ),
+                Operator::new('/', 2, |a:VariableType, b:VariableType| a.div(&b) ),
+                Operator::new('%', 2, |a:VariableType, b:VariableType| a.modulo(&b) ),
+                Operator::new('^', 3, |a:VariableType, b:VariableType| a.powf(&b) ),
+                Operator::new('(', 4, |_:VariableType, _:VariableType| Ok(VariableType::Scalar(Scalar::new(0.))) ),
+                Operator::new('{', 4, |_:VariableType, _:VariableType| Ok(VariableType::Scalar(Scalar::new(0.))) ),
+                Operator::new('[', 4, |_:VariableType, _:VariableType| Ok(VariableType::Scalar(Scalar::new(0.))) )
             ]
         }
     }
