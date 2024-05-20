@@ -1,12 +1,11 @@
 use std::fmt::Display;
 
-use log::{error, warn, info};
+use log::{error, info};
 
 use super::operators::Operator;
 use super::operators::Operators;
 use crate::stack::Stack;
 use crate::math_types::Scalar;
-use crate::variables::variable_storage::EnvironmentVariables;
 use crate::variables::variable_storage::VarStorage;
 use crate::variables::variable_types::VariableType;
 
@@ -18,7 +17,7 @@ pub enum ExpressionType {
     DeclorationExpression(String), //Returns the name of the temporary
     EmptyExpression,
     AnsExpression,
-    EnvironmentVariable(String),
+    EnvironmentExpression(String), //Contains the value of a specified constant of the universe.
     InvalidExpression(String) //Contains the error message. 
 }
 
@@ -48,6 +47,11 @@ impl ExpressionType {
         let var_result = Self::is_variable_expression(input);
         if let Ok(v) = var_result {
             return ExpressionType::VariableExpression(v);
+        }
+
+        let env_result = Self::is_environmental_expression(input);
+        if let Ok(e) = env_result {
+            return ExpressionType::EnvironmentExpression(e);
         }
 
         //At this point, all cases have failed
@@ -98,12 +102,46 @@ impl ExpressionType {
         Err(String::from("Not a decloration your mom"))
     }
     pub fn is_variable_expression(input: &str) -> Result<String, String> {
-        Err(String::from("not a variable your dad"))
+        let trimmed = input.trim();
+
+        if trimmed.is_empty() {
+            return Err(String::from("Expression is not a variable expression because it is empty."));
+        }
+
+        if let Some(r) = trimmed.strip_prefix(trimmed) {
+            Ok(String::from(r))
+        }
+        else {
+            Err(String::from("Expression is not a variable expression because it does not have the variable identifier '$'."))
+        }
+    }
+    pub fn is_environmental_expression(input: &str) -> Result<String, String> {
+        let trimmed = input.trim();
+
+        if trimmed.is_empty() {
+            return Err(String::from("Expression is not an environmental expression because it is empty."));
+        }
+
+        for c in trimmed.chars() {
+            if c.is_whitespace() {
+                return Err(String::from("Expression is not an environmental expression because it contains white space."))
+            }
+        }
+
+        Ok(String::from(trimmed))
     }
 }
 impl Display for ExpressionType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+        match self {
+            ExpressionType::NumericExpression(n) => write!(f, "{n}"),
+            ExpressionType::VariableExpression(v) => write!(f, "var.{v}"),
+            ExpressionType::DeclorationExpression(d) => write!(f, "tmp.{d}"),
+            ExpressionType::EmptyExpression => write!(f, ""),
+            ExpressionType::AnsExpression => write!(f, "ans"),
+            ExpressionType::EnvironmentExpression(e) => write!(f, "{e}"),
+            ExpressionType::InvalidExpression(_) => write!(f, "INVALID"),
+        }
     }
 }
 
@@ -142,14 +180,7 @@ impl<'a> Expression<'a> {
         }
     }
 
-    pub fn from_infix(input: &str, ops: &'a Operators) -> Result<Self, String> {
-        Self::infix_to_postfix(input, ops)
-    }
-    pub fn from_postfix(input: &str, ops: &'a Operators) -> Result<Self, String> {
-        todo!()
-    }
-
-    pub fn infix_to_postfix(infix: &str, ops: &'a Operators) -> Result<Self, String> {
+    pub fn from_infix(infix: &str, ops: &'a Operators) -> Result<Self, String> {
         if !is_balanced_string(infix) {
             return Err(String::from("There is not a balance of braces."));
         }
@@ -307,7 +338,7 @@ impl<'a> Expression<'a> {
         Ok(())
     }
 
-    pub fn evaluate(&self, vars: &VarStorage, env: &EnvironmentVariables) -> VariableType {
+    pub fn evaluate(&self, vars: &VarStorage) -> VariableType {
         if self.elements.is_empty() {
             return VariableType::Scalar(Scalar::new(0.00f64));
         }
@@ -367,13 +398,13 @@ impl<'a> Expression<'a> {
                                 result.push(r.clone());
                             }
                             else {
-                                error!("Could not resolve variable '{name}' while parsing.");
+                                error!("Could not retrive the variable '{name}'.");
                                 return VariableType::None;
                             }
                         }
-                        ExpressionType::EnvironmentVariable(var) => {
-                            if let Some(v) = env.get_var(var) {
-                                result.push(v.clone());
+                        ExpressionType::EnvironmentExpression(var) => {
+                            if let Some(a) = vars.get_env_var_value(var) {
+                                result.push(a.clone());
                             }
                             else {
                                 error!("Could not retrive the environment variable '{var}'.");
@@ -427,69 +458,4 @@ pub fn is_balanced_string(obj: &str) -> bool {
     }
 
     st.is_empty()
-}
-
-pub fn evaluate_postfix(postfix: &str, ops: &Operators) -> Result<f64, String> {
-    todo!("Hi {postfix} using operators")
-
-    /*
-    if postfix.is_empty() {
-        return Ok(0.00f64);
-    } else if is_numeric_string(postfix) {
-        let num: Result<f64, _> = postfix.parse::<f64>();
-
-        return match num {
-            Ok(n) => Ok(n),
-            Err(e) => Err(e.to_string()),
-        }
-    }
-
-    let literals: Vec<&str> = postfix.split(' ').collect();
-    let mut results = Stack::<f64>::new();
-    for curr in literals {
-        let first_char = curr.chars().next().unwrap();
-        if curr.len() == 1 && ops.is_operator(first_char) {
-            let operator;
-            {
-                let oper_temp = ops.get_operator(first_char);
-                if let Some(a) = oper_temp {
-                    operator = a;
-                } else {
-                    return Err(format!("\'{curr}\' is not a recognized operator."));
-                }
-            }
-
-            if results.len() < 2 {
-                return Err(
-                    "The expression calls for an operator, but does not contain enough numbers."
-                        .to_string(),
-                );
-            }
-
-            let b = *results.peek().unwrap();
-            results.pop()?;
-            let a = *results.peek().unwrap();
-            results.pop()?;
-
-            results.push(operator.evaluate(a, b));
-        } else if is_numeric_string(curr) {
-            let converted: Result<f64, _> = curr.parse::<f64>();
-            if let Ok(a) = converted {
-                results.push(a);
-            } else {
-                return Err(format!("Could not parse the numeric string \'{curr}\'."));
-            }
-        } else {
-            return Err("Invalid operator/numerical expression.".to_string());
-        }
-    }
-
-    if results.len() != 1 {
-        return Err(
-            "The expression does not have the correct number of operators to numbers.".to_string(),
-        );
-    }
-
-    Ok(*results.peek().unwrap())
-     */
 }

@@ -1,12 +1,13 @@
 #[cfg(test)]
 pub mod tests {
-    use crate::ops::parsing::{evaluate_postfix};
-    use crate::ops::num_resolver::{round_f64, get_number_digits_count};
-    use crate::ops::operators::Operators as Operators;
+    //use crate::ops::parsing::{evaluate_postfix};
+    use crate::ops::num_resolver::{//round_f64, 
+        get_number_digits_count};
+    //use crate::ops::operators::Operators as Operators;
 
     use crate::math_types::{Matrix, Vector, Scalar, VarComm};
 
-    fn expect_pass(input: &str, expected: f64) {
+    fn expect_pass(_input: &str, _expected: f64) {
         /*
         let ops = Operators::new();
         let postfix = to_postfix(&input, &ops);
@@ -37,7 +38,7 @@ pub mod tests {
         println!("Value = {val}, Expected = {expected_r}");
         assert_eq!(&val, &expected_r); */
     }
-    fn expect_fail(input: &str) {
+    fn expect_fail(_input: &str) {
         /*let ops = Operators::new();
         let postfix = to_postfix(&input, &ops);
 

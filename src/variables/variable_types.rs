@@ -31,6 +31,10 @@ impl Display for VariableType {
     }
 }
 impl VariableType {
+    pub fn from_num(num: f64) -> Self {
+        Self::Scalar(Scalar::new(num))
+    }
+
     pub fn display_type(&self) -> String {
         match self {
             VariableType::Scalar(_) => String::from("(Scalar)"),

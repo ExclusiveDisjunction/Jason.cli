@@ -8,7 +8,7 @@ pub mod functions;
 
 use std::io::{stdin as stdin, stdout as stdout, Write};
 
-use variables::variable_storage::{VarStorage, EnvironmentVariables};
+use variables::variable_storage::VarStorage;
 use ops::operators::Operators;
 use ops::parsing::Expression;
 use log::{debug, info, warn, LevelFilter};
@@ -49,7 +49,6 @@ fn main() -> Result<(), String> {
     info!("All storage loaded.");
     debug!("Loading operators.");
     let ops = Operators::new();
-    let envs = EnvironmentVariables::new("");
 
     let mut input_expr = String::new();
     print!("Please enter an expression: ");
@@ -60,7 +59,7 @@ fn main() -> Result<(), String> {
 
     let expr = Expression::from_infix(input_expr.trim(), &ops);
     if let Ok(e) = expr {
-        let result = e.evaluate(&storage, &envs);
+        let result = e.evaluate(&storage);
         println!("Result is {}", result);
         storage.set_ans(result);
     }

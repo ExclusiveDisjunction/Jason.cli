@@ -1,7 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::fs::{File, read_dir, create_dir_all, remove_file};
-use std::io::{Read, Write, BufRead};
-use std::collections::HashMap;
+use std::io::{Read, Write, BufRead, Lines, BufReader};
 use std::path::Path;
 pub use super::variable_types::{VariableType as VarType, VariableType};
 use log::{info, warn, error, debug};
@@ -9,6 +8,7 @@ use log::{info, warn, error, debug};
 struct VarStorageEntry {
     name: String,
     data: VarType,
+    desc: String,
     write_to_files: bool
 }
 impl PartialEq for VarStorageEntry {
@@ -30,6 +30,7 @@ impl VarStorageEntry {
             Some(Self {
                 name: n.to_string(),
                 data,
+                desc: String::new(),
                 write_to_files
             })
         }
@@ -91,6 +92,10 @@ impl VarStorageEntry {
         true
     }
     
+    fn get_desc(&self) -> &str {
+        &self.desc
+    }
+
     fn get_data(&self) -> &VariableType {
         &self.data
     }
@@ -108,6 +113,7 @@ impl VarStorageEntry {
 pub struct VarStorage {
     variables: Vec<VarStorageEntry>,
     temporaries: Vec<VarStorageEntry>,
+    env_vars: Vec<VarStorageEntry>,
     ans: VarStorageEntry,
     root: String, 
     save_to_files: bool
@@ -127,6 +133,7 @@ impl VarStorage {
         Some(Self {
             variables: Vec::<VarStorageEntry>::new(),
             temporaries: Vec::<VarStorageEntry>::new(),
+            env_vars: Vec::<VarStorageEntry>::new(),
             ans: VarStorageEntry::new("ans", VariableType::None, true).unwrap(),
             root: root_directory.to_string(),
             save_to_files: true
@@ -298,7 +305,7 @@ impl VarStorage {
         true
     }
     //Removes from the current instance.
-    pub fn drop_variable(&mut self, name: &str) -> bool {
+    pub fn pop_variable(&mut self, name: &str) -> bool {
         let index = self.get_variable_index(name);
 
         if let Some(i) = index {
@@ -311,8 +318,8 @@ impl VarStorage {
         }
     }
     //Removes from file system and drops
-    pub fn delete_variable(&mut self, name: &str) -> bool {
-        self.drop_variable(name) && remove_file(self.get_variable_path(name)).is_ok()
+    pub fn drop_variable(&mut self, name: &str) -> bool {
+        self.pop_variable(name) && remove_file(self.get_variable_path(name)).is_ok()
     }
 
     pub fn get_variable_value(&self, name: &str) -> Option<&VariableType> {
@@ -408,6 +415,28 @@ impl VarStorage {
         false
     }
 
+    fn get_env_var(&self, name: &str) -> Option<&VarStorageEntry> {
+        self.env_vars.iter().find(|x| x.name == name)
+    }
+    fn get_env_var_mut(&mut self, name: &str) -> Option<&mut VarStorageEntry> {
+        self.env_vars.iter_mut().find(|x| x.name == name)
+    }
+    pub fn get_env_var_value(&self, name: &str) -> Option<&VariableType> {
+        Some(&self.get_env_var(name)?.data)
+    }
+    pub fn get_env_var_value_mut(&mut self, name: &str) -> Option<&VariableType> {
+        Some(&mut self.get_env_var_mut(name)?.data)
+    }
+    pub fn get_env_var_desc(&self, name: &str) -> Option<&str> {
+        Some(&self.get_env_var(name)?.get_desc())
+    }
+    pub fn set_env_var_value(&self, name: &str, val: VariableType) -> bool {
+        todo!();
+    }
+    pub fn set_env_var_desc(&self, name: &str, desc: Option<String>) -> bool {
+        todo!();
+    }
+
     pub fn get_ans(&self) -> &VariableType {
         self.ans.get_data()
     }
@@ -425,49 +454,8 @@ impl VarStorage {
     }
 }
 
-fn read_lines<P>(filename: P) -> std::io::Result<std::io::Lines<std::io::BufReader<File>>>
+fn read_lines<P>(filename: P) -> std::io::Result<Lines<BufReader<File>>>
 where P: AsRef<Path>, {
     let file = File::open(filename)?;
     Ok(std::io::BufReader::new(file).lines())
-}
-
-pub struct EnvironmentVariables {
-    vars: HashMap<String, VariableType>
-}
-impl EnvironmentVariables {
-    pub fn new(path: &str) -> Self {
-        //This function will not fail if it cannot open the path, it will just not load any variables.
-
-        let mut result = Self {
-            vars: HashMap::<String, VariableType>::new()
-        };
-
-        if Path::new(path).exists() {
-            if let Ok(open_file) = read_lines(path) {
-                for line in open_file.flatten() {
-                    let trimmed = line.trim().to_string();
-
-                    let mut name = String::new();
-                    for c in trimmed.chars() {
-                        if c.is_whitespace() {
-                            break;
-                        }
-
-                        name.push(c);
-                    }
-
-                    let var = VariableType::from_sterilize(&trimmed[trimmed.len()-name.len()-1..]);
-                    if let Ok(v) = var {
-                        result.vars.insert(name, v);
-                    }
-                }
-            }
-        }
-
-        result
-    }
-
-    pub fn get_var(&self, name: &str) -> Option<&VariableType> {
-        self.vars.get(name)
-    }
 }

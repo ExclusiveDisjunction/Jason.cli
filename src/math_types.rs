@@ -1,4 +1,4 @@
-use std::fmt::{Display};
+use std::fmt::Display;
 use std::ops::{Index, IndexMut, Range};
 use std::cmp::max;
 use rand::prelude::*;
@@ -43,10 +43,10 @@ impl PartialOrd<f64> for Scalar {
             Some(std::cmp::Ordering::Greater)
         }
         else if self.eq(other) {
-            Some(std::cmp::Ordering::Greater)
+            Some(std::cmp::Ordering::Equal)
         }
         else if self.lt(other) {
-            Some(std::cmp::Ordering::Greater)
+            Some(std::cmp::Ordering::Less)
         }
         else {
             None
