@@ -3,5 +3,11 @@
         "./Cargo.toml",
         "./Cargo.toml"
     ],
-    "rust-analyzer.showUnlinkedFileNotification": false
+    "rust-analyzer.showUnlinkedFileNotification": false,
+    "files.associations": {
+        "*.h": "cpp",
+        "iosfwd": "cpp",
+        "fstream": "cpp",
+        "stdexcept": "cpp"
+    }
 }
