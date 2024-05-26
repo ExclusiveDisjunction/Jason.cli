@@ -35,6 +35,8 @@ private:
             Out << DateTime::Now().ToString(DateStringFormat::ShortDate, TimeStringFormat::ExtendedTime, false) << ' ';
             switch (level)
             {
+                case LoggerLevel::LL_None:
+                    return false;
                 case LoggerLevel::LL_Debug:
                     Out << "DEBUG "; 
                     break;

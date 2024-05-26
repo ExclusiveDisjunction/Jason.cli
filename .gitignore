@@ -4,3 +4,6 @@
 run_variables
 
 *.log
+cmake-build-debug
+*.out
+.vscode
