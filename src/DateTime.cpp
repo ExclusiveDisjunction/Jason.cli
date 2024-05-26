@@ -58,12 +58,11 @@ DateTime DateTime::Today()
 {
 	DateTime Return;
 
-    auto Point = std::chrono::local_t();
-	//auto Point = system_clock::now();
-	//auto Zone = std::chrono::get_tzdb().current_zone();
-	//auto Zoned = zoned_time(Zone, Point);
+	auto Point = system_clock::now();
+	auto Zone = std::chrono::get_tzdb().current_zone();
+	auto Zoned = zoned_time(Zone, Point);
 
-	Return._Dur = Point.time_since_epoch();
+	Return._Dur = Zoned.get_local_time().time_since_epoch();
 	Return = Return.DayParts();
 
 	return Return;

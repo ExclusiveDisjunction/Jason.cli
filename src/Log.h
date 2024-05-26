@@ -1,6 +1,11 @@
+#ifndef LOG_H
+#define LOG_H
+
 #include <iostream>
 #include <fstream>
 #include <climits>
+#include <type_traits>
+#include <concepts>
 
 #include "DateTime.h"
 
@@ -14,7 +19,7 @@ enum LoggerLevel
     LL_Critical = 5
 };
 
-class Logger 
+class Logger
 {
 private:
     bool StartLog(LoggerLevel level)
@@ -38,19 +43,19 @@ private:
                 case LoggerLevel::LL_None:
                     return false;
                 case LoggerLevel::LL_Debug:
-                    Out << "DEBUG "; 
+                    Out << "DEBUG ";
                     break;
                 case LoggerLevel::LL_Info:
-                    Out << "INFO "; 
+                    Out << "INFO ";
                     break;
                 case LoggerLevel::LL_Warning:
-                    Out << "WARNING "; 
+                    Out << "WARNING ";
                     break;
                 case LoggerLevel::LL_Error:
-                    Out << "ERROR "; 
+                    Out << "ERROR ";
                     break;
                 case LoggerLevel::LL_Critical:
-                    Out << "CRITICAL "; 
+                    Out << "CRITICAL ";
                     break;
             }
         }
@@ -73,9 +78,16 @@ private:
 
 public:
     Logger(const std::string& Path, LoggerLevel Level = LoggerLevel::LL_Info) : Out(Path, std::ios::trunc), State(LoggerLevel::LL_None), Level(Level)
-    {  
+    {
         if (!Out)
             throw std::logic_error("Cannot open file at that path.");
+    }
+    ~Logger()
+    {
+        if (IsInLog())
+            EndLog();
+
+        Out.close();
     }
 
     friend Logger& Debug(Logger&);
@@ -87,7 +99,7 @@ public:
 
     /// @brief Returns true if the logger has started, but not ended a log.
     /// @return A boolean containing the state.
-    bool IsInLog() const 
+    bool IsInLog() const
     {
         return State != LoggerLevel::LL_None;
     }
@@ -97,22 +109,54 @@ public:
     }
 
     template<typename T>
-    Logger& operator<<(const T& obj)
+    void Write(const T& obj)
     {
         if (!IsInLog())
             throw std::logic_error("Cannot insert into log when a level has not been specified.");
 
         if (!CurrentLogIsIgnored())
             this->Out << obj;
-        return *this;
     }
+
+    Logger& operator<<(const std::string& obj)
+    {
+        try
+        {
+            this->Write(obj);
+            return *this;
+        }
+        catch (std::logic_error& e)
+        {
+            throw e;
+        }
+    }
+    template<typename T>
+    requires (std::is_arithmetic_v<T> && !std::is_pointer_v<T>)
+    Logger& operator<<(const T& obj)
+    {
+        try
+        {
+            this->Write(obj);
+            return *this;
+        }
+        catch (std::logic_error& e)
+        {
+            throw e;
+        }
+    }
+
+    Logger& operator<<(Logger& (*func)(Logger&))
+    {
+        return func(*this);
+    }
+
 };
 
 Logger& Debug(Logger& in)
 {
     if (!in.StartLog(LoggerLevel::LL_Debug))
         throw std::logic_error("Cannot start log line because another line has not been completed. Please finish that line first.");
-    
+
     return in;
 }
 Logger& Info(Logger& in)
@@ -126,7 +170,7 @@ Logger& Warning(Logger& in)
 {
     if (!in.StartLog(LoggerLevel::LL_Warning))
         throw std::logic_error("Cannot start log line because another line has not been completed. Please finish that line first.");
-        
+
     return in;
 }
 Logger& Error(Logger& in)
@@ -149,3 +193,5 @@ Logger& EndLog(Logger& in)
     in.EndLog();
     return in;
 }
+
+#endif
