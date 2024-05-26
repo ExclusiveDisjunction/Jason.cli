@@ -9,40 +9,65 @@
 #include <sstream>
 #include <string>
 
+#include "StdCalc.h"
+
+class MATH_LIB VariableType;
+
 enum VariableTypes
 {
-    VT_None,
     VT_Scalar,
     VT_Vector,
     VT_Matrix
 };
 
-class VariableType
+class MATH_LIB VariableType
 {
 public:
-    VariableType();
+    [[nodiscard]] virtual VariableTypes GetType() const noexcept = 0;
 
-    virtual VariableTypes GetType() const = 0;
+    [[nodiscard]] virtual std::string Sterilize() const noexcept; //Writes to a string value
+    virtual void Sterilize(std::ostream& out) const noexcept = 0; //Writes to a file, can be retrieved.
+    [[nodiscard]] virtual std::string GetTypeString() const noexcept = 0; //Displays (None), (Scalar), (Vector:D), (Matrix:mxn)
+    virtual std::ostream& operator<<(std::ostream& out) const noexcept = 0; //Pretty prints
 
-    virtual std::string Sterilize() const //Writes to a string value
+    virtual VariableType* operator+(const VariableType& in) const noexcept
     {
-        std::stringstream ss;
-        Sterilize(ss);
-        return ss.str();
+        return nullptr;
     }
-    virtual void Sterilize(std::ostream& out) const = 0; //Writes to a file, can be retrived.
-    virtual std::string GetTypeString() const = 0; //Displays (None), (Scalar), (Vector:D), (Matrix:mxn)
-    virtual std::ostream& operator<<(std::ostream& out) const = 0; //Pretty prints
+    virtual VariableType* operator-(const VariableType& in) const noexcept
+    {
+        return nullptr;
+    }
+    virtual VariableType* operator*(const VariableType& in) const noexcept
+    {
+        return nullptr;
+    }
+    virtual VariableType* operator/(const VariableType& in) const noexcept
+    {
+        return nullptr;
+    }
+    virtual VariableType* operator%(const VariableType& in) const noexcept
+    {
+        return nullptr;
+    }
+    [[nodiscard]] virtual VariableType* Pow(const VariableType& in) const noexcept
+    {
+        return nullptr;
+    }
 
-    virtual VariableType operator+(const VariableType& in) const = 0;
-    virtual VariableType operator-(const VariableType& in) const = 0;
-    virtual VariableType operator*(const VariableType& in) const = 0;
-    virtual VariableType operator/(const VariableType& in) const = 0;
-    virtual VariableType operator%(const VariableType& in) const = 0;
-    virtual VariableType pow(const VariableType& in) const = 0;
-
-    virtual bool operator==(const VariableType& obj) const = 0;
-    virtual bool operator!=(const VariableType& obj) const = 0;
+    virtual bool operator==(const VariableType& obj) const noexcept = 0;
+    virtual bool operator!=(const VariableType& obj) const noexcept = 0;
 };
+
+MATH_LIB VariableType* FromSterilized(const std::string& val) noexcept;
+MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept;
+
+MATH_LIB VariableType* ApplyOperation(const VariableType* one, const VariableType* two, char oper) noexcept;
+MATH_LIB VariableType* AddVar(const VariableType* one, const VariableType* two) noexcept;
+MATH_LIB VariableType* SubVar(const VariableType* one, const VariableType* two) noexcept;
+MATH_LIB VariableType* MulVar(const VariableType* one, const VariableType* two) noexcept;
+MATH_LIB VariableType* DivVar(const VariableType* one, const VariableType* two) noexcept;
+MATH_LIB VariableType* ModVar(const VariableType* one, const VariableType* two) noexcept;
+MATH_LIB VariableType* PowVar(const VariableType* one, const VariableType* two) noexcept;
 
 #endif //JASON_VARIABLETYPE_H
