@@ -13,4 +13,5 @@ add_executable(Jason src/Entry.cpp
         src/Calc/Scalar.h
         src/Calc/StdCalc.cpp
         src/Calc/MathVector.cpp
-        src/Calc/VariableType.cpp)
+        src/Calc/VariableType.cpp
+        src/Calc/Matrix.cpp)

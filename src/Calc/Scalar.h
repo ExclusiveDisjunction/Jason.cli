@@ -48,6 +48,8 @@ public:
     bool operator!=(const VariableType& obj) const noexcept override;
 
     std::ostream& operator<<(std::ostream& out) const noexcept override;
+
+    constexpr explicit operator double() const noexcept { return Data; }
 };
 
 

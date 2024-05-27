@@ -22,7 +22,7 @@ private:
 public:
     explicit MathVector(double Val) : MathVector(1, Val) {}
     explicit MathVector(unsigned int Dim, double Val = 0.0);
-    MathVector(unsigned int Dim, double *Point);
+    MathVector(unsigned int Dim, const double *Point);
     template<std::convertible_to<double>... Args>
     explicit MathVector(Args... Value) noexcept {
         auto ToFill = std::vector<double>({((double) Value)...});
@@ -37,29 +37,7 @@ public:
                 Point[i] = ToFill[i];
         }
     }
-    explicit MathVector(std::istream &in) {
-        std::string header;
-        in >> header;
-        if (header != "VEC")
-            throw std::logic_error("Cannot construct vector from stream because the header is not the stream.");
-
-        in >> this->_Dim;
-        if (_Dim < 0)
-            throw std::logic_error("Dimension is negative.");
-        else if (_Dim == 0) {
-            DeAllocate();
-            return;
-        } else //Dim is positive
-        {
-            Allocate(_Dim, 0);
-            for (int i = 0; i < _Dim; i++) {
-                if (!in)
-                    throw std::logic_error("There is not enough inputs to match the dimensions.");
-
-                in >> this->Point[i];
-            }
-        }
-    }
+    explicit MathVector(std::istream &in);
     MathVector(const MathVector &Obj) noexcept;
     MathVector(MathVector &&Obj) noexcept;
     ~MathVector();
@@ -80,7 +58,6 @@ public:
         ss << "(Vector:" << this->_Dim << ")";
         return ss.str();
     }
-    std::ostream& operator<<(std::ostream& out) const noexcept override;
 
     MathVector &operator=(const MathVector &Obj) noexcept;
     MathVector &operator=(MathVector &&Obj) noexcept;
@@ -93,7 +70,8 @@ public:
     [[nodiscard]] unsigned int Dim() const { return _Dim; }
     [[nodiscard]] bool IsValid() const { return _Dim > 0; }
 
-    double &operator[](unsigned int TargetDim) const;
+    double& operator[](unsigned int TargetDim);
+    double operator[](unsigned int TargetDim) const;
 
     [[nodiscard]] double Magnitude() const;
     [[nodiscard]] double Angle() const;
@@ -109,7 +87,8 @@ public:
     bool operator==(const VariableType& in) const noexcept override;
     bool operator!=(const VariableType& in) const noexcept override;
 
-    explicit operator Matrix() const;
+    std::ostream& operator<<(std::ostream& out) const noexcept override;
+    explicit operator Matrix() const noexcept;
 
 #ifdef _WINDOWS_
     explicit operator POINT() const

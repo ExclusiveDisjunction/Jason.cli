@@ -1,5 +1,6 @@
 #include "MathVector.h"
 #include "Matrix.h"
+#include "Scalar.h"
 
 MathVector::MathVector(unsigned int Dim, double Val)
 {
@@ -11,7 +12,7 @@ MathVector::MathVector(unsigned int Dim, double Val)
     for (unsigned int i = 0; i < Dim; i++)
         Point[i] = Val;
 }
-MathVector::MathVector(unsigned int Dim, double* Point)
+MathVector::MathVector(unsigned int Dim, const double* Point)
 {
     if (Dim <= 0)
         throw std::logic_error("The dimension is equal to zero, and this is not allowed.");
@@ -20,6 +21,33 @@ MathVector::MathVector(unsigned int Dim, double* Point)
 
     for (unsigned int i = 0; i < Dim; i++)
         this->Point[i] = Point[i];
+}
+MathVector::MathVector(std::istream &in)
+{
+    std::string header;
+    in >> header;
+    if (header != "VEC")
+        throw std::logic_error("Cannot construct vector from stream because the header is not the stream.");
+
+    in >> this->_Dim;
+    if (_Dim < 0)
+        throw std::logic_error("Dimension is negative.");
+    else if (_Dim == 0)
+    {
+        DeAllocate();
+        return;
+    }
+    else //Dim is positive
+    {
+        Allocate(_Dim, 0);
+        for (int i = 0; i < _Dim; i++)
+        {
+            if (!in)
+                throw std::logic_error("There is not enough inputs to match the dimensions.");
+
+            in >> this->Point[i];
+        }
+    }
 }
 MathVector::MathVector(const MathVector& Obj) noexcept
 {
@@ -111,10 +139,6 @@ void MathVector::DeAllocate()
     }
 }
 
-MathVector MathVector::ZeroVector(unsigned int Dim)
-{
-    return MathVector(Dim, 0);
-}
 MathVector MathVector::ErrorVector()
 {
     MathVector Return(1, 0);
@@ -123,21 +147,27 @@ MathVector MathVector::ErrorVector()
     return Return;
 }
 
-double& MathVector::operator[](unsigned int Index) const
+double& MathVector::operator[](unsigned int Index)
 {
     if (Index >= _Dim)
-        throw std::exception("The index provided is invalid.");
+        throw std::logic_error("The index provided is invalid.");
 
     return Point[Index];
 }
+double MathVector::operator[](unsigned int Index) const
+{
+    if (Index >= _Dim)
+        throw std::logic_error("The index provided is invalid.");
 
+    return Point[Index];
+}
 double MathVector::Magnitude() const
 {
     if (_Dim == 1)
         return Point[0];
 
     if (_Dim <= 0)
-        throw std::exception("A magnitude cannot be measured on a dimensionless object.");
+        throw std::logic_error("A magnitude cannot be measured on a dimensionless object.");
 
     double Sum = 0;
     for (unsigned int i = 0; i < _Dim; i++)
@@ -148,10 +178,20 @@ double MathVector::Magnitude() const
 double MathVector::Angle() const
 {
     if (_Dim <= 1)
-        throw std::exception("Cannot measure the angle of a scalar or lower rank mathematical object.");
+        throw std::logic_error("Cannot measure the angle of a scalar or lower rank mathematical object.");
 
     return atan(Magnitude());
 }
+
+void MathVector::Sterilize(std::ostream& out) const noexcept
+{
+
+}
+std::ostream& MathVector::operator<<(std::ostream& out) const noexcept
+{
+
+}
+
 
 MathVector MathVector::CrossProduct(const MathVector& One, const MathVector& Two)
 {
@@ -161,14 +201,14 @@ MathVector MathVector::CrossProduct(const MathVector& One, const MathVector& Two
     MathVector A, B;
     switch (One.Dim())
     {
-    case 1:
-        return One[0] * Two[0];
     case 2:
         A = MathVector(One[0], One[1], 0);
         B = MathVector(Two[0], Two[1], 0);
+        break;
     case 3:
         A = One;
         B = Two;
+        break;
     default:
         return ErrorVector();
     }
@@ -178,7 +218,7 @@ MathVector MathVector::CrossProduct(const MathVector& One, const MathVector& Two
 double MathVector::DotProduct(const MathVector& One, const MathVector& Two)
 {
     if (One._Dim != Two._Dim)
-        return std::numeric_limits<double>::infinity();
+        throw std::logic_error("The dimensions of the two vectors do not match.");
 
     double Return = 0.0;
     for (unsigned int i = 0; i < One._Dim; i++)
@@ -187,11 +227,103 @@ double MathVector::DotProduct(const MathVector& One, const MathVector& Two)
     return Return;
 }
 
-MathVector::operator double() const
+VariableType* MathVector::operator+(const VariableType& in) const noexcept
 {
-    return Magnitude();
+    try
+    {
+        const auto& obj = dynamic_cast<const MathVector&>(in);
+
+        if (_Dim != obj._Dim)
+            return nullptr;
+
+        auto* result = new MathVector(_Dim);
+        for (unsigned i = 0; i < _Dim; i++)
+            result->Point[i] = Point[i] + obj.Point[i];
+
+        return result;
+    }
+    catch (std::bad_cast& e)
+    {
+        return nullptr;
+    }
 }
-MathVector::operator Matrix() const
+VariableType* MathVector::operator-(const VariableType& in) const noexcept
+{
+    try
+    {
+        const auto& obj = dynamic_cast<const MathVector&>(in);
+
+        if (_Dim != obj._Dim)
+            return nullptr;
+
+        auto* result = new MathVector(_Dim);
+        for (unsigned i = 0; i < _Dim; i++)
+            result->Point[i] = Point[i] - obj.Point[i];
+
+        return result;
+    }
+    catch (std::bad_cast& e)
+    {
+        return nullptr;
+    }
+}
+VariableType* MathVector::operator*(const VariableType& in) const noexcept
+{
+    try
+    {
+        const auto& obj = dynamic_cast<const Scalar&>(in);
+
+        auto* result = new MathVector(*this);
+        for (unsigned i = 0; i < result->_Dim; i++)
+            result->Point[i] *= obj.Data;
+    }
+    catch (std::bad_cast& e)
+    {
+        return nullptr;
+    }
+}
+VariableType* MathVector::operator/(const VariableType& in) const noexcept
+{
+    try
+    {
+        const auto& obj = dynamic_cast<const Scalar&>(in);
+
+        auto* result = new MathVector(*this);
+        for (unsigned i = 0; i < result->_Dim; i++)
+            result->Point[i] /= obj.Data;
+    }
+    catch (std::bad_cast& e)
+    {
+        return nullptr;
+    }
+}
+
+bool MathVector::operator==(const VariableType& in) const noexcept
+{
+    try
+    {
+        const auto& obj = dynamic_cast<const MathVector&>(in);
+
+        if (_Dim != obj._Dim)
+            return false;
+
+        for (unsigned i = 0; i < _Dim; i++)
+            if (Point[i] != obj.Point[i])
+                return false;
+
+        return true;
+    }
+    catch (std::bad_cast& e)
+    {
+        return false;
+    }
+}
+bool MathVector::operator!=(const VariableType& in) const noexcept
+{
+    return !(*this == in);
+}
+
+MathVector::operator Matrix() const noexcept
 {
     Matrix Return(_Dim, 1);
 
@@ -199,99 +331,4 @@ MathVector::operator Matrix() const
         Return[i][0] = Point[i];
 
     return Return;
-}
-
-MathVector operator+(const MathVector& One, const MathVector& Two)
-{
-    if (One.Dim() != Two.Dim())
-        return MathVector::ErrorVector();
-
-    unsigned int Dim = One.Dim();
-    MathVector Return(Dim, 0);
-    for (unsigned int i = 0; i < Dim; i++)
-        Return[i] = One[i] + Two[i];
-
-    return Return;
-}
-MathVector& MathVector::operator+=(const MathVector& Obj)
-{
-    if (Obj._Dim != _Dim)
-        throw std::exception("The dimensions do not match.");
-
-    for (unsigned int i = 0; i < _Dim; i++)
-        Point[i] += Obj[i];
-
-    return *this;
-}
-MathVector operator-(const MathVector& One, const MathVector& Two)
-{
-    if (One.Dim() != Two.Dim())
-        return MathVector::ErrorVector();
-
-    unsigned int Dim = One.Dim();
-    MathVector Return(Dim, 0);
-    for (unsigned int i = 0; i < Dim; i++)
-        Return[i] = One[i] - Two[i];
-
-    return Return;
-}
-MathVector& MathVector::operator-=(const MathVector& Obj)
-{
-    if (Obj._Dim != _Dim)
-        throw std::exception("The dimensions do not match.");
-
-    for (unsigned int i = 0; i < _Dim; i++)
-        Point[i] -= Obj[i];
-
-    return *this;
-}
-MathVector operator*(const MathVector& One, double Two)
-{
-    unsigned int Dim = One.Dim();
-    MathVector Return(Dim, 0);
-    for (unsigned int i = 0; i < Dim; i++)
-        Return[i] = One[i] * Two;
-
-    return Return;
-}
-MathVector operator*(double One, const MathVector& Two) { return Two * One; }
-MathVector& MathVector::operator*=(double Obj)
-{
-    for (unsigned int i = 0; i < _Dim; i++)
-        Point[i] *= Obj;
-
-    return *this;
-}
-MathVector operator/(const MathVector& One, double Two)
-{
-    unsigned int Dim = One.Dim();
-    MathVector Return(Dim, 0);
-    for (unsigned int i = 0; i < Dim; i++)
-        Return[i] = One[i] / Two;
-
-    return Return;
-}
-MathVector& MathVector::operator/=(double Obj)
-{
-    for (unsigned int i = 0; i < _Dim; i++)
-        Point[i] /= Obj;
-
-    return *this;
-}
-
-bool operator==(const MathVector& One, const MathVector& Two)
-{
-    if (One.Dim() != Two.Dim())
-        return false;
-
-    unsigned int Dim = One.Dim(), i;
-    for (i = 0; i < Dim; i++)
-        if (One[i] != Two[i])
-            return false;
-
-    return true;
-}
-bool operator!=(const MathVector& One, const MathVector& Two)
-{
-    return !(One == Two);
 }
