@@ -1,5 +1,8 @@
 #include "Matrix.h"
 
+#include "MathVector.h"
+#include "Scalar.h"
+
 #include <random>
 #include <utility>
 
@@ -106,6 +109,8 @@ Matrix Matrix::Identity(unsigned int Rows, unsigned int Cols)
 Matrix Matrix::RandomMatrix(unsigned int Rows, unsigned int Columns, bool Integers)
 {
     Matrix Return(Rows, Columns);
+    if (!Return.Data)
+        throw std::logic_error("Cannot construct a matrix of zero size.");
 
     std::random_device dev;
     std::mt19937 engine(dev());
@@ -147,10 +152,21 @@ double* Matrix::operator[](unsigned int Row)
 
 Matrix Matrix::Extract(unsigned int StartI, unsigned int StartJ, unsigned int RowCount, unsigned int ColumnCount)
 {
+    /*
+     * I want to split this in two parts. This function will return a MatrixExtrusion, and then the other part will
+     * return a MatrixMinor.
+     */
+
+    if (RowCount == 0 || ColumnCount == 0)
+        return Matrix::ErrorMatrix();
+
     if ((StartI + RowCount - 1) > m || (StartJ + ColumnCount - 1) > n)
         throw std::logic_error("The index was out of range for that size.");
 
     Matrix Return(RowCount, ColumnCount);
+    if (!Return.Data)
+        return Matrix::ErrorMatrix();
+
     for (unsigned int i = StartI, ip = 0; i < StartI + RowCount - 1; i++, ip++)
         for (unsigned int j = StartJ, jp = 0; j < StartJ + ColumnCount - 1; j++, jp++)
             Return.Data[ip][jp] = Data[i][j];
@@ -160,15 +176,10 @@ Matrix Matrix::Extract(unsigned int StartI, unsigned int StartJ, unsigned int Ro
 
 void Matrix::RowSwap(unsigned int OrigRow, unsigned int NewRow)
 {
-    if (OrigRow == NewRow)
+    if (OrigRow == NewRow || OrigRow > m || NewRow > m)
         return;
 
-    for (unsigned int i = 0; i < n; i++)
-    {
-        double Temp = Data[OrigRow][i];
-        Data[OrigRow][i] = Data[NewRow][i];
-        Data[NewRow][i] = Temp;
-    }
+    std::swap(Data[OrigRow], Data[NewRow]);
 }
 void Matrix::RowAdd(unsigned int OrigRow, double Fac, unsigned int TargetRow)
 {
@@ -182,15 +193,18 @@ void Matrix::RowAdd(unsigned int OrigRow, double Fac, unsigned int TargetRow)
 double Matrix::Determinant() const
 {
     if (Rows() != Columns())
-        return INFINITY;
+        throw std::logic_error("The matrix must be square");
 
-    return 0; //TODO: Finish Determinant
+    /*
+     * To do the determinant, we will have to get the minors of the matrix, and therefore requires the MatrixMinor.
+     */
+    return 0;
 }
 
 Matrix Matrix::Invert() const
 {
     if (Rows() != Columns())
-        return ErrorMatrix();
+        throw std::logic_error("The matrix must be square");
 
     Matrix Id = Identity(m);
     Matrix Aug = Id | *this;
@@ -205,6 +219,9 @@ Matrix Matrix::Invert() const
 Matrix Matrix::Transpose() const
 {
     Matrix Return(m, n);
+    if (!Return.Data)
+        throw std::logic_error("Cannot transpose an empty matrix.");
+
     for (unsigned int i = 0; i < m; i++)
         for (unsigned int j = 0; j < n; j++)
             Return.Data[j][i] = Data[i][j];
@@ -292,31 +309,127 @@ void Matrix::RREF()
     }
 }
 
-Matrix operator|(const Matrix& One, const Matrix& Two)
+Matrix Matrix::operator|(const Matrix& Two) const
 {
-    if (One.Rows() != Two.Rows())
+    if (!Data || !Two.Data)
+        throw std::logic_error("You cannot augment a matrix that is empty.");
+
+    if (m != Two.n)
         throw std::logic_error("The dimensions for the matrices are not compatible for augmentation.");
 
-    unsigned int OneRows = One.Rows(), OneColumns = One.Columns(), TwoColumns = Two.Columns();
+    unsigned int OneRows = m, OneColumns = n, TwoColumns = Two.n;
     Matrix Return(OneRows, OneColumns + TwoColumns);
+
+    if (!Return.Data)
+        throw std::exception();
+
     for (unsigned int i = 0; i < OneRows; i++)
     {
-        for (unsigned int j = 0; j < One.Columns(); j++)
-            Return[i][j] = One[i][j];
+        for (unsigned int j = 0; j < OneColumns; j++)
+            Return.Data[i][j] = Two.Data[i][j];
         for (unsigned int j = OneColumns, jp = 0; j < OneColumns + TwoColumns; j++, jp++)
-            Return[i][j] = Two[i][jp];
+            Return.Data[i][j] = Two.Data[i][jp];
     }
 
     return Return;
 }
-Matrix operator*(const Matrix& A, const Matrix& B)
+VariableType* Matrix::operator+(const VariableType& Two) const noexcept
 {
+
+}
+VariableType* Matrix::operator-(const VariableType& Two) const noexcept
+{
+
+}
+VariableType* Matrix::operator*(const VariableType& Two) const noexcept
+{
+    if (!this->Data)
+        return nullptr;
+
+    try
+    {
+        switch (Two.GetType())
+        {
+            case VT_Scalar:
+            {
+                const auto& sca = dynamic_cast<const Scalar&>(Two);
+                auto fac = static_cast<double>(sca);
+
+                auto* result = new Matrix(*this);
+                if (!result->Data)
+                    return nullptr;
+
+                for (unsigned i = 0; i < result->m; i++)
+                    for (unsigned j = 0; j < result->n; j++)
+                        result->Data[i][j] *= fac;
+
+                return result;
+            }
+            case VT_Matrix:
+            {
+                const auto& vec = dynamic_cast<const MathVector&>(Two);
+
+                if (vec.Dim() != n)
+                    return nullptr;
+
+                MathVector result(m);
+                for (unsigned int j = 0; j < n; j++)
+                {
+                    MathVector CurrentCol(m, 0);
+                    for (unsigned int i = 0; i < m; i++)
+                        CurrentCol[i] = Data[i][j];
+
+                    result += CurrentCol * Scalar(vec[j]);
+                }
+
+                return resul;
+            }
+            case VT_Vector:
+            {
+
+            }
+            default:
+                return nullptr;
+        }
+    }
+    catch (std::bad_cast& e)
+    {
+        return nullptr;
+    }
+}
+VariableType* Matrix::operator/(const VariableType& Two) const noexcept
+{
+
+}
+VariableType* Matrix::Pow(const VariableType& Two) const noexcept
+{
+
+}
+
+bool Matrix::operator==(const VariableType& two) const noexcept
+{
+
+}
+bool Matrix::operator!=(const VariableType& two) const noexcept
+{
+
+}
+
+std::ostream& operator<<(std::ostream& out) const noexcept
+{
+
+}
+Matrix Matrix::operator*(const Matrix& B) const noexcept
+{
+
     if (!A.IsValid() || !B.IsValid() || A.Columns() != B.Rows())
         return Matrix::ErrorMatrix();
 
     unsigned int R = A.Rows(), C = B.Columns();
     unsigned int R1 = R, C1 = A.Columns(), R2 = B.Rows(), C2 = C;
     Matrix Return(R, C);
+    if (!Return.Data)
+        throw std::logic_error("")
 
     for (unsigned int i = 0; i < R1; i++)
     {
