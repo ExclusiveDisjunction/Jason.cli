@@ -29,18 +29,18 @@ MathVector::MathVector(std::istream &in)
     if (header != "VEC")
         throw std::logic_error("Cannot construct vector from stream because the header is not the stream.");
 
-    in >> this->_Dim;
-    if (_Dim < 0)
+    in >> this->d;
+    if (d < 0)
         throw std::logic_error("Dimension is negative.");
-    else if (_Dim == 0)
+    else if (d == 0)
     {
         DeAllocate();
         return;
     }
     else //Dim is positive
     {
-        Allocate(_Dim, 0);
-        for (int i = 0; i < _Dim; i++)
+        Allocate(d, 0);
+        for (int i = 0; i < d; i++)
         {
             if (!in)
                 throw std::logic_error("There is not enough inputs to match the dimensions.");
@@ -51,28 +51,28 @@ MathVector::MathVector(std::istream &in)
 }
 MathVector::MathVector(const MathVector& Obj) noexcept
 {
-    if (Obj._Dim == 0 || !Obj.Point)
+    if (Obj.d == 0 || !Obj.Point)
     {
         DeAllocate();
         return;
     }
 
-    Allocate(Obj._Dim, 0);
+    Allocate(Obj.d, 0);
 
-    for (unsigned int i = 0; i < _Dim; i++)
+    for (unsigned int i = 0; i < d; i++)
         Point[i] = Obj.Point[i];
 }
 MathVector::MathVector(MathVector&& Obj) noexcept
 {
-    if (Obj._Dim == 0 || !Obj.Point)
+    if (Obj.d == 0 || !Obj.Point)
     {
         DeAllocate();
         return;
     }
 
-    Allocate(Obj._Dim, 0);
+    Allocate(Obj.d, 0);
 
-    for (unsigned int i = 0; i < _Dim; i++)
+    for (unsigned int i = 0; i < d; i++)
         Point[i] = Obj.Point[i];
 
     Obj.DeAllocate();
@@ -87,16 +87,16 @@ MathVector& MathVector::operator=(const MathVector& Obj) noexcept
     if (*this == Obj)
         return *this;
 
-    if (Obj._Dim == 0 || !Obj.Point)
+    if (Obj.d == 0 || !Obj.Point)
     {
         DeAllocate();
         return *this;
     }
 
-    if (Obj._Dim != _Dim)
-        Allocate(Obj._Dim, 0);
+    if (Obj.d != d)
+        Allocate(Obj.d, 0);
 
-    for (unsigned int i = 0; i < _Dim; i++)
+    for (unsigned int i = 0; i < d; i++)
         Point[i] = Obj.Point[i];
 
     return *this;
@@ -106,16 +106,16 @@ MathVector& MathVector::operator=(MathVector&& Obj) noexcept
     if (*this == Obj)
         return *this;
 
-    if (Obj._Dim == 0 || !Obj.Point)
+    if (Obj.d == 0 || !Obj.Point)
     {
         DeAllocate();
         return *this;
     }
 
-    if (Obj._Dim != _Dim)
-        Allocate(Obj._Dim, 0);
+    if (Obj.d != d)
+        Allocate(Obj.d, 0);
 
-    for (unsigned int i = 0; i < _Dim; i++)
+    for (unsigned int i = 0; i < d; i++)
         Point[i] = Obj.Point[i];
 
     Obj.DeAllocate();
@@ -127,7 +127,7 @@ void MathVector::Allocate(unsigned int Dim, double Val)
     DeAllocate();
 
     Point = new double[Dim] {Val};
-    _Dim = Dim;
+    d = Dim;
 }
 void MathVector::DeAllocate()
 {
@@ -135,7 +135,7 @@ void MathVector::DeAllocate()
     {
         delete[] Point;
         Point = nullptr;
-        _Dim = 0;
+        d = 0;
     }
 }
 
@@ -149,35 +149,35 @@ MathVector MathVector::ErrorVector()
 
 double& MathVector::operator[](unsigned int Index)
 {
-    if (Index >= _Dim)
+    if (Index >= d)
         throw std::logic_error("The index provided is invalid.");
 
     return Point[Index];
 }
 double MathVector::operator[](unsigned int Index) const
 {
-    if (Index >= _Dim)
+    if (Index >= d)
         throw std::logic_error("The index provided is invalid.");
 
     return Point[Index];
 }
 double MathVector::Magnitude() const
 {
-    if (_Dim == 1)
+    if (d == 1)
         return Point[0];
 
-    if (_Dim <= 0)
+    if (d <= 0)
         throw std::logic_error("A magnitude cannot be measured on a dimensionless object.");
 
     double Sum = 0;
-    for (unsigned int i = 0; i < _Dim; i++)
+    for (unsigned int i = 0; i < d; i++)
         Sum += Point[i] * Point[i];
 
     return sqrt(Sum);
 }
 double MathVector::Angle() const
 {
-    if (_Dim <= 1)
+    if (d <= 1)
         throw std::logic_error("Cannot measure the angle of a scalar or lower rank mathematical object.");
 
     return atan(Magnitude());
@@ -217,11 +217,11 @@ MathVector MathVector::CrossProduct(const MathVector& One, const MathVector& Two
 }
 double MathVector::DotProduct(const MathVector& One, const MathVector& Two)
 {
-    if (One._Dim != Two._Dim)
+    if (One.d != Two.d)
         throw std::logic_error("The dimensions of the two vectors do not match.");
 
     double Return = 0.0;
-    for (unsigned int i = 0; i < One._Dim; i++)
+    for (unsigned int i = 0; i < One.d; i++)
         Return += One[i] * Two[i];
 
     return Return;
@@ -233,11 +233,11 @@ VariableType* MathVector::operator+(const VariableType& in) const noexcept
     {
         const auto& obj = dynamic_cast<const MathVector&>(in);
 
-        if (_Dim != obj._Dim)
+        if (d != obj.d)
             return nullptr;
 
-        auto* result = new MathVector(_Dim);
-        for (unsigned i = 0; i < _Dim; i++)
+        auto* result = new MathVector(d);
+        for (unsigned i = 0; i < d; i++)
             result->Point[i] = Point[i] + obj.Point[i];
 
         return result;
@@ -253,11 +253,11 @@ VariableType* MathVector::operator-(const VariableType& in) const noexcept
     {
         const auto& obj = dynamic_cast<const MathVector&>(in);
 
-        if (_Dim != obj._Dim)
+        if (d != obj.d)
             return nullptr;
 
-        auto* result = new MathVector(_Dim);
-        for (unsigned i = 0; i < _Dim; i++)
+        auto* result = new MathVector(d);
+        for (unsigned i = 0; i < d; i++)
             result->Point[i] = Point[i] - obj.Point[i];
 
         return result;
@@ -274,7 +274,7 @@ VariableType* MathVector::operator*(const VariableType& in) const noexcept
         const auto& obj = dynamic_cast<const Scalar&>(in);
 
         auto* result = new MathVector(*this);
-        for (unsigned i = 0; i < result->_Dim; i++)
+        for (unsigned i = 0; i < result->d; i++)
             result->Point[i] *= obj.Data;
     }
     catch (std::bad_cast& e)
@@ -289,7 +289,7 @@ VariableType* MathVector::operator/(const VariableType& in) const noexcept
         const auto& obj = dynamic_cast<const Scalar&>(in);
 
         auto* result = new MathVector(*this);
-        for (unsigned i = 0; i < result->_Dim; i++)
+        for (unsigned i = 0; i < result->d; i++)
             result->Point[i] /= obj.Data;
     }
     catch (std::bad_cast& e)
@@ -304,10 +304,10 @@ bool MathVector::operator==(const VariableType& in) const noexcept
     {
         const auto& obj = dynamic_cast<const MathVector&>(in);
 
-        if (_Dim != obj._Dim)
+        if (d != obj.d)
             return false;
 
-        for (unsigned i = 0; i < _Dim; i++)
+        for (unsigned i = 0; i < d; i++)
             if (Point[i] != obj.Point[i])
                 return false;
 
@@ -325,9 +325,9 @@ bool MathVector::operator!=(const VariableType& in) const noexcept
 
 MathVector::operator Matrix() const noexcept
 {
-    Matrix Return(_Dim, 1);
+    Matrix Return(d, 1);
 
-    for (unsigned int i = 0; i < _Dim; i++)
+    for (unsigned int i = 0; i < d; i++)
         Return[i][0] = Point[i];
 
     return Return;

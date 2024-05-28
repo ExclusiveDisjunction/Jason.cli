@@ -30,11 +30,7 @@ public:
     [[nodiscard]] virtual std::string GetTypeString() const noexcept = 0; //Displays (None), (Scalar), (Vector:D), (Matrix:mxn)
     virtual std::ostream& operator<<(std::ostream& out) const noexcept = 0; //Pretty prints
 
-    [[nodiscard]] static VariableType* Add(const VariableType* One, const VariableType* Two);
-    [[nodiscard]] static VariableType* Sub(const VariableType* One, const VariableType* Two);
-    [[nodiscard]] static VariableType* Mul(const VariableType* One, const VariableType* Two);
-    [[nodiscard]] static VariableType* Div(const VariableType* One, const VariableType* Two);
-    [[nodiscard]] static VariableType* Pow(const VariableType* One, const VariableType* Two);
+    [[nodiscard]] static VariableType* ApplyOperation(const VariableType* One, const VariableType* Two, char oper);
 
     virtual bool operator==(const VariableType& obj) const noexcept = 0;
     virtual bool operator!=(const VariableType& obj) const noexcept = 0;

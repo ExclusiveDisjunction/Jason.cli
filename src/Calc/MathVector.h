@@ -9,6 +9,7 @@
 #include <sstream>
 
 class MATH_LIB Matrix;
+class MATH_LIB Scalar;
 
 class MATH_LIB MathVector : public VariableType {
 private:
@@ -16,13 +17,11 @@ private:
 
     void DeAllocate();
 
-    unsigned int _Dim = 1;
+    unsigned int d = 1;
     double *Point = nullptr;
 
 public:
-    explicit MathVector(double Val) : MathVector(1, Val) {}
     explicit MathVector(unsigned int Dim, double Val = 0.0);
-    MathVector(unsigned int Dim, const double *Point);
     template<std::convertible_to<double>... Args>
     explicit MathVector(Args... Value) noexcept {
         auto ToFill = std::vector<double>({((double) Value)...});
@@ -55,7 +54,7 @@ public:
     [[nodiscard]] std::string GetTypeString() const noexcept override
     {
         std::stringstream ss;
-        ss << "(Vector:" << this->_Dim << ")";
+        ss << "(Vector:" << this->d << ")";
         return ss.str();
     }
 
@@ -67,8 +66,8 @@ public:
 
     static MathVector ErrorVector();
 
-    [[nodiscard]] unsigned int Dim() const { return _Dim; }
-    [[nodiscard]] bool IsValid() const { return _Dim > 0; }
+    [[nodiscard]] unsigned int Dim() const { return d; }
+    [[nodiscard]] bool IsValid() const { return d > 0; }
 
     double& operator[](unsigned int TargetDim);
     double operator[](unsigned int TargetDim) const;
@@ -79,10 +78,12 @@ public:
     static MathVector CrossProduct(const MathVector &One, const MathVector &Two);
     static double DotProduct(const MathVector &One, const MathVector &Two);
 
-    VariableType* operator+(const VariableType& in) const noexcept override;
-    VariableType* operator-(const VariableType& in) const noexcept override;
-    VariableType* operator*(const VariableType& in) const noexcept override;
-    VariableType* operator/(const VariableType& in) const noexcept override;
+    MathVector operator+(const MathVector& in) const;
+    MathVector operator-(const MathVector& in) const;
+    MathVector operator*(const Scalar& in) const;
+    MathVector operator*(double in) const;
+    MathVector operator/(const Scalar& in) const;
+    MathVector operator/(double in) const;
 
     bool operator==(const VariableType& in) const noexcept override;
     bool operator!=(const VariableType& in) const noexcept override;

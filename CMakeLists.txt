@@ -14,4 +14,5 @@ add_executable(Jason src/Entry.cpp
         src/Calc/StdCalc.cpp
         src/Calc/MathVector.cpp
         src/Calc/VariableType.cpp
-        src/Calc/Matrix.cpp)
+        src/Calc/Matrix.cpp
+        src/Calc/OperatorException.h)

@@ -6,6 +6,7 @@
 #define JASON_SCALAR_H
 
 #include "VariableType.h"
+#include "OperatorException.h"
 
 class Scalar : public VariableType
 {
@@ -15,34 +16,23 @@ public:
 
     double Data;
 
-    [[nodiscard]] VariableTypes GetType() const noexcept override
-    {
-        return VariableTypes::VT_Scalar;
-    }
+    [[nodiscard]] VariableTypes GetType() const noexcept override;
     void Sterilize(std::ostream& out) const noexcept override;
-    static Scalar* FromSterilize(const std::string& in)
-    {
-        try
-        {
-            std::stringstream ss(in);
-            return new Scalar(ss);
-        }
-        catch (std::logic_error& e)
-        {
-            throw e;
-        }
-    }
-    [[nodiscard]] std::string GetTypeString() const noexcept override
-    {
-        return "(Scalar)";
-    }
+    static Scalar* FromSterilize(const std::string& in);
+    [[nodiscard]] std::string GetTypeString() const noexcept override;
 
-    VariableType* operator+(const VariableType& in) const noexcept override;
-    VariableType* operator-(const VariableType& in) const noexcept override;
-    VariableType* operator*(const VariableType& in) const noexcept override;
-    VariableType* operator/(const VariableType& in) const noexcept override;
-    VariableType* operator%(const VariableType& in) const noexcept override;
-    [[nodiscard]] VariableType* Pow(const VariableType& in) const noexcept override;
+    Scalar operator+(const Scalar& in) const noexcept;
+    Scalar operator+(double in) const noexcept;
+    Scalar operator-(const Scalar& in) const noexcept;
+    Scalar operator-(double in) const noexcept;
+    Scalar operator*(const Scalar& in) const noexcept;
+    Scalar operator*(double in) const noexcept;
+    Scalar operator/(const Scalar& in) const noexcept;
+    Scalar operator/(double in) const noexcept;
+    Scalar operator%(const Scalar& in) const;
+    Scalar operator%(double in) const;
+    [[nodiscard]] Scalar Pow(const Scalar& in) const noexcept;
+    [[nodiscard]] Scalar Pow(double in) const noexcept;
 
     bool operator==(const VariableType& obj) const noexcept override;
     bool operator!=(const VariableType& obj) const noexcept override;
