@@ -45,7 +45,9 @@ MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept
 
     try
     {
-        if (One->GetType() == VT_Scalar && Two->GetType() == VT_Scalar) //Trivial Case
+        VariableTypes t1 = One->GetType(), t2 = Two->GetType();
+
+        if (t1 == VT_Scalar && t2 == VT_Scalar) //Trivial Case
         {
             const auto& A = dynamic_cast<const Scalar&>(*One);
             const auto& B = dynamic_cast<const Scalar&>(*Two);
@@ -61,81 +63,57 @@ MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept
                 case '/':
                     return new Scalar(A / B);
                 case '%':
-                {
-                    //Might throw
-                    try
-                    {
-                        return new Scalar(A % B);
-                    }
-                    catch (OperatorException& e)
-                    {
-                        throw e;
-                    }
-                }
+                    return new Scalar(A % B);
                 case '^':
                     return new Scalar(A.Pow(B));
                 default:
                     return nullptr;
             }
         }
-        else if (One->GetType() == VT_Vector && Two->GetType() == VT_Vector)
+        else if (t1 == VT_Vector && t2 == VT_Vector)
         {
             const auto& A = dynamic_cast<const MathVector&>(*One);
             const auto& B = dynamic_cast<const MathVector&>(*Two);
 
-            try
+            switch (oper)
             {
-                switch (oper)
-                {
-                    case '+':
-                        return new MathVector(A + B);
-                    case '-':
-                        return new MathVector(A - B);
-                    case '*':
-                    case '/':
-                    case '%':
-                    case '^':
-                        throw OperatorException(oper, A.GetTypeString(), B.GetTypeString(), "Operation does not exist.");
-                    default:
-                        throw OperatorException(oper, false);
-                }
-            }
-            catch (OperatorException& e)
-            {
-                throw e;
+                case '+':
+                    return new MathVector(A + B);
+                case '-':
+                    return new MathVector(A - B);
+                case '*':
+                case '/':
+                case '%':
+                case '^':
+                    throw OperatorException(oper, A.GetTypeString(), B.GetTypeString(), "Operation does not exist.");
+                default:
+                    throw OperatorException(oper, false);
             }
         }
-        else if (One->GetType() == VT_Matrix && Two->GetType() == VT_Matrix)
+        else if (t1 == VT_Matrix && t2 == VT_Matrix)
         {
             const auto& A = dynamic_cast<const Matrix&>(*One);
             const auto& B = dynamic_cast<const Matrix&>(*Two);
 
-            try
+            switch (oper)
             {
-                switch (oper)
-                {
-                    case '+':
-                        return new Matrix(A + B);
-                    case '-':
-                        return new Matrix(A - B);
-                    case '*':
-                        return new Matrix(A * B);
-                    case '/':
-                    case '%':
-                    case '^':
-                        throw OperatorException(oper, A.GetTypeString(), B.GetTypeString(), "Operation does not exist.");
-                    default:
-                        throw OperatorException(oper, false);
-                }
-            }
-            catch (OperatorException& e)
-            {
-                throw e;
+                case '+':
+                    return new Matrix(A + B);
+                case '-':
+                    return new Matrix(A - B);
+                case '*':
+                    return new Matrix(A * B);
+                case '/':
+                case '%':
+                case '^':
+                    throw OperatorException(oper, A.GetTypeString(), B.GetTypeString(), "Operation does not exist.");
+                default:
+                    throw OperatorException(oper, false);
             }
         }
 
         /*
-         * Now that the trival cases are out of the way, there are the more exotic cross types.
+         * Now that the trivial cases are out of the way, there are the more exotic cross types.
          * These are:
          *  1. Scalar * Vector
          *  2. Vector * Scalar
@@ -145,10 +123,68 @@ MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept
          *  6. Matrix ^ Scalar (Given (Sca -> N || Sca == 0)  && Matrix is square if Sca >= 2)
          *  7. Matrix + Vector (Given dims match)
          *  8. Vector + Matrix (Given dims match)
+         *  9. Matrix - Vector (Given dims match)
+         *  10. Vector - Matrix (Given dims match)
         */
+        switch (oper)
+        {
+            case '+':
+            {
+                if (t1 == VT_Matrix && t2 == VT_Vector)
+                    return new Matrix(dynamic_cast<const Matrix&>(*One) + static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*Two)));
+                else if (t1 == VT_Vector && t2 == VT_Matrix)
+                    return new Matrix(dynamic_cast<const Matrix&>(*Two) + static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*One)));
+                else
+                    throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
+            }
+            case '-':
+            {
+                if (t1 == VT_Matrix && t2 == VT_Vector)
+                    return new Matrix(dynamic_cast<const Matrix&>(*One) - static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*Two)));
+                else if (t1 == VT_Vector && t2 == VT_Matrix)
+                    return new Matrix(dynamic_cast<const Matrix&>(*Two) - static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*One)));
+                else
+                    throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
+            }
+            case '*':
+            {
+                if (t1 == VT_Scalar && t2 == VT_Vector)
+                    return new MathVector(dynamic_cast<const MathVector&>(*Two) * dynamic_cast<const Scalar&>(*One));
+                else if (t1 == VT_Vector && t2 == VT_Scalar)
+                    return new MathVector(dynamic_cast<const MathVector&>(*One) * dynamic_cast<const Scalar&>(*Two));
+                else if (t1 == VT_Scalar && t2 == VT_Matrix)
+                    return new Matrix(dynamic_cast<const Matrix&>(*Two) * dynamic_cast<const Scalar&>(*One));
+                else if (t1 == VT_Matrix && t2 == VT_Scalar)
+                    return new Matrix(dynamic_cast<const Matrix&>(*One) * dynamic_cast<const Scalar&>(*Two));
+                else if (t1 == VT_Matrix && t2 == VT_Vector)
+                    return new Matrix(dynamic_cast<const Matrix&>(*One) *
+                                      static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*Two)));
+
+                throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
+            }
+            case '^':
+            {
+                if (t1 == VT_Matrix && t2 == VT_Scalar)
+                {
+                    const auto& A = dynamic_cast<const Matrix&>(*One);
+                    const auto& B = dynamic_cast<const Scalar&>(*Two);
+
+                    return new Matrix(A.Pow(B));
+                }
+
+                throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
+            }
+            default:
+                throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
+        }
+
     }
     catch (std::bad_cast& e)
     {
         throw std::logic_error("A bad cast exception was thrown, meaning that a type lied about its GetType.");
+    }
+    catch (OperatorException& e)
+    {
+        throw e;
     }
 }

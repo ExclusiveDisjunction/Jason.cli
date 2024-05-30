@@ -33,6 +33,8 @@ public:
     [[nodiscard]] unsigned int Columns() const { return n; }
     [[nodiscard]] bool IsValid() const { return m != 0 && n != 0; }
 
+    [[nodiscard]] VariableType* MoveIntoPointer() const noexcept override;
+
     [[nodiscard]] VariableTypes GetType() const noexcept override
     {
         return VariableTypes::VT_Matrix;
