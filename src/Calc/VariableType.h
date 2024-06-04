@@ -42,12 +42,4 @@ public:
 MATH_LIB VariableType* FromSterilized(const std::string& val) noexcept;
 MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept;
 
-MATH_LIB VariableType* ApplyOperation(const VariableType* one, const VariableType* two, char oper) noexcept;
-MATH_LIB VariableType* AddVar(const VariableType* one, const VariableType* two) noexcept;
-MATH_LIB VariableType* SubVar(const VariableType* one, const VariableType* two) noexcept;
-MATH_LIB VariableType* MulVar(const VariableType* one, const VariableType* two) noexcept;
-MATH_LIB VariableType* DivVar(const VariableType* one, const VariableType* two) noexcept;
-MATH_LIB VariableType* ModVar(const VariableType* one, const VariableType* two) noexcept;
-MATH_LIB VariableType* PowVar(const VariableType* one, const VariableType* two) noexcept;
-
 #endif //JASON_VARIABLETYPE_H

@@ -14,11 +14,12 @@ class MATH_LIB Scalar;
 class MATH_LIB MathVector : public VariableType {
 private:
     void Allocate(unsigned int Dim, double Val);
-
     void DeAllocate();
 
     unsigned int d = 1;
     double *Point = nullptr;
+
+    MathVector();
 
 public:
     explicit MathVector(unsigned int Dim, double Val = 0.0);
@@ -41,25 +42,15 @@ public:
     MathVector(MathVector &&Obj) noexcept;
     ~MathVector();
 
-    void Sterilize(std::ostream& out) const noexcept override;
-    static MathVector *FromSterilized(const std::string &obj) {
-        try {
-            std::stringstream ss(obj);
-            return new MathVector(ss);
-        }
-        catch (std::logic_error &e) {
-            throw e;
-        }
-    }
-    [[nodiscard]] std::string GetTypeString() const noexcept override
-    {
-        std::stringstream ss;
-        ss << "(Vector:" << this->d << ")";
-        return ss.str();
-    }
+    [[nodiscard]] VariableType* MoveIntoPointer() noexcept override;
 
-    MathVector &operator=(const MathVector &Obj) noexcept;
-    MathVector &operator=(MathVector &&Obj) noexcept;
+    void Sterilize(std::ostream& out) const noexcept override;
+    static MathVector* FromSterilized(const std::string &obj);
+    [[nodiscard]] std::string GetTypeString() const noexcept override;
+    std::ostream& operator<<(std::ostream& out) const noexcept override;
+
+    MathVector& operator=(const MathVector &Obj) noexcept;
+    MathVector& operator=(MathVector &&Obj) noexcept;
     [[nodiscard]] VariableTypes GetType() const noexcept override {
         return VariableTypes::VT_Vector;
     }
@@ -75,7 +66,7 @@ public:
     [[nodiscard]] double Magnitude() const;
     [[nodiscard]] double Angle() const;
 
-    static MathVector CrossProduct(const MathVector &One, const MathVector &Two);
+    [[maybe_unused]] static MathVector CrossProduct(const MathVector &One, const MathVector &Two);
     static double DotProduct(const MathVector &One, const MathVector &Two);
 
     MathVector operator+(const MathVector& in) const;
@@ -88,7 +79,6 @@ public:
     bool operator==(const VariableType& in) const noexcept override;
     bool operator!=(const VariableType& in) const noexcept override;
 
-    std::ostream& operator<<(std::ostream& out) const noexcept override;
     explicit operator Matrix() const noexcept;
 
 #ifdef _WINDOWS_
