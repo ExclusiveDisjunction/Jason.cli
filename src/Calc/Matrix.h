@@ -19,8 +19,13 @@ private:
     unsigned int m = 0;
     unsigned int n = 0;
 
-    void Allocate(unsigned int NewRows, unsigned int NewColumns, double Value = 0);
-    void DeAllocate();
+    void Allocate(unsigned int NewRows, unsigned int NewColumns, double Value = 0) noexcept;
+    void DeAllocate() noexcept;
+
+    std::vector<std::pair<bool, unsigned>> GetColumnWidthSchematic() const;
+    std::string GetRowString(unsigned row, std::vector<std::pair<bool, unsigned>>& schema, char open, char close) const;
+
+    Matrix();
 
 public:
     Matrix(unsigned int Rows, unsigned int Columns, double Value = 0) noexcept;
@@ -31,38 +36,20 @@ public:
 
     [[nodiscard]] unsigned int Rows() const { return m; }
     [[nodiscard]] unsigned int Columns() const { return n; }
-    [[nodiscard]] bool IsValid() const { return m != 0 && n != 0; }
+    [[nodiscard]] bool IsValid() const { return m != 0 && n != 0 && this->Data; }
 
-    [[nodiscard]] VariableType* MoveIntoPointer() const noexcept override;
+    [[nodiscard]] VariableType* MoveIntoPointer() noexcept override;
 
-    [[nodiscard]] VariableTypes GetType() const noexcept override
-    {
-        return VariableTypes::VT_Matrix;
-    }
+    [[nodiscard]] VariableTypes GetType() const noexcept override;
     void Sterilize(std::ostream& out) const noexcept override;
-    static Matrix* FromSterilize(const std::string& sterilized)
-    {
-        try
-        {
-            std::stringstream ss(sterilized);
-            return new Matrix(ss);
-        }
-        catch (std::logic_error& e)
-        {
-            throw e;
-        }
-    }
-    [[nodiscard]] std::string GetTypeString() const noexcept override
-    {
-        std::stringstream ss;
-        ss << "(Matrix:" << m << "x" << n << ")";
-        return ss.str();
-    }
+    std::ostream& operator<<(std::ostream& out) const noexcept override;
+    [[nodiscard]] [[maybe_unused]] static Matrix* FromSterilize(const std::string& sterilized);
+    [[nodiscard]] std::string GetTypeString() const noexcept override;
 
-    static Matrix ErrorMatrix();
-    static Matrix Identity(unsigned int Size);
-    static Matrix Identity(unsigned int Rows, unsigned int Cols);
-    static Matrix RandomMatrix(unsigned int Rows, unsigned int Columns, bool Integers);
+    [[nodiscard]] static Matrix ErrorMatrix();
+    [[nodiscard]] static Matrix Identity(unsigned int Size);
+    [[nodiscard]] static Matrix Identity(unsigned int Rows, unsigned int Cols);
+    [[nodiscard]] [[maybe_unused]] static Matrix RandomMatrix(unsigned int Rows, unsigned int Columns, bool Integers);
 
     const double* operator[](unsigned int Row) const;
     double* operator[](unsigned int Row);
@@ -75,10 +62,10 @@ public:
     void RowSwap(unsigned int OrigRow, unsigned int NewRow);
     void RowAdd(unsigned int OrigRow, double Fac, unsigned int TargetRow);
 
-    [[nodiscard]] double Determinant() const;
+    [[maybe_unused]] [[nodiscard]] double Determinant() const;
 
-    [[nodiscard]] Matrix Invert() const;
-    [[nodiscard]] Matrix Transpose() const;
+    [[maybe_unused]] [[nodiscard]] Matrix Invert() const;
+    [[maybe_unused]] [[nodiscard]] Matrix Transpose() const;
 
     void REF();
     void RREF();
@@ -91,11 +78,9 @@ public:
     Matrix operator*(double Two) const;
     Matrix operator/(const Scalar& Two) const;
     Matrix operator/(double Two) const;
-    Matrix Pow(const Scalar& Two) const;
-    Matrix Pow(double Two);
+    [[nodiscard]] Matrix Pow(const Scalar& Two) const;
+    [[nodiscard]] Matrix Pow(double Two) const;
 
     bool operator==(const VariableType& two) const noexcept override;
     bool operator!=(const VariableType& two) const noexcept override;
-
-    std::ostream& operator<<(std::ostream& out) const noexcept override;
 };

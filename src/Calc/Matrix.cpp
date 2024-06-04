@@ -6,9 +6,17 @@
 #include <random>
 #include <utility>
 
+Matrix::Matrix()
+{
+    DeAllocate();
+}
 Matrix::Matrix(unsigned int Rows, unsigned int Columns, double Value) noexcept
 {
     Allocate(Rows, Columns, Value);
+}
+Matrix::Matrix(std::istream& in)
+{
+
 }
 Matrix::Matrix(const Matrix& Other) noexcept
 {
@@ -20,11 +28,11 @@ Matrix::Matrix(const Matrix& Other) noexcept
 }
 Matrix::Matrix(Matrix&& Other) noexcept
 {
-    Allocate(Other.Rows(), Other.Columns());
+    this->Data = std::exchange(Other.Data, nullptr);
+    this->m = std::exchange(Other.m, 0);
+    this->n = std::exchange(Other.n, 0);
 
-    for (unsigned int i = 0; i < m; i++)
-        for (unsigned int j = 0; j < n; j++)
-            Data[i][j] = std::exchange(Other.Data[i][j], 0);
+    Other.DeAllocate();
 }
 Matrix::~Matrix()
 {
@@ -47,19 +55,18 @@ Matrix& Matrix::operator=(const Matrix& Other) noexcept
 }
 Matrix& Matrix::operator=(Matrix&& Other) noexcept
 {
-    if (Data == Other.Data) //Self Assignment
-        return *this;
+    this->DeAllocate();
 
-    Allocate(Other.Rows(), Other.Columns());
+    this->Data = std::exchange(Other.Data, nullptr);
+    this->m = std::exchange(Other.m, 0);
+    this->n = std::exchange(Other.n, 0);
 
-    for (unsigned int i = 0; i < m; i++)
-        for (unsigned int j = 0; j < n; j++)
-            Data[i][j] = std::exchange(Other.Data[i][j], 0);
+    Other.DeAllocate();
 
     return *this;
 }
 
-void Matrix::Allocate(unsigned int NewRows, unsigned int NewColumns, double Value)
+void Matrix::Allocate(unsigned int NewRows, unsigned int NewColumns, double Value) noexcept
 {
     if (NewRows != m || NewColumns != n)
     {
@@ -73,7 +80,7 @@ void Matrix::Allocate(unsigned int NewRows, unsigned int NewColumns, double Valu
             Data[i] = new double[NewColumns] { Value };
     }
 }
-void Matrix::DeAllocate()
+void Matrix::DeAllocate() noexcept
 {
     if (Data)
     {
@@ -85,14 +92,14 @@ void Matrix::DeAllocate()
         delete[] Data;
 
         Data = nullptr;
-        m = 0;
-        n = 0;
     }
+    m = 0;
+    n = 0;
 }
 
 Matrix Matrix::ErrorMatrix()
 {
-    return {0, 0};
+    return Matrix();
 }
 Matrix Matrix::Identity(unsigned int Size)
 {
@@ -135,6 +142,18 @@ Matrix Matrix::RandomMatrix(unsigned int Rows, unsigned int Columns, bool Intege
     return Return;
 }
 
+VariableType* Matrix::MoveIntoPointer() noexcept
+{
+    Matrix* Return = new Matrix();
+    Return.Data = std::exchange(this->Data, nullptr);
+    Return.m = std::exchange(this->m, nullptr);
+    Return.n = std::exchange(this->n, nullptr);
+
+    this->DeAllocate();
+
+    return Return;
+}
+
 const double* Matrix::operator[](unsigned int Row) const
 {
     if (Row > m)
@@ -148,6 +167,36 @@ double* Matrix::operator[](unsigned int Row)
         throw std::logic_error("Out of bounds");
 
     return Data[Row];
+}
+
+VariableTypes Matrix::GetType() const noexcept
+{
+    return VariableTypes::VT_Matrix;
+}
+void Matrix::Sterilize(std::ostream& out) const noexcept
+{
+    out << "MAT " << this->m << ' ' << this->n << ' ';
+    for (unsigned i = 0; i < this->m && this->Data; i++)
+        for (unsigned j = 0; j < this->n; j++)
+            out << this->Data[i][j] << ' ';
+}
+Matrix* Matrix::FromSterilize(const std::string& sterilized)
+{
+    try
+    {
+        std::stringstream ss(sterilized);
+        return new Matrix(ss);
+    }
+    catch (std::logic_error& e)
+    {
+        throw e;
+    }
+}
+std::string Matrix::GetTypeString() const noexcept
+{
+    std::stringstream ss;
+    ss << "(Matrix:" << m << "x" << n << ")";
+    return ss.str();
 }
 
 Matrix Matrix::Extract(unsigned int StartI, unsigned int StartJ, unsigned int RowCount, unsigned int ColumnCount)
@@ -309,19 +358,104 @@ void Matrix::RREF()
     }
 }
 
+bool Matrix::operator==(const VariableType& two) const noexcept
+{
+    try
+    {
+        const auto& a = *this;
+        const auto& b = dynamic_cast<const Matrix&>(two);
+
+        if (!a.IsValid() && b.IsValid()) //If both are empty then they are equal
+            return true;
+
+        if (!a.IsValid() || !b.IsValid() || a.m != b.m || a.n != b.n)
+            return false;
+
+        for (unsigned i = 0; i < a.m; i++)
+            for (unsigned j = 0; j < a.n; j++)
+                if (a.Data[i][j] != b.Data[i][j])
+                    return false;
+
+        return true;
+    }
+    catch (std::bad_cast& e)
+    {
+        return false;
+    }
+}
+bool Matrix::operator!=(const VariableType& two) const noexcept
+{
+    try
+    {
+        const auto& a = *this;
+        const auto& b = dynamic_cast<const Matrix&>(two);
+
+        if (!a.IsValid() && b.IsValid()) //If both are empty then they are equal
+            return false;
+
+        if (!a.IsValid() || !b.IsValid() || a.m != b.m || a.n != b.n)
+            return true;
+
+        for (unsigned i = 0; i < a.m; i++)
+            for (unsigned j = 0; j < a.n; j++)
+                if (a.Data[i][j] != b.Data[i][j])
+                    return true;
+
+        return false;
+    }
+    catch (std::bad_cast& e)
+    {
+        return true;
+    }
+}
+
+std::ostream& Matrix::operator<<(std::ostream& out) const noexcept
+{
+    if (!this->IsValid())
+    {
+        out << "[ ]";
+        return out;
+    }
+
+    auto schema = this->GetColumnWidthSchematic();
+
+    if (this->m == 1)
+        out << this->GetRowString(0, schema, '[', ']');
+    else
+    {
+        // ⌊ ⌋ ⌈ ⌉ |
+
+        for (unsigned i = 0; i < m; i++)
+        {
+            char open, close;
+            if (i == 0 || i == m - 1) //First and last rows
+            {
+                open = '[';
+                close = ']';
+            }
+            else
+                open = close = '|';
+
+            out << this->GetRowString(i, schema, open, close) << '\n';
+        }
+    }
+
+    return out;
+}
+
 Matrix Matrix::operator|(const Matrix& Two) const
 {
-    if (!Data || !Two.Data)
-        throw std::logic_error("You cannot augment a matrix that is empty.");
+    if (!IsValid() || !Two.IsValid())
+        throw OperatorException('|', GetTypeString(), Two.GetTypeString(), "Cannot augment empty matrix");
 
-    if (m != Two.n)
-        throw std::logic_error("The dimensions for the matrices are not compatible for augmentation.");
+    if (n != Two.n)
+        throw OperatorException('|', GetTypeString(), Two.GetTypeString(), "Row dimensions do not match.");
 
     unsigned int OneRows = m, OneColumns = n, TwoColumns = Two.n;
     Matrix Return(OneRows, OneColumns + TwoColumns);
 
-    if (!Return.Data)
-        throw std::exception();
+    if (!Return.IsValid())
+        throw std::exception(); //Not supposed to happen, just in case though.
 
     for (unsigned int i = 0; i < OneRows; i++)
     {
@@ -333,157 +467,146 @@ Matrix Matrix::operator|(const Matrix& Two) const
 
     return Return;
 }
-VariableType* Matrix::operator+(const VariableType& Two) const noexcept
+Matrix Matrix::operator+(const Matrix& Two) const
 {
+    if (!this->IsValid() || !Two.IsValid())
+        throw OperatorException('+', this->GetTypeString(), Two.GetTypeString(), "Empty Matrix");
 
+    if (this->m != Two.m || this->n != Two.n)
+        throw OperatorException('+', this->GetTypeString(), Two.GetTypeString(), "Dimension Mismatch");
+
+    Matrix result(*this);
+    for (unsigned i = 0; i < result.m && result.Data; i++)
+        for (unsigned j = 0; j < result.n; j++)
+            result.Data[i][j] += Two.Data[i][j];
+
+    return result;
 }
-VariableType* Matrix::operator-(const VariableType& Two) const noexcept
+Matrix Matrix::operator-(const Matrix& Two) const
 {
+    if (!this->IsValid() || !Two.IsValid())
+        throw OperatorException('-', this->GetTypeString(), Two.GetTypeString(), "Empty Matrix");
 
+    if (this->m != Two.m || this->n != Two.n)
+        throw OperatorException('-', this->GetTypeString(), Two.GetTypeString(), "Dimension Mismatch");
+
+    Matrix result(*this);
+    for (unsigned i = 0; i < result.m && result.Data; i++)
+        for (unsigned j = 0; j < result.n; j++)
+            result.Data[i][j] -= Two.Data[i][j];
+
+    return result;
 }
-VariableType* Matrix::operator*(const VariableType& Two) const noexcept
+Matrix Matrix::operator*(const Matrix& Two) const
 {
-    if (!this->Data)
-        return nullptr;
+    if (!this->IsValid() || !Two.IsValid())
+        throw OperatorException('*', this->GetTypeString(), Two.GetTypeString(), "Empty Matrix");
 
+    if (this->n != Two.m)
+        throw OperatorException('*', this->GetTypeString(), Two.GetTypeString(), "Dimension mismatch");
+
+    unsigned r = this->m, c = Two.n;
+    Matrix result(r, c);
+
+    for (unsigned i = 0; i < r && result.Data; i++)
+    {
+        for (unsigned j = 0; j < c; j++)
+        {
+            result.Data[i][j] = 0.00;
+            for (unsigned k = 0; k < Two.m; k++)
+                result.Data[i][j] += this->Data[i][k] * Two.Data[k][j];
+        }
+    }
+
+    return result;
+}
+Matrix Matrix::operator*(const Scalar& Two) const
+{
     try
     {
-        switch (Two.GetType())
-        {
-            case VT_Scalar:
-            {
-                const auto& sca = dynamic_cast<const Scalar&>(Two);
-                auto fac = static_cast<double>(sca);
-
-                auto* result = new Matrix(*this);
-                if (!result->Data)
-                    return nullptr;
-
-                for (unsigned i = 0; i < result->m; i++)
-                    for (unsigned j = 0; j < result->n; j++)
-                        result->Data[i][j] *= fac;
-
-                return result;
-            }
-            case VT_Matrix:
-            {
-                const auto& vec = dynamic_cast<const MathVector&>(Two);
-
-                if (vec.Dim() != n)
-                    return nullptr;
-
-                MathVector result(m);
-                for (unsigned int j = 0; j < n; j++)
-                {
-                    MathVector CurrentCol(m, 0);
-                    for (unsigned int i = 0; i < m; i++)
-                        CurrentCol[i] = Data[i][j];
-
-                    result += CurrentCol * Scalar(vec[j]);
-                }
-
-                return resul;
-            }
-            case VT_Vector:
-            {
-
-            }
-            default:
-                return nullptr;
-        }
+        return operator*(static_cast<double>(Two));
     }
-    catch (std::bad_cast& e)
+    catch (OperatorException& e)
     {
-        return nullptr;
+        throw e;
     }
 }
-VariableType* Matrix::operator/(const VariableType& Two) const noexcept
+Matrix Matrix::operator*(double Two) const
 {
+    if (!this->IsValid())
+        throw OperatorException('*', this->GetTypeString(), "(Scalar)", "Empty Matrix.");
 
+    Matrix result(this->m, this->n);
+    for (unsigned i = 0; i < result.m && result.Data; i++)
+        for (unsigned j = 0; j < result.n; j++)
+            result.Data[i][j] *= Two;
+
+    return result;
 }
-VariableType* Matrix::Pow(const VariableType& Two) const noexcept
+Matrix Matrix::operator/(const Scalar& Two) const
 {
-
-}
-
-bool Matrix::operator==(const VariableType& two) const noexcept
-{
-
-}
-bool Matrix::operator!=(const VariableType& two) const noexcept
-{
-
-}
-
-std::ostream& operator<<(std::ostream& out) const noexcept
-{
-
-}
-Matrix Matrix::operator*(const Matrix& B) const noexcept
-{
-
-    if (!A.IsValid() || !B.IsValid() || A.Columns() != B.Rows())
-        return Matrix::ErrorMatrix();
-
-    unsigned int R = A.Rows(), C = B.Columns();
-    unsigned int R1 = R, C1 = A.Columns(), R2 = B.Rows(), C2 = C;
-    Matrix Return(R, C);
-    if (!Return.Data)
-        throw std::logic_error("")
-
-    for (unsigned int i = 0; i < R1; i++)
+    try
     {
-        for (unsigned int j = 0; j < C2; j++)
-        {
-            Return[i][j] = 0;
-
-            for (unsigned int k = 0; k < R2; k++)
-                Return[i][j] += A[i][k] * B[k][j];
-        }
+        return operator/(static_cast<double>(Two));
     }
-
-    return Return;
-}
-MathVector operator*(const Matrix& One, const MathVector& Two)
-{
-    if (Two.Dim() != One.Columns())
-        return MathVector::ErrorVector();
-
-    unsigned int Cols = One.Columns(), Rows = One.Rows();
-    MathVector Return(Rows);
-    for (unsigned int j = 0; j < Cols; j++)
+    catch (OperatorException& e)
     {
-        MathVector CurrentCol(Rows, 0);
-        for (unsigned int i = 0; i < Rows; i++)
-            CurrentCol[i] = One[i][j];
-
-        Return += Two[j] * CurrentCol;
+        throw e;
     }
-
-    return Return;
 }
-Matrix operator*(double One, const Matrix& Two)
+Matrix Matrix::operator/(double Two) const
 {
-    unsigned int Rows = Two.Rows(), Columns = Two.Columns();
-    Matrix Return(Rows, Columns);
+    if (!this->IsValid())
+        throw OperatorException('*', this->GetTypeString(), "(Scalar)", "Empty Matrix.");
 
-    for (unsigned int i = 0; i < Rows; i++)
-        for (unsigned int j = 0; j < Columns; j++)
-            Return[i][j] = Two[i][j] * One;
+    Matrix result(this->m, this->n);
+    for (unsigned i = 0; i < result.m && result.Data; i++)
+        for (unsigned j = 0; j < result.n; j++)
+            result.Data[i][j] *= Two;
 
-    return Return;
+    return result;
 }
-Matrix& Matrix::operator*=(double Val)
+[[nodiscard]] Matrix Matrix::Pow(const Scalar& Two) const
 {
-    for (unsigned int i = 0; i < m; i++)
-        for (unsigned int j = 0; j < n; j++)
-            Data[i][j] *= Val;
-
-    return *this;
+    try
+    {
+        return this->Pow(static_cast<double>(Two));
+    }
+    catch (OperatorException& e)
+    {
+        throw e;
+    }
+    catch (std::exception& e)
+    {
+        throw e;
+    }
 }
-Matrix operator*(const Matrix& One, double Two)
+[[nodiscard]] Matrix Matrix::Pow(double Two) const
 {
-    return Two * One;
+    /*
+     * for Pow to be valid on a matrix, the one of following criteria must be true.
+     *
+     * 1. Two == 0.00 -> IdentityMatrix of same dims
+     * 2. Two == 1.00 -> Return same matrix
+     * 3. Two > 1.00 && Two is integer && m == n -> Result of multiplication.
+     */
+
+    if (!this->IsValid())
+        throw OperatorException('^', this->GetTypeString(), "(Scalar)", "Empty Matrix");
+
+    if (Two == 0) //First case
+        return Matrix::Identity(this->m, this->n);
+    else if (Two == 1) //Second case
+        return *this;
+    else if (Two > 1 && floor(Two) == Two && this->m == this->n) //Third case
+    {
+        throw std::exception(); //Will finish in the Operators branch.
+    }
+    else //Invalid
+        throw OperatorException('^', this->GetTypeString(), "(Scalar)",
+                                this->m != this->n ? "Matrix is not square" :
+                                Two < 0 ?                 "Operand is not a positive number" :
+                                                          "Operand is not a whole number");
 }
 
 bool operator==(const Matrix& One, const Matrix& Two)
@@ -502,104 +625,4 @@ bool operator==(const Matrix& One, const Matrix& Two)
 bool operator!=(const Matrix& One, const Matrix& Two)
 {
     return !(One == Two);
-}
-
-std::ostream& operator<<(std::ostream& out, const Matrix& Data)
-{
-    //TODO: Fix output margins for columns with differing size.
-    auto Width = [](double Data) -> int
-    {
-        int Return = 0;
-        if (Data < 0)
-            Return++;
-
-        if (Data == 0)
-            return Return + 1;
-
-        int Red = static_cast<int>(Data);
-        while (Red != 0)
-        {
-            Return++;
-            Red /= 10;
-        }
-        return Return;
-    };
-
-    unsigned int Rows = Data.Rows(), Columns = Data.Columns();
-
-    bool* Negatives = new bool[Columns] { false }; //For each column, if the column contains any number of negative numbers, then that column's value is true.
-    bool* LongestIsNegative = new bool[Columns] { false }; //If the longest value (see next array) is a negative value, then this is set to true for later use.
-    int* Longest = new int[Columns] { 0 }; //The length of the longest number in each column.
-    int* LongestWoNeg = new int[Columns] { 0 };
-    for (unsigned int j = 0; j < Columns; j++)
-    {
-        int TempLong = 0;
-        int TempLongWoNeg = 0;
-        bool TempNeg = false;
-        for (unsigned int i = 0; i < Rows; i++)
-        {
-            if (Data[i][j] < 0)
-                Negatives[j] = true;
-
-            int EvalWidth = Width(Data[i][j]);
-            if (EvalWidth > TempLong)
-            {
-                TempLong = EvalWidth;
-                TempNeg = Data[i][j] < 0;
-            }
-            if (Negatives[j])
-                if (EvalWidth - 1 > TempLongWoNeg)
-                    TempLongWoNeg = EvalWidth - 1;
-        }
-        Longest[j] = TempLong;
-        LongestIsNegative[j] = TempNeg;
-        LongestWoNeg[j] = TempLongWoNeg;
-    }
-
-    for (unsigned int i = 0; i < Rows; i++)
-    {
-        for (unsigned int j = 0; j < Columns; j++)
-        {
-            if (j == 0) //The first row is always just one space to the next. This is because the next code block uses the previous column's data (there is no previous column)
-            {
-                if (Negatives[0] && Data[i][j] >= 0)
-                    out << ' ';
-                else if (Negatives[0] && Data[i][j] < 0)
-                    out << '-';
-                out << abs(Data[i][j]);
-                continue;
-            }
-
-            //if (Negatives[j] && Data[i][j] >= 0) //if the current number is not negative and this column contains a negative number, it must be shifted forward one digit.
-            //	out << ' ';
-
-            int PastWidth = 0; //The width of the previous column to insert spaces.
-            int PastElemWidth = Width(Data[i][j - 1]); //The length of the previous matrix.
-            if (Negatives[j])
-                PastWidth++;
-
-            if (PastElemWidth == Longest[j - 1]) //If the current row contains the longest value for the last item, then the math is different.
-                PastWidth += 0;
-            else
-                PastWidth += LongestWoNeg[j - 1] - 1; //Elsewise, the current row is just the distance from the longest of that column.
-
-            for (int k = 0; k < PastWidth; k++) //Inserts the spaces
-                out << ' ';
-
-            if (Negatives[j] && Data[i][j] >= 0)
-                out << ' ' << Data[i][j];
-            else if (Negatives[j] && Data[i][j] < 0)
-                out << '-' << -1 * Data[i][j];
-            else
-                out << ' ' << Data[i][j];
-        }
-        out << std::endl;
-    }
-
-    delete[] Longest;
-    delete[] LongestWoNeg;
-    delete[] Negatives;
-    delete[] LongestIsNegative;
-
-    return out;
 }
