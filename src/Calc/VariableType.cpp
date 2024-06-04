@@ -55,17 +55,17 @@ MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept
             switch (oper)
             {
                 case '+':
-                    return new Scalar(A + B);
+                    return (A + B).MoveIntoPointer();
                 case '-':
-                    return new Scalar(A - B);
+                    return (A - B).MoveIntoPointer();
                 case '*':
-                    return new Scalar(A * B);
+                    return (A * B).MoveIntoPointer();
                 case '/':
-                    return new Scalar(A / B);
+                    return (A / B).MoveIntoPointer();
                 case '%':
-                    return new Scalar(A % B);
+                    return (A % B).MoveIntoPointer();
                 case '^':
-                    return new Scalar(A.Pow(B));
+                    return (A.Pow(B)).MoveIntoPointer();
                 default:
                     return nullptr;
             }
@@ -78,9 +78,9 @@ MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept
             switch (oper)
             {
                 case '+':
-                    return new MathVector(A + B);
+                    return (A + B).MoveIntoPointer();
                 case '-':
-                    return new MathVector(A - B);
+                    return (A - B).MoveIntoPointer();
                 case '*':
                 case '/':
                 case '%':
@@ -98,11 +98,11 @@ MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept
             switch (oper)
             {
                 case '+':
-                    return new Matrix(A + B);
+                    return (A + B).MoveIntoPointer();
                 case '-':
-                    return new Matrix(A - B);
+                    return (A - B).MoveIntoPointer();
                 case '*':
-                    return new Matrix(A * B);
+                    return (A * B).MoveIntoPointer();
                 case '/':
                 case '%':
                 case '^':
@@ -131,34 +131,34 @@ MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept
             case '+':
             {
                 if (t1 == VT_Matrix && t2 == VT_Vector)
-                    return new Matrix(dynamic_cast<const Matrix&>(*One) + static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*Two)));
+                    return (dynamic_cast<const Matrix&>(*One) + static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*Two))).MoveIntoPointer();
                 else if (t1 == VT_Vector && t2 == VT_Matrix)
-                    return new Matrix(dynamic_cast<const Matrix&>(*Two) + static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*One)));
+                    return (dynamic_cast<const Matrix&>(*Two) + static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*One))).MoveIntoPointer();
                 else
                     throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
             }
             case '-':
             {
                 if (t1 == VT_Matrix && t2 == VT_Vector)
-                    return new Matrix(dynamic_cast<const Matrix&>(*One) - static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*Two)));
+                    return (dynamic_cast<const Matrix&>(*One) - static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*Two))).MoveIntoPointer();
                 else if (t1 == VT_Vector && t2 == VT_Matrix)
-                    return new Matrix(dynamic_cast<const Matrix&>(*Two) - static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*One)));
+                    return (dynamic_cast<const Matrix&>(*Two) - static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*One))).MoveIntoPointer();
                 else
                     throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
             }
             case '*':
             {
                 if (t1 == VT_Scalar && t2 == VT_Vector)
-                    return new MathVector(dynamic_cast<const MathVector&>(*Two) * dynamic_cast<const Scalar&>(*One));
+                    return (dynamic_cast<const MathVector&>(*Two) * dynamic_cast<const Scalar&>(*One)).MoveIntoPointer();
                 else if (t1 == VT_Vector && t2 == VT_Scalar)
-                    return new MathVector(dynamic_cast<const MathVector&>(*One) * dynamic_cast<const Scalar&>(*Two));
+                    return (dynamic_cast<const MathVector&>(*One) * dynamic_cast<const Scalar&>(*Two)).MoveIntoPointer();
                 else if (t1 == VT_Scalar && t2 == VT_Matrix)
-                    return new Matrix(dynamic_cast<const Matrix&>(*Two) * dynamic_cast<const Scalar&>(*One));
+                    return (dynamic_cast<const Matrix&>(*Two) * dynamic_cast<const Scalar&>(*One)).MoveIntoPointer();
                 else if (t1 == VT_Matrix && t2 == VT_Scalar)
-                    return new Matrix(dynamic_cast<const Matrix&>(*One) * dynamic_cast<const Scalar&>(*Two));
+                    return (dynamic_cast<const Matrix&>(*One) * dynamic_cast<const Scalar&>(*Two)).MoveIntoPointer();
                 else if (t1 == VT_Matrix && t2 == VT_Vector)
-                    return new Matrix(dynamic_cast<const Matrix&>(*One) *
-                                      static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*Two)));
+                    return (dynamic_cast<const Matrix&>(*One) *
+                                      static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*Two))).MoveIntoPointer();
 
                 throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
             }
@@ -169,7 +169,7 @@ MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept
                     const auto& A = dynamic_cast<const Matrix&>(*One);
                     const auto& B = dynamic_cast<const Scalar&>(*Two);
 
-                    return new Matrix(A.Pow(B));
+                    return (A.Pow(B)).MoveIntoPointer();
                 }
 
                 throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());

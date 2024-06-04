@@ -26,7 +26,7 @@ public:
     [[nodiscard]] virtual VariableTypes GetType() const noexcept = 0;
 
     //Moves all information out of the current instance and makes a pointer to the corresponding type. Saves on calling the memory constructor.
-    [[nodiscard]] virtual VariableType* MoveIntoPointer() const noexcept = 0;
+    [[nodiscard]] virtual VariableType* MoveIntoPointer() noexcept = 0;
 
     [[nodiscard]] virtual std::string Sterilize() const noexcept; //Writes to a string value
     virtual void Sterilize(std::ostream& out) const noexcept = 0; //Writes to a file, can be retrieved.
@@ -41,13 +41,5 @@ public:
 
 MATH_LIB VariableType* FromSterilized(const std::string& val) noexcept;
 MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept;
-
-MATH_LIB VariableType* ApplyOperation(const VariableType* one, const VariableType* two, char oper) noexcept;
-MATH_LIB VariableType* AddVar(const VariableType* one, const VariableType* two) noexcept;
-MATH_LIB VariableType* SubVar(const VariableType* one, const VariableType* two) noexcept;
-MATH_LIB VariableType* MulVar(const VariableType* one, const VariableType* two) noexcept;
-MATH_LIB VariableType* DivVar(const VariableType* one, const VariableType* two) noexcept;
-MATH_LIB VariableType* ModVar(const VariableType* one, const VariableType* two) noexcept;
-MATH_LIB VariableType* PowVar(const VariableType* one, const VariableType* two) noexcept;
 
 #endif //JASON_VARIABLETYPE_H

@@ -16,6 +16,8 @@ public:
 
     double Data;
 
+    [[nodiscard]] VariableType* MoveIntoPointer() noexcept override { return new Scalar(*this); }
+
     [[nodiscard]] VariableTypes GetType() const noexcept override;
     void Sterilize(std::ostream& out) const noexcept override;
     static Scalar* FromSterilize(const std::string& in);
