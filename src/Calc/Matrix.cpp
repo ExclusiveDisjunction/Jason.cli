@@ -16,7 +16,30 @@ Matrix::Matrix(unsigned int Rows, unsigned int Columns, double Value) noexcept
 }
 Matrix::Matrix(std::istream& in)
 {
+    std::string header;
+    in >> header;
+    if (header != "MAT" || !in)
+        throw std::logic_error("Cannot construct a matrix from this string.");
 
+    in >> this->m;
+    in >> this->n;
+
+    if (this->m == 0 || this->n == 0)
+        DeAllocate();
+    else
+    {
+        Allocate(this->m, this->n);
+        for (unsigned i = 0; i < this->m; i++)
+        {
+            for (unsigned j = 0; j < this->n; j++)
+            {
+                if (!in)
+                    throw std::logic_error("Not enough numbers to match the dimensions.");
+
+                in >> this->Data[i][j];
+            }
+        }
+    }
 }
 Matrix::Matrix(const Matrix& Other) noexcept
 {
@@ -99,7 +122,7 @@ void Matrix::DeAllocate() noexcept
 
 Matrix Matrix::ErrorMatrix()
 {
-    return Matrix();
+    return {};
 }
 Matrix Matrix::Identity(unsigned int Size)
 {
@@ -113,7 +136,7 @@ Matrix Matrix::Identity(unsigned int Rows, unsigned int Cols)
 
     return result;
 }
-Matrix Matrix::RandomMatrix(unsigned int Rows, unsigned int Columns, bool Integers)
+[[maybe_unused]] Matrix Matrix::RandomMatrix(unsigned int Rows, unsigned int Columns, bool Integers)
 {
     Matrix Return(Rows, Columns);
     if (!Return.Data)
@@ -144,10 +167,10 @@ Matrix Matrix::RandomMatrix(unsigned int Rows, unsigned int Columns, bool Intege
 
 VariableType* Matrix::MoveIntoPointer() noexcept
 {
-    Matrix* Return = new Matrix();
-    Return.Data = std::exchange(this->Data, nullptr);
-    Return.m = std::exchange(this->m, nullptr);
-    Return.n = std::exchange(this->n, nullptr);
+    auto* Return = new Matrix();
+    Return->Data = std::exchange(this->Data, nullptr);
+    Return->m = std::exchange(this->m, 0);
+    Return->n = std::exchange(this->n, 0);
 
     this->DeAllocate();
 
@@ -180,7 +203,7 @@ void Matrix::Sterilize(std::ostream& out) const noexcept
         for (unsigned j = 0; j < this->n; j++)
             out << this->Data[i][j] << ' ';
 }
-Matrix* Matrix::FromSterilize(const std::string& sterilized)
+[[maybe_unused]] Matrix* Matrix::FromSterilize(const std::string& sterilized)
 {
     try
     {
@@ -239,25 +262,26 @@ void Matrix::RowAdd(unsigned int OrigRow, double Fac, unsigned int TargetRow)
         Data[TargetRow][j] += Data[OrigRow][j] * Fac;
 }
 
-double Matrix::Determinant() const
+[[maybe_unused]] double Matrix::Determinant() const
 {
-    if (Rows() != Columns())
+    if (this->m != this->n)
         throw std::logic_error("The matrix must be square");
 
     /*
      * To do the determinant, we will have to get the minors of the matrix, and therefore requires the MatrixMinor.
+     * Will be done with the addition of the matrix branch.
      */
     return 0;
 }
 
-Matrix Matrix::Invert() const
+[[maybe_unused]] Matrix Matrix::Invert() const
 {
     if (Rows() != Columns())
         throw std::logic_error("The matrix must be square");
 
     Matrix Id = Identity(m);
     Matrix Aug = Id | *this;
-    Aug.RREF();
+    Aug.ReducedRowEchelonForm();
 
     Matrix Left = Aug.Extract(0, 0, m, m), Right = Aug.Extract(0, 4, m, m);
     if (Right != Id)
@@ -265,7 +289,7 @@ Matrix Matrix::Invert() const
     else
         return Left;
 }
-Matrix Matrix::Transpose() const
+[[maybe_unused]] Matrix Matrix::Transpose() const
 {
     Matrix Return(m, n);
     if (!Return.Data)
@@ -278,56 +302,90 @@ Matrix Matrix::Transpose() const
     return Return;
 }
 
-void Matrix::REF()
+void Matrix::RowEchelonForm()
 {
-    unsigned int nr = Rows(), nc = Columns();
+    if (!this->IsValid())
+        return;
 
-    for (unsigned int r = 0; r < nr; r++)
+    unsigned rows = this->m;
+    unsigned cols = this->n;
+    unsigned currentRow = 0;
+
+    for (unsigned current_col = 0; current_col < cols; current_col++)
     {
-        bool AllZeroes = true;
-        for (unsigned int c = 0; c < nc; c++)
-        {
-            if (Data[r][c] != 0)
-            {
-                AllZeroes = false;
-                break;
-            }
-        }
+        unsigned pivot_row = current_col;
+        while (pivot_row < rows && this->Data[pivot_row][current_col] == 0)
+            pivot_row++;
 
-        if (AllZeroes == true)
-            RowSwap(r, nr);
-    }
-
-    unsigned int p = 0;
-    while (p < nr && p < nc)
-    {
-    NextPivot:
-        unsigned int r = 1;
-        while (Data[p][p] == 0)
+        if (pivot_row < rows)
         {
-            if (p + r <= nr)
+            this->RowSwap(currentRow, pivot_row);
+
+            double pivot_value = this->Data[currentRow][current_col];
+            for (unsigned col = current_col; col < cols; col++)
+                this->Data[currentRow][col] /= pivot_value;
+
+            for (unsigned row = currentRow + 1; row < rows; row++)
             {
-                p++;
-                goto NextPivot;
+                double mul = this->Data[row][current_col];
+                for (unsigned col = current_col; col < cols; col++)
+                    this->Data[row][col] -= mul * this->Data[currentRow][col];
             }
 
-            RowSwap(p, p + r);
-            r++;
+            currentRow++;
         }
-        for (r = 1; r < nr - p; r++)
-        {
-            if (Data[(p + r - 1) * Columns() + p] != 0)
-            {
-                double x = -Data[p + r][p] / Data[p][p];
-                for (unsigned int c = p; c < nc; c++)
-                    Data[p + r][c] = Data[p][c] * x + Data[p + r][c];
-            }
-        }
-        p++;
     }
 }
-void Matrix::RREF()
+void Matrix::ReducedRowEchelonForm()
 {
+    this->RowEchelonForm();
+
+    unsigned rows = this->m;
+    unsigned cols = this->n;
+    unsigned lead = 0;
+
+    for (unsigned r = 0; r < cols; r++)
+    {
+        if (lead >= cols)
+            break;
+
+        unsigned i = r;
+        while (this->Data[i][lead] == 0)
+        {
+            i++;
+            if (i == rows)
+            {
+                i = r;
+                lead++;
+                if (lead == cols)
+                    break;
+            }
+        }
+
+        if (lead < cols)
+        {
+            this->RowSwap(i, r);
+            double divisor = this->Data[r][lead];
+            if (divisor == 0)
+            {
+                for (unsigned j = 0; j < cols; j++)
+                    this->Data[r][j] /= divisor;
+            }
+
+            for (unsigned k = 0; k < rows; k++)
+            {
+                if (k != r)
+                {
+                    double factor = this->Data[k][lead];
+                    for (unsigned j = 0; j < cols; j++)
+                        this->Data[k][j] = factor * this->Data[r][j];
+                }
+            }
+        }
+
+        lead++;
+    }
+
     unsigned int Lead = 0;
     unsigned int Rows = this->Rows(), Columns = this->Columns();
     for (unsigned int r = 0; r < Rows; r++)
@@ -409,6 +467,93 @@ bool Matrix::operator!=(const VariableType& two) const noexcept
     }
 }
 
+std::vector<std::pair<bool, unsigned long>> Matrix::GetColumnWidthSchematic() const
+{
+    /*
+        This algorithm will find the largest width of each column, and store the result in the result value.
+
+        For instance:
+
+        [4 3 1 2]
+        [33 4 1 -2]
+        [5 -44.3 2 1]
+
+        Which evaluates to:
+        [(false, 2), (true, 5), (false, 1), (true, 2)]
+
+        Which can be used to re-format the matrix when printing to be:
+        [4   3    1  2]
+        [33  4    1 -2]
+        [5  -44.3 2  1]
+    */
+    std::vector<std::pair<bool, unsigned long>> result;
+
+    for (unsigned j = 0; j < this->n; j++)
+    {
+        bool negative_found = false;
+        unsigned long largest_num = 0;
+        for (unsigned i = 0; i < this->m; i++)
+        {
+            double curr = this->Data[i][j];
+            if (curr < 0)
+                negative_found = true;
+            largest_num = std::max(
+                    static_cast<unsigned long>(std::to_string(curr).length()),
+                    largest_num);
+        }
+
+        result.emplace_back(negative_found, largest_num);
+    }
+
+    return result;
+}
+std::string Matrix::GetRowString(unsigned row, std::vector<std::pair<bool, unsigned long>>& schema, char open, char close) const
+{
+    if (row > this->m)
+        return {};
+
+    /*
+        Convert the number to a string
+        If the length of that string is less than the maximum of the column, then add extra spaces to the end till it meets the maximum.
+        If there is a negative in that column, and the current number is not negative, add one to the beginning of the string, and remove one from the end. If it is negative, do not add any extra spaces.
+        Repeat this for each number for each column and row, and put a space between columns.
+    */
+
+    std::stringstream ss;
+    ss << open << ' ';
+    const double* host = this->Data[row];
+    for (unsigned i = 0; i < this->n; i++)
+    {
+        const auto& this_schema = schema[i];
+        bool has_negative = this_schema.first;
+        unsigned long width = this_schema.second;
+
+        double curr = host[i];
+        if (curr >= 0 && has_negative)
+        {
+            ss << ' ' << curr;
+            continue;
+        }
+
+        std::string curr_str = std::to_string(curr);
+        if (has_negative && (curr_str.length()) < width + 1 || (curr_str.length() < width))
+        {
+            unsigned long diff = width - (curr_str.length());
+            std::string space_str;
+            if (has_negative)
+                diff++;
+
+            for (unsigned t = 0; t < diff; t++)
+                space_str += ' ';
+
+            curr_str += space_str;
+        }
+        ss << curr_str << ' ';
+    }
+
+    ss << close;
+    return ss.str();
+}
 std::ostream& Matrix::operator<<(std::ostream& out) const noexcept
 {
     if (!this->IsValid())

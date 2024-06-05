@@ -22,14 +22,14 @@ private:
     void Allocate(unsigned int NewRows, unsigned int NewColumns, double Value = 0) noexcept;
     void DeAllocate() noexcept;
 
-    std::vector<std::pair<bool, unsigned>> GetColumnWidthSchematic() const;
-    std::string GetRowString(unsigned row, std::vector<std::pair<bool, unsigned>>& schema, char open, char close) const;
+    [[nodiscard]] std::vector<std::pair<bool, unsigned long>> GetColumnWidthSchematic() const;
+    std::string GetRowString(unsigned row, std::vector<std::pair<bool, unsigned long>>& schema, char open, char close) const;
 
     Matrix();
 
 public:
     Matrix(unsigned int Rows, unsigned int Columns, double Value = 0) noexcept;
-    Matrix(std::istream& in);
+    explicit Matrix(std::istream& in);
     Matrix(const Matrix& Other) noexcept;
     Matrix(Matrix&& Other) noexcept;
     ~Matrix();
@@ -43,7 +43,8 @@ public:
     [[nodiscard]] VariableTypes GetType() const noexcept override;
     void Sterilize(std::ostream& out) const noexcept override;
     std::ostream& operator<<(std::ostream& out) const noexcept override;
-    [[nodiscard]] [[maybe_unused]] static Matrix* FromSterilize(const std::string& sterilized);
+
+    [[maybe_unused]] [[maybe_unused]] [[nodiscard]] [[maybe_unused]] static Matrix* FromSterilize(const std::string& sterilized);
     [[nodiscard]] std::string GetTypeString() const noexcept override;
 
     [[nodiscard]] static Matrix ErrorMatrix();
@@ -67,8 +68,8 @@ public:
     [[maybe_unused]] [[nodiscard]] Matrix Invert() const;
     [[maybe_unused]] [[nodiscard]] Matrix Transpose() const;
 
-    void REF();
-    void RREF();
+    void RowEchelonForm();
+    void ReducedRowEchelonForm();
 
     Matrix operator|(const Matrix& Two) const;
     Matrix operator+(const Matrix& Two) const;
