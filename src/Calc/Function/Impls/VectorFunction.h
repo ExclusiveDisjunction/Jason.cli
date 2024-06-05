@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FunctionBase.h"
+#include "../Base/FunctionBase.h"
 #include "SequenceBase.h"
 
 namespace Math::Function

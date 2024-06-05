@@ -1,8 +1,8 @@
 #pragma once
 
 #include "..\StdCalc.h"
-#include "Function.h"
-#include "Polynomial.h"
+#include "../Function.h"
+#include "../Composite/Polynomial.h"
 
 namespace Math::Function
 {

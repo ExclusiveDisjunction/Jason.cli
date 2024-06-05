@@ -1,7 +1,7 @@
 #include "GeneralFunctions.h"
 
 #include "CoreFunctions.h"
-#include "Polynomial.h"
+#include "../Composite/Polynomial.h"
 #include "..\Constants.h"
 
 namespace Math::Function

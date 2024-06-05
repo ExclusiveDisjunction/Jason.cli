@@ -1,6 +1,6 @@
 #include "MatrixFunction.h"
 
-#include "Polynomial.h"
+#include "../Composite/Polynomial.h"
 
 namespace Math::Function
 {

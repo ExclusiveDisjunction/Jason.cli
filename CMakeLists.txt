@@ -15,4 +15,12 @@ add_executable(Jason src/Entry.cpp
         src/Calc/MathVector.cpp
         src/Calc/VariableType.cpp
         src/Calc/Matrix.cpp
-        src/Calc/OperatorException.h)
+        src/Calc/OperatorException.h
+        src/IO/IoThread.cpp
+        src/IO/IoThread.h
+        src/Calc/Function/Function.h
+        src/Calc/Function/Impls/CoreFunctions.h
+        src/Calc/Function/Base/FunctionBase.h
+        src/Calc/Function/Base/FunctionRelation.h
+        src/Calc/Function/Base/FunctionRelation.cpp
+        src/Calc/Function/Base/FunctionBase.cpp)

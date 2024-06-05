@@ -5,18 +5,16 @@
 */
 
 //Base
-#include "FunctionRelation.h"
-#include "FunctionBase.h"
+#include "Base/FunctionRelation.h"
+#include "Base/FunctionBase.h"
 
-//Function Types
-#include "CoreFunctions.h"
-#include "MatrixFunction.h"
-#include "VectorFunction.h"
+//Impls
+#include "Impls/CoreFunctions.h"
+#include "Impls/MatrixFunction.h"
+#include "Impls/VectorFunction.h"
+#include "Impls/GeneralFunctions.h"
 
 //Composite Functions
-#include "CompositeFunction.h"
-#include "Polynomial.h"
-#include "RationalFunction.h"
-
-//Tools & Other
-#include "GeneralFunctions.h"
+#include "Composite/CompositeFunction.h"
+#include "Composite/Polynomial.h"
+#include "Composite/RationalFunction.h"

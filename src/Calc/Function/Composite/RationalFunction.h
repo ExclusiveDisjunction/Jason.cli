@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FunctionBase.h"
+#include "../Base/FunctionBase.h"
 #include "CompositeFunction.h"
 
 #include <iostream>
