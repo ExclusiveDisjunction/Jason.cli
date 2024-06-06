@@ -23,4 +23,6 @@ add_executable(Jason src/Entry.cpp
         src/Calc/Function/Base/FunctionBase.h
         src/Calc/Function/Base/FunctionRelation.h
         src/Calc/Function/Base/FunctionRelation.cpp
-        src/Calc/Function/Base/FunctionBase.cpp)
+        src/Calc/Function/Base/FunctionBase.cpp
+        src/Calc/Complex.cpp
+        src/Calc/Complex.h)

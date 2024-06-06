@@ -16,6 +16,7 @@ class MATH_LIB VariableType;
 enum VariableTypes
 {
     VT_Scalar,
+    VT_Complex,
     VT_Vector,
     VT_Matrix
 };
