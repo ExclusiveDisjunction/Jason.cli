@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Base/FunctionBase.h"
+#include "../FunctionBase.h"
 #include "VectorFunction.h"
 
 namespace Math::Function

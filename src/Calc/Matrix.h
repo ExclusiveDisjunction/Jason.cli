@@ -2,6 +2,7 @@
 
 #include "StdCalc.h"
 #include "VariableType.h"
+#include <vector>
 
 class MATH_LIB Scalar;
 class MATH_LIB MathVector;

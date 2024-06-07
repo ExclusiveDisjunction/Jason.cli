@@ -5,8 +5,7 @@
 */
 
 //Base
-#include "Base/FunctionRelation.h"
-#include "Base/FunctionBase.h"
+#include "FunctionBase.h"
 
 //Impls
 #include "Impls/CoreFunctions.h"
