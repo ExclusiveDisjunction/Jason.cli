@@ -5,7 +5,7 @@
 #ifndef JASON_COMPLEX_H
 #define JASON_COMPLEX_H
 
-#include "VariableType.h"
+#include "../VariableType.h"
 
 class MATH_LIB Scalar;
 

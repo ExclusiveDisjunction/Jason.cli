@@ -1,6 +1,6 @@
 #include "StdCalc.h"
 
-#include "MathVector.h"
+#include "Numerics/MathVector.h"
 
 double MapLerp(double R1h, double R1l, double R2h, double R2l, double R1p)
 {

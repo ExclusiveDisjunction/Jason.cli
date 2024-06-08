@@ -4,9 +4,9 @@
 
 #include "VariableType.h"
 
-#include "Scalar.h"
-#include "MathVector.h"
-#include "Matrix.h"
+#include "Numerics/Scalar.h"
+#include "Numerics/MathVector.h"
+#include "Numerics/Matrix.h"
 
 #include "OperatorException.h"
 

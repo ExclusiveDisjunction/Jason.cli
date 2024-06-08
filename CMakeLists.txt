@@ -9,12 +9,12 @@ add_executable(Jason src/Entry.cpp
         src/IO/VarStorage.cpp
         src/IO/VarStorage.h
         src/Calc/VariableType.h
-        src/Calc/Scalar.cpp
-        src/Calc/Scalar.h
+        src/Calc/Numerics/Scalar.cpp
+        src/Calc/Numerics/Scalar.h
         src/Calc/StdCalc.cpp
-        src/Calc/MathVector.cpp
+        src/Calc/Numerics/MathVector.cpp
         src/Calc/VariableType.cpp
-        src/Calc/Matrix.cpp
+        src/Calc/Numerics/Matrix.cpp
         src/Calc/OperatorException.h
         src/IO/IoThread.cpp
         src/IO/IoThread.h
@@ -22,5 +22,6 @@ add_executable(Jason src/Entry.cpp
         src/Calc/Function/Impls/CoreFunctions.h
         src/Calc/Function/FunctionBase.h
         src/Calc/Function/FunctionBase.cpp
-        src/Calc/Complex.cpp
-        src/Calc/Complex.h)
+        src/Calc/Numerics/Complex.cpp
+        src/Calc/Numerics/Complex.h
+        src/Calc/Numerics.h)

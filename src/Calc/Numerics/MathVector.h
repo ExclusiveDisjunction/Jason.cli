@@ -1,7 +1,7 @@
 #pragma once
 
-#include "StdCalc.h"
-#include "VariableType.h"
+#include "../StdCalc.h"
+#include "../VariableType.h"
 
 #include <iostream>
 #include <vector>
@@ -70,24 +70,16 @@ public:
     static double DotProduct(const MathVector &One, const MathVector &Two);
 
     MathVector operator+(const MathVector& in) const;
+    MathVector& operator+=(const MathVector& in) const;
     MathVector operator-(const MathVector& in) const;
-    MathVector operator*(const Scalar& in) const;
+    MathVector& operator-=(const MathVector& in) const;
     MathVector operator*(double in) const;
-    MathVector operator/(const Scalar& in) const;
+    MathVector& operator*=(double in) const;
     MathVector operator/(double in) const;
+    MathVector& operator/=(double in) const;
 
     bool operator==(const VariableType& in) const noexcept override;
     bool operator!=(const VariableType& in) const noexcept override;
 
     explicit operator Matrix() const noexcept;
-
-#ifdef _WINDOWS_
-    explicit operator POINT() const
-    {
-        if (Dim() < 2)
-            throw std::exception("This object does not have enough dimensions to construct a POINT object.");
-
-        return POINT{ static_cast<LONG>(Point[0]), static_cast<LONG>(Point[1]) };
-    }
-#endif
 };

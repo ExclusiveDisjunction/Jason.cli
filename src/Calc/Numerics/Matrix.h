@@ -1,7 +1,7 @@
 #pragma once
 
-#include "StdCalc.h"
-#include "VariableType.h"
+#include "../StdCalc.h"
+#include "../VariableType.h"
 #include <vector>
 
 class MATH_LIB Scalar;
@@ -45,7 +45,7 @@ public:
     void Sterilize(std::ostream& out) const noexcept override;
     std::ostream& operator<<(std::ostream& out) const noexcept override;
 
-    [[maybe_unused]] [[maybe_unused]] [[nodiscard]] [[maybe_unused]] static Matrix* FromSterilize(const std::string& sterilized);
+    [[nodiscard]] [[maybe_unused]] static Matrix* FromSterilize(const std::string& sterilized);
     [[nodiscard]] std::string GetTypeString() const noexcept override;
 
     [[nodiscard]] static Matrix ErrorMatrix();
@@ -74,14 +74,16 @@ public:
 
     Matrix operator|(const Matrix& Two) const;
     Matrix operator+(const Matrix& Two) const;
+    Matrix& operator+=(const Matrix& Two) const;
     Matrix operator-(const Matrix& Two) const;
+    Matrix& operator-=(const Matrix& Two) const;
     Matrix operator*(const Matrix& Two) const;
-    Matrix operator*(const Scalar& Two) const;
+    Matrix& operator*=(const Matrix& Two) const;
     Matrix operator*(double Two) const;
-    Matrix operator/(const Scalar& Two) const;
+    Matrix& operator+=(double Two) const;
     Matrix operator/(double Two) const;
-    [[nodiscard]] Matrix Pow(const Scalar& Two) const;
-    [[nodiscard]] Matrix Pow(double Two) const;
+    Matrix& operator/=(const Matrix& Two) const;
+    [[nodiscard]] Matrix Pow(long long Two) const;
 
     bool operator==(const VariableType& two) const noexcept override;
     bool operator!=(const VariableType& two) const noexcept override;

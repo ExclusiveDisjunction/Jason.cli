@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../StdCalc.h"
-#include "../MathVector.h"
-#include "../Matrix.h"
+#include "../Numerics/MathVector.h"
+#include "../Numerics/Matrix.h"
 
 class MATH_LIB FunctionBase
 {
