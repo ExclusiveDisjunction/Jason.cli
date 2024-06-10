@@ -8,6 +8,9 @@
 #include "../VariableType.h"
 #include "../OperatorException.h"
 
+class MATH_LIB Complex;
+class MATH_LIB Imaginary;
+
 class MATH_LIB Scalar;
 class MATH_LIB Integer;
 class MATH_LIB Fraction;
@@ -26,14 +29,34 @@ public:
     [[nodiscard]] static Scalar* FromSterilize(const std::string& in);
     [[nodiscard]] static Scalar* FromSterilize(std::istream& in);
 
+    template<typename T> requires std::convertible_to<T, double>
+    RealNumber operator+(const T& in) const noexcept;
+    template<typename T> requires std::convertible_to<T, double>
+    RealNumber operator-(const T& in) const noexcept;
+    template<typename T> requires std::convertible_to<T, double>
+    RealNumber operator*(const T& in) const noexcept;
+    template<typename T> requires std::convertible_to<T, double>
+    RealNumber operator/(const T& in) const noexcept;
+
     RealNumber operator+(double in) const noexcept;
-    virtual Scalar& operator+=(double in) const noexcept = 0;
     RealNumber operator-(double in) const noexcept;
-    virtual Scalar& operator-=(double in) const noexcept = 0;
     RealNumber operator*(double in) const noexcept;
-    virtual Scalar& operator*=(double in) const noexcept = 0;
     RealNumber operator/(double in) const noexcept;
+
+    Complex operator+(const Imaginary& in) const noexcept;
+    Complex operator-(const Imaginary& in) const noexcept;
+
+    Scalar& operator+=(const Scalar& in) const noexcept;
+    Scalar& operator-=(const Scalar& in) const noexcept;
+    Scalar& operator*=(const Scalar& in) const noexcept;
+    Scalar& operator/=(const Scalar& in) const noexcept;
+
+    virtual Scalar& operator+=(double in) const noexcept = 0;
+    virtual Scalar& operator-=(double in) const noexcept = 0;
+    virtual Scalar& operator*=(double in) const noexcept = 0;
     virtual Scalar& operator/=(double in) const noexcept = 0;
+
+    template<typename T> requires std::convertible_to<T, double>
     [[nodiscard]] RealNumber Pow(double in) const noexcept;
 
     bool operator==(const VariableType& obj) const noexcept override;
@@ -42,6 +65,7 @@ public:
     std::ostream& operator<<(std::ostream& out) const noexcept override;
 
     virtual constexpr explicit operator double() const noexcept = 0;
+    constexpr explicit operator Complex() const noexcept;
 };
 
 class Integer : public Scalar
@@ -56,21 +80,35 @@ public:
 
     long long Data = 0;
 
-    Integer operator+(long long in) const noexcept;
-    Integer& operator+=(long long in) const noexcept;
+    template<typename T> requires std::convertible_to<T, long long>
+    Integer operator+(const T& in) const noexcept;
+    template<typename T> requires std::convertible_to<T, long long>
+    Integer operator-(const T& in) const noexcept;
+    template<typename T> requires std::convertible_to<T, long long>
+    Integer operator*(const T& in) const noexcept;
+    template<typename T> requires std::convertible_to<T, long long>
+    Integer operator/(const T& in) const noexcept;
+    template<typename T> requires std::convertible_to<T, long long>
+    Integer operator%(const T& in) const noexcept;
+
+    template<typename T> requires std::convertible_to<T, long long>
+    Integer& operator+=(const T& in) const noexcept;
+    template<typename T> requires std::convertible_to<T, long long>
+    Integer& operator-=(const T& in) const noexcept;
+    template<typename T> requires std::convertible_to<T, long long>
+    Integer& operator*=(const T& in) const noexcept;
+    template<typename T> requires std::convertible_to<T, long long>
+    Integer& operator/=(const T& in) const noexcept;
+    template<typename T> requires std::convertible_to<T, long long>
+    Integer& operator%=(const T& in) const noexcept;
+
     Scalar& operator+=(double in) const noexcept override;
-    Integer operator-(long long in) const noexcept;
-    Integer& operator-=(long long in) const noexcept;
     Scalar& operator-=(double in) const noexcept override;
-    Integer operator*(long long in) const noexcept;
-    Integer& operator*=(long long in) const noexcept;
     Scalar& operator*=(double in) const noexcept override;
-    Integer operator/(long long in) const noexcept;
-    Integer& operator/=(long long in) const noexcept;
     Scalar& operator/=(double in) const noexcept override;
-    Integer operator%(long long in) const noexcept;
-    Integer& operator%=(long long in) const noexcept;
-    [[nodiscard]] Integer Pow(long long in) const noexcept;
+
+    template<typename T> requires std::convertible_to<T, long long>
+    [[nodiscard]] Integer Pow(const T& in) const noexcept;
 
     constexpr explicit operator double() const noexcept override;
     constexpr explicit operator long long() const noexcept;
