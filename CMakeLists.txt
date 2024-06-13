@@ -22,7 +22,5 @@ add_executable(Jason src/Entry.cpp
         src/Calc/Function/Impls/CoreFunctions.h
         src/Calc/Function/FunctionBase.h
         src/Calc/Function/FunctionBase.cpp
-        src/Calc/Numerics/Complex.cpp
-        src/Calc/Numerics/Complex.h
         src/Calc/Numerics.h
 )

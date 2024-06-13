@@ -6,7 +6,7 @@
 
 enum class DateStringFormat
 {
-	None,
+	None, //This means there is nothing here.
 	ShortDate, //MM-DD-YYY
 	EuroShortDate, //DD-MM-YYY
 	LongDate, //Month DD(th, rd, st), YYYY

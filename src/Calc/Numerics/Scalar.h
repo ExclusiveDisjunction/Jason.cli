@@ -8,13 +8,19 @@
 #include "../VariableType.h"
 #include "../OperatorException.h"
 
-class MATH_LIB Complex;
-class MATH_LIB Imaginary;
-
 class MATH_LIB Scalar;
 class MATH_LIB Integer;
 class MATH_LIB Fraction;
 class MATH_LIB RealNumber;
+
+template<typename T, typename Base, typename NumType>
+concept IsBaseOrNumeric = requires
+{
+    std::is_base_of<T, Base>::value || std::is_same<T, NumType>::value || std::is_nothrow_convertible<T, NumType>::value;
+};
+
+template<typename T>
+concept IsScalarOrDouble = IsBaseOrNumeric<T, Scalar, double>;
 
 class Scalar : public VariableType
 {
@@ -29,43 +35,24 @@ public:
     [[nodiscard]] static Scalar* FromSterilize(const std::string& in);
     [[nodiscard]] static Scalar* FromSterilize(std::istream& in);
 
-    template<typename T> requires std::convertible_to<T, double>
+    template<typename T> requires IsScalarOrDouble<T>
     RealNumber operator+(const T& in) const noexcept;
-    template<typename T> requires std::convertible_to<T, double>
+    template<typename T> requires IsScalarOrDouble<T>
     RealNumber operator-(const T& in) const noexcept;
-    template<typename T> requires std::convertible_to<T, double>
+    template<typename T> requires IsScalarOrDouble<T>
     RealNumber operator*(const T& in) const noexcept;
-    template<typename T> requires std::convertible_to<T, double>
+    template<typename T> requires IsScalarOrDouble<T>
     RealNumber operator/(const T& in) const noexcept;
 
-    RealNumber operator+(double in) const noexcept;
-    RealNumber operator-(double in) const noexcept;
-    RealNumber operator*(double in) const noexcept;
-    RealNumber operator/(double in) const noexcept;
-
-    Complex operator+(const Imaginary& in) const noexcept;
-    Complex operator-(const Imaginary& in) const noexcept;
-
-    Scalar& operator+=(const Scalar& in) const noexcept;
-    Scalar& operator-=(const Scalar& in) const noexcept;
-    Scalar& operator*=(const Scalar& in) const noexcept;
-    Scalar& operator/=(const Scalar& in) const noexcept;
-
-    virtual Scalar& operator+=(double in) const noexcept = 0;
-    virtual Scalar& operator-=(double in) const noexcept = 0;
-    virtual Scalar& operator*=(double in) const noexcept = 0;
-    virtual Scalar& operator/=(double in) const noexcept = 0;
-
-    template<typename T> requires std::convertible_to<T, double>
-    [[nodiscard]] RealNumber Pow(double in) const noexcept;
+    template<typename T> requires IsScalarOrDouble<T>
+    [[nodiscard]] RealNumber Pow(const T& in) const noexcept;
 
     bool operator==(const VariableType& obj) const noexcept override;
     bool operator!=(const VariableType& obj) const noexcept override;
 
     std::ostream& operator<<(std::ostream& out) const noexcept override;
 
-    virtual constexpr explicit operator double() const noexcept = 0;
-    constexpr explicit operator Complex() const noexcept;
+    virtual constexpr explicit operator double() const noexcept = 0; 
 };
 
 class Integer : public Scalar
@@ -80,67 +67,62 @@ public:
 
     long long Data = 0;
 
-    template<typename T> requires std::convertible_to<T, long long>
+    template<typename T> requires IsBaseOrNumeric<T, Integer, long long>
     Integer operator+(const T& in) const noexcept;
-    template<typename T> requires std::convertible_to<T, long long>
+    template<typename T> requires IsBaseOrNumeric<T, Integer, long long>
     Integer operator-(const T& in) const noexcept;
-    template<typename T> requires std::convertible_to<T, long long>
+    template<typename T> requires IsBaseOrNumeric<T, Integer, long long>
     Integer operator*(const T& in) const noexcept;
-    template<typename T> requires std::convertible_to<T, long long>
+    template<typename T> requires IsBaseOrNumeric<T, Integer, long long>
     Integer operator/(const T& in) const noexcept;
-    template<typename T> requires std::convertible_to<T, long long>
+    template<typename T> requires IsBaseOrNumeric<T, Integer, long long>
     Integer operator%(const T& in) const noexcept;
 
-    template<typename T> requires std::convertible_to<T, long long>
-    Integer& operator+=(const T& in) const noexcept;
-    template<typename T> requires std::convertible_to<T, long long>
-    Integer& operator-=(const T& in) const noexcept;
-    template<typename T> requires std::convertible_to<T, long long>
-    Integer& operator*=(const T& in) const noexcept;
-    template<typename T> requires std::convertible_to<T, long long>
-    Integer& operator/=(const T& in) const noexcept;
-    template<typename T> requires std::convertible_to<T, long long>
-    Integer& operator%=(const T& in) const noexcept;
-
-    Scalar& operator+=(double in) const noexcept override;
-    Scalar& operator-=(double in) const noexcept override;
-    Scalar& operator*=(double in) const noexcept override;
-    Scalar& operator/=(double in) const noexcept override;
-
-    template<typename T> requires std::convertible_to<T, long long>
-    [[nodiscard]] Integer Pow(const T& in) const noexcept;
+    template<typename T> requires IsBaseOrNumeric<T, Integer, long long>
+    Integer operator+=(const T& in) const noexcept;
+    template<typename T> requires IsBaseOrNumeric<T, Integer, long long>
+    Integer operator-=(const T& in) const noexcept;
+    template<typename T> requires IsBaseOrNumeric<T, Integer, long long>
+    Integer operator*=(const T& in) const noexcept;
+    template<typename T> requires IsBaseOrNumeric<T, Integer, long long>
+    Integer operator/=(const T& in) const noexcept;
+    template<typename T> requires IsBaseOrNumeric<T, Integer, long long>
+    Integer operator%=(const T& in) const noexcept;
 
     constexpr explicit operator double() const noexcept override;
     constexpr explicit operator long long() const noexcept;
 };
+
 class Fraction : public Scalar
 {
 private:
     [[nodiscard]] std::string GetScaType() const noexcept override;
+
+    long long A = 0;
+    long long B = 0;
 public:
     Fraction(long long Num, long long Denom);
     explicit Fraction(std::istream& in);
 
     [[nodiscard]] VariableType* MoveIntoPointer() noexcept override;
 
-    long long A = 0;
-    long long B = 0;
+    std::pair<long long, long long> GetVals() const noexcept;
+    void SetVals(const std::pair<long long, long long>& New);
+    void SetVals(long long Num, long long Denom);
 
     Fraction operator+(const Fraction& in) const noexcept;
-    Fraction& operator+=(const Fraction& in) const noexcept;
-    Scalar& operator+=(double in) const noexcept override;
     Fraction operator-(const Fraction& in) const noexcept;
-    Fraction& operator-=(const Fraction& in) const noexcept;
-    Scalar& operator-=(double in) const noexcept override;
     Fraction operator*(const Fraction& in) const noexcept;
-    Fraction& operator*=(const Fraction& in) const noexcept;
-    Scalar& operator*=(double in) const noexcept override;
     Fraction operator/(const Fraction& in) const noexcept;
+
+    Fraction& operator+=(const Fraction& in) const noexcept;
+    Fraction& operator-=(const Fraction& in) const noexcept;
+    Fraction& operator*=(const Fraction& in) const noexcept;
     Fraction& operator/=(const Fraction& in) const noexcept;
-    Scalar& operator/=(double in) const noexcept override;
 
     constexpr explicit operator double() const noexcept override;
 };
+
 class RealNumber : public Scalar
 {
 private:
@@ -153,10 +135,14 @@ public:
 
     double Data;
 
-    Scalar& operator+=(double in) const noexcept override;
-    Scalar& operator-=(double in) const noexcept override;
-    Scalar& operator*=(double in) const noexcept override;
-    Scalar& operator/=(double in) const noexcept override;
+    template<typename T> requires IsScalarOrDouble<T>
+    RealNumber& operator+=(const T& in) const noexcept;
+    template<typename T> requires IsScalarOrDouble<T>
+    RealNumber& operator-=(const T& in) const noexcept;
+    template<typename T> requires IsScalarOrDouble<T>
+    RealNumber& operator*=(const T& in) const noexcept;
+    template<typename T> requires IsScalarOrDouble<T>
+    RealNumber& operator/=(const T& in) const noexcept;
 
     //Since Scalar has all operators that are valid for Real numbers, this class has to do nothing.
     constexpr explicit operator double() const noexcept override;

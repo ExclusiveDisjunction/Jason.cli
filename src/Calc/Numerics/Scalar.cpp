@@ -49,33 +49,56 @@ Scalar* Scalar::FromSterilize(std::istream& in)
     return "(Scalar:" + this->GetScaType() + ")";
 }
 
-RealNumber Scalar::operator+(double in) const noexcept
+template<typename T> requires IsScalarOrDouble<T>
+RealNumber Scalar::operator+(const T& in) const noexcept
 {
     RealNumber result(this->operator double());
     result += in;
     return result;
 }
-RealNumber Scalar::operator-(double in) const noexcept
+template<typename T> requires IsScalarOrDouble<T>
+RealNumber Scalar::operator-(const T& in) const noexcept
 {
     RealNumber result(this->operator double());
     result -= in;
     return result;
 }
-RealNumber Scalar::operator*(double in) const noexcept
+template<typename T> requires IsScalarOrDouble<T>
+RealNumber Scalar::operator*(const T& in) const noexcept
 {
     RealNumber result(this->operator double());
     result *= in;
     return result;
 }
-RealNumber Scalar::operator/(double in) const noexcept
+template<typename T> requires IsScalarOrDouble<T>
+RealNumber Scalar::operator/(const T& in) const noexcept
 {
     RealNumber result(this->operator double());
     result /= in;
     return result;
 }
-[[nodiscard]] RealNumber Scalar::Pow(double in) const noexcept
+
+Scalar& Scalar::operator+=(const Scalar& in) const noexcept
 {
-    return RealNumber(pow(this->operator double(), in));
+    return operator+=(static_cast<double>(in));
+}
+Scalar& Scalar::operator-=(const Scalar& in) const noexcept
+{
+    return operator-=(static_cast<double>(in));
+}
+Scalar& Scalar::operator*=(const Scalar& in) const noexcept
+{
+    return operator*=(static_cast<double>(in))
+}
+Scalar& Scalar::operator/=(const Scalar& in) const noexcept
+{
+    return operator/=(static_cast<double>(in));
+}
+
+template<typename T> requires IsScalarOrDouble<T>
+[[nodiscard]] RealNumber Scalar::Pow(const T& in) const noexcept
+{
+    return RealNumber( pow(static_cast<double>(*this), static_cast<double>(in)) );
 }
 
 bool Scalar::operator==(const VariableType& obj) const noexcept

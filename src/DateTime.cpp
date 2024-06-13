@@ -56,25 +56,16 @@ DateTime::DateTime(const std::string& sterilized)
 
 DateTime DateTime::Today()
 {
-	DateTime Return;
-
-	auto Point = system_clock::now();
-	auto Zone = std::chrono::get_tzdb().current_zone();
-	auto Zoned = zoned_time(Zone, Point);
-
-	Return._Dur = Zoned.get_local_time().time_since_epoch();
-	Return = Return.DayParts();
-
-	return Return;
+	return Now().DayParts();
 }
 DateTime DateTime::Now()
 {
 	DateTime Return;
 
-	auto Point = system_clock::now();
-	auto Zoned = zoned_time(current_zone(), Point);
+	auto Time = time(nullptr);
+	auto Conv = mktime(localtime(&Time));
 
-	Return._Dur = Zoned.get_local_time().time_since_epoch();
+	Return._Dur = std::chrono::seconds(Conv);
 
 	return Return;
 }

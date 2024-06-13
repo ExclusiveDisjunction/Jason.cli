@@ -6,7 +6,6 @@
 #define JASON_NUMERICS_H
 
 #include "Numerics/Scalar.h"
-#include "Numerics/Complex.h"
 #include "Numerics/MathVector.h"
 #include "Numerics/Matrix.h"
 
