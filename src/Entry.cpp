@@ -14,4 +14,6 @@ int main(int ArgsCount, char** Args)
     l << Info << "Starting up Jason" << EndLog;
 
     l << Debug << "Indexing previous variables" << EndLog;
+
+    return 0;
 }
