@@ -9,9 +9,6 @@
 #include "../OperatorException.h"
 
 class MATH_LIB Scalar;
-class MATH_LIB Integer;
-class MATH_LIB Fraction;
-class MATH_LIB RealNumber;
 
 template<typename T, typename Base, typename NumType>
 concept IsBaseOrNumeric = requires
@@ -24,10 +21,10 @@ concept IsScalarOrDouble = IsBaseOrNumeric<T, Scalar, double>;
 
 class Scalar : public VariableType
 {
-protected:
-    //Used to get the type of scalar from the derived types.
-    [[nodiscard]] virtual std::string GetScaType() const noexcept = 0;
 public:
+    template<typename T> requires IsScalarOrDouble<double>
+    explicit Scalar(const T& Item);
+
     [[nodiscard]] VariableTypes GetType() const noexcept override;
     [[nodiscard]] std::string GetTypeString() const noexcept override;
     void Sterilize(std::ostream& out) const noexcept override;
@@ -35,17 +32,29 @@ public:
     [[nodiscard]] static Scalar* FromSterilize(const std::string& in);
     [[nodiscard]] static Scalar* FromSterilize(std::istream& in);
 
-    template<typename T> requires IsScalarOrDouble<T>
-    RealNumber operator+(const T& in) const noexcept;
-    template<typename T> requires IsScalarOrDouble<T>
-    RealNumber operator-(const T& in) const noexcept;
-    template<typename T> requires IsScalarOrDouble<T>
-    RealNumber operator*(const T& in) const noexcept;
-    template<typename T> requires IsScalarOrDouble<T>
-    RealNumber operator/(const T& in) const noexcept;
+    template<typename T> requires std::convertible_to<T, double>
+    Scalar operator+(const T& in) const noexcept;
+    template<typename T> requires std::convertible_to<T, double>
+    Scalar operator-(const T& in) const noexcept;
+    template<typename T> requires std::convertible_to<T, double>
+    Scalar operator*(const T& in) const noexcept;
+    template<typename T> requires std::convertible_to<T, double>
+    Scalar operator/(const T& in) const noexcept;
+
+    template<typename T> requires std::convertible_to<T, double>
+    Scalar& operator+=(const T& in) noexcept;
+    template<typename T> requires std::convertible_to<T, double>
+    Scalar& operator-=(const T& in) noexcept;
+    template<typename T> requires std::convertible_to<T, double>
+    Scalar& operator*=(const T& in) noexcept;
+    template<typename T> requires std::convertible_to<T, double>
+    Scalar& operator/=(const T& in);
+
+    long long ToLongNoRound() const;
+    long long ToLongTrunc() const noexcept;
 
     template<typename T> requires IsScalarOrDouble<T>
-    [[nodiscard]] RealNumber Pow(const T& in) const noexcept;
+    [[nodiscard]] Scalar Pow(const T& in) const noexcept;
 
     bool operator==(const VariableType& obj) const noexcept override;
     bool operator!=(const VariableType& obj) const noexcept override;
