@@ -6,13 +6,23 @@
 
 #include <iomanip>
 
+template<typename T> requires IsScalarOrDouble<T>
+Scalar::Scalar(const T& Item) : Data(static_cast<double>(Item))
+{
+
+}
+Scalar::Scalar(std::istream& in)
+{
+
+}
+
 [[nodiscard]] VariableTypes Scalar::GetType() const noexcept
 {
     return VariableTypes::VT_Scalar;
 }
 void Scalar::Sterilize(std::ostream& out) const noexcept
 {
-    out << "SCA " << this->GetScaType() << ' ' << this->operator double();
+    out << "SCA " << this->operator double();
 }
 Scalar* Scalar::FromSterilize(const std::string& in)
 {
@@ -28,77 +38,115 @@ Scalar* Scalar::FromSterilize(const std::string& in)
 }
 Scalar* Scalar::FromSterilize(std::istream& in)
 {
-    std::string header, type;
-    auto pos = in.tellg();
-    in >> header >> type;
+    std::string header;
+    std::streampos pos = in.tellg();
+    in >> header;
     if (header != "SCA")
         throw std::logic_error("Cannot construct a scalar from this object.");
 
     in.seekg(pos);
-    if (type == "R") //RealNum
-        return new RealNumber(in);
-    else if (type == "Z") //Integer
-        return new Integer(in);
-    else if (type == "Q") //Fraction
-        return new Fraction(in);
-    else
-        throw std::logic_error("The scalar's type was not recognized.");
+    return new Scalar(in);
 }
 [[nodiscard]] std::string Scalar::GetTypeString() const noexcept
 {
-    return "(Scalar:" + this->GetScaType() + ")";
+    return "(Scalar)";
+}
+
+[[nodiscard]] VariableType* Scalar::MoveIntoPointer() noexcept
+{
+    auto* result = new Scalar(*this);
+    this->Data = 0;
+    return result;
 }
 
 template<typename T> requires IsScalarOrDouble<T>
-RealNumber Scalar::operator+(const T& in) const noexcept
+Scalar Scalar::operator+(const T& in) const noexcept
 {
-    RealNumber result(this->operator double());
+    Scalar result(*this);
     result += in;
     return result;
 }
 template<typename T> requires IsScalarOrDouble<T>
-RealNumber Scalar::operator-(const T& in) const noexcept
+Scalar Scalar::operator-(const T& in) const noexcept
 {
-    RealNumber result(this->operator double());
+    Scalar result(*this);
     result -= in;
     return result;
 }
 template<typename T> requires IsScalarOrDouble<T>
-RealNumber Scalar::operator*(const T& in) const noexcept
+Scalar Scalar::operator*(const T& in) const noexcept
 {
-    RealNumber result(this->operator double());
+    Scalar result(*this);
     result *= in;
     return result;
 }
 template<typename T> requires IsScalarOrDouble<T>
-RealNumber Scalar::operator/(const T& in) const noexcept
+Scalar Scalar::operator/(const T& in) const
 {
-    RealNumber result(this->operator double());
-    result /= in;
+    //FIX THIS LATER
+    auto conv = static_cast<double>(in);
+    if (conv == 0) //div by zero
+        throw OperatorException('/', this->GetTypeString(), this->GetTypeString(), "Divide by zero");
+
+    Scalar result(*this);
+    result /= conv;
     return result;
 }
 
-Scalar& Scalar::operator+=(const Scalar& in) const noexcept
+template<typename T> requires IsScalarOrDouble<T>
+Scalar& Scalar::operator+=(const T& in) noexcept
 {
-    return operator+=(static_cast<double>(in));
+    this->Data += static_cast<double>(in);
+    return *this;
 }
-Scalar& Scalar::operator-=(const Scalar& in) const noexcept
+template<typename T> requires IsScalarOrDouble<T>
+Scalar& Scalar::operator-=(const T& in) noexcept
 {
-    return operator-=(static_cast<double>(in));
+    this->Data += static_cast<double>(in);
+    return *this;
 }
-Scalar& Scalar::operator*=(const Scalar& in) const noexcept
+template<typename T> requires IsScalarOrDouble<T>
+Scalar& Scalar::operator*=(const T& in) noexcept
 {
-    return operator*=(static_cast<double>(in))
+    this->Data += static_cast<double>(in);
+    return *this;
 }
-Scalar& Scalar::operator/=(const Scalar& in) const noexcept
+template<typename T> requires IsScalarOrDouble<T>
+Scalar& Scalar::operator/=(const T& in)
 {
-    return operator/=(static_cast<double>(in));
+    auto conv = static_cast<double>(in);
+    if (conv == 0)
+        throw OperatorException('/', this->GetTypeString(), this->GetTypeString(), "Divide by zero");
+
+    this->Data /= conv;
+    return *this;
 }
 
 template<typename T> requires IsScalarOrDouble<T>
-[[nodiscard]] RealNumber Scalar::Pow(const T& in) const noexcept
+[[nodiscard]] Scalar Scalar::Pow(const T& in) const noexcept
 {
-    return RealNumber( pow(static_cast<double>(*this), static_cast<double>(in)) );
+    return Scalar { pow(static_cast<double>(*this), static_cast<double>(in)) };
+}
+
+[[nodiscard]] long long Scalar::ToLongNoRound() const
+{
+    long long Trunc = ToLongTrunc();
+    double diff = static_cast<double>(Trunc) - this->Data;
+    diff = diff < 0 ? -1 * diff : diff;
+
+    if (diff > 5E-6)
+        throw std::logic_error("The instance cannot be converted to a long long.");
+    else
+        return Trunc;
+}
+[[nodiscard]] long long Scalar::ToLongTrunc() const noexcept
+{
+    return static_cast<long long>(this->Data);
+}
+
+constexpr Scalar::operator double() const noexcept
+{
+    return this->Data;
 }
 
 bool Scalar::operator==(const VariableType& obj) const noexcept
@@ -119,6 +167,6 @@ bool Scalar::operator!=(const VariableType& obj) const noexcept
 
 std::ostream& Scalar::operator<<(std::ostream& out) const noexcept
 {
-    out << std::scientific << this->operator double();
+    out << std::scientific << this->Data;
     return out;
 }

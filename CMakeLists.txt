@@ -9,7 +9,6 @@ add_executable(Jason src/Entry.cpp
         src/IO/VarStorage.cpp
         src/IO/VarStorage.h
         src/Calc/VariableType.h
-        src/Calc/Numerics/Scalar.cpp
         src/Calc/Numerics/Scalar.h
         src/Calc/StdCalc.cpp
         src/Calc/Numerics/MathVector.cpp
