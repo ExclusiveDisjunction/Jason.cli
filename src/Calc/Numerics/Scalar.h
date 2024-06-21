@@ -5,19 +5,11 @@
 #ifndef JASON_SCALAR_H
 #define JASON_SCALAR_H
 
+#include "Constraints.h"
 #include "../VariableType.h"
 #include "../OperatorException.h"
 
 class MATH_LIB Scalar;
-
-template<typename T, typename Base, typename NumType>
-concept IsBaseOrNumeric = requires
-{
-    std::is_base_of<T, Base>::value || std::is_same<T, NumType>::value || std::is_nothrow_convertible<T, NumType>::value;
-};
-
-template<typename T>
-concept IsScalarOrDouble = IsBaseOrNumeric<T, Scalar, double>;
 
 class MATH_LIB Scalar : public VariableType
 {
@@ -66,9 +58,9 @@ public:
 
     std::ostream& operator<<(std::ostream& out) const noexcept override;
 
-    constexpr explicit operator double() const noexcept;
+    [[maybe_unused]] constexpr explicit operator double() const noexcept;
 };
 
-#include "Scalar.cpp"
+#include "ScalarT.tpp"
 
 #endif //JASON_SCALAR_H

@@ -36,6 +36,8 @@ MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept
         return new MathVector(in);
     else if (header == "MAT")
         return new Matrix(in);
+    else
+        return nullptr;
 }
 
 [[nodiscard]] VariableType *VariableType::ApplyOperation(const VariableType* One, const VariableType* Two, char oper)
@@ -63,7 +65,19 @@ MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept
                 case '/':
                     return (A / B).MoveIntoPointer();
                 case '%':
-                    return (A % B).MoveIntoPointer();
+                {
+                    try
+                    {
+                        long long ConvA = A.ToLongNoRound();
+                        long long ConvB = B.ToLongNoRound();
+
+                        return new Scalar(ConvA % ConvB);
+                    }
+                    catch (std::logic_error& e)
+                    {
+                        throw OperatorException('%', A.GetTypeString(), B.GetTypeString(), "Not integers. Cannot % on real numbers.");
+                    }
+                }
                 case '^':
                     return (A.Pow(B)).MoveIntoPointer();
                 default:
@@ -131,18 +145,18 @@ MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept
             case '+':
             {
                 if (t1 == VT_Matrix && t2 == VT_Vector)
-                    return (dynamic_cast<const Matrix&>(*One) + static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*Two))).MoveIntoPointer();
+                    return (dynamic_cast<const Matrix&>(*One) + Matrix(dynamic_cast<const MathVector&>(*Two))).MoveIntoPointer();
                 else if (t1 == VT_Vector && t2 == VT_Matrix)
-                    return (dynamic_cast<const Matrix&>(*Two) + static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*One))).MoveIntoPointer();
+                    return (dynamic_cast<const Matrix&>(*Two) + Matrix(dynamic_cast<const MathVector&>(*One))).MoveIntoPointer();
                 else
                     throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
             }
             case '-':
             {
                 if (t1 == VT_Matrix && t2 == VT_Vector)
-                    return (dynamic_cast<const Matrix&>(*One) - static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*Two))).MoveIntoPointer();
+                    return (dynamic_cast<const Matrix&>(*One) - Matrix(dynamic_cast<const MathVector&>(*Two))).MoveIntoPointer();
                 else if (t1 == VT_Vector && t2 == VT_Matrix)
-                    return (dynamic_cast<const Matrix&>(*Two) - static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*One))).MoveIntoPointer();
+                    return (dynamic_cast<const Matrix&>(*Two) - Matrix(dynamic_cast<const MathVector&>(*One))).MoveIntoPointer();
                 else
                     throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
             }
@@ -158,18 +172,29 @@ MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept
                     return (dynamic_cast<const Matrix&>(*One) * dynamic_cast<const Scalar&>(*Two)).MoveIntoPointer();
                 else if (t1 == VT_Matrix && t2 == VT_Vector)
                     return (dynamic_cast<const Matrix&>(*One) *
-                                      static_cast<const Matrix&>(dynamic_cast<const MathVector&>(*Two))).MoveIntoPointer();
-
-                throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
+                                      Matrix(dynamic_cast<const MathVector&>(*Two))).MoveIntoPointer();
+                else
+                    throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
             }
             case '^':
             {
                 if (t1 == VT_Matrix && t2 == VT_Scalar)
                 {
-                    const auto& A = dynamic_cast<const Matrix&>(*One);
-                    const auto& B = dynamic_cast<const Scalar&>(*Two);
+                    try
+                    {
+                        const auto& A = dynamic_cast<const Matrix&>(*One);
+                        const auto& B = dynamic_cast<const Scalar&>(*Two);
 
-                    return (A.Pow(B)).MoveIntoPointer();
+                        long long ConvB = B.ToLongNoRound();
+                        if (ConvB < 0)
+                            throw OperatorException('^', One->GetTypeString(), Two->GetTypeString(), "Cannot raise matrix to a negative power.");
+
+                        return A.Pow(static_cast<unsigned long long>(ConvB)).MoveIntoPointer();
+                    }
+                    catch (std::logic_error& e)
+                    {
+                        throw OperatorException('^', One->GetTypeString(), Two->GetTypeString(), "Cannot raise matrix to a non-integer power.");
+                    }
                 }
 
                 throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());

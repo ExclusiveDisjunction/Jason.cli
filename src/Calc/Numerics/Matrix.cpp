@@ -6,15 +6,26 @@
 #include <random>
 #include <utility>
 
-Matrix::Matrix()
+Matrix::Matrix() : m(0), n(0), Data(nullptr)
 {
     DeAllocate();
 }
-Matrix::Matrix(unsigned int Rows, unsigned int Columns, double Value) noexcept
+Matrix::Matrix(unsigned int Rows, unsigned int Columns, double Value) noexcept : Matrix()
 {
     Allocate(Rows, Columns, Value);
 }
-Matrix::Matrix(std::istream& in)
+[[maybe_unused]] Matrix::Matrix(const MathVector& in) : Matrix()
+{
+    if (!in.IsValid())
+        DeAllocate();
+    else
+    {
+        Allocate(in.Dim(), 1);
+        for (unsigned i = 0; i < this->m; i++)
+            this->Data[i][0] = in[i];
+    }
+}
+Matrix::Matrix(std::istream& in)  : Matrix()
 {
     std::string header;
     in >> header;
@@ -41,7 +52,7 @@ Matrix::Matrix(std::istream& in)
         }
     }
 }
-Matrix::Matrix(const Matrix& Other) noexcept
+Matrix::Matrix(const Matrix& Other) noexcept  : Matrix()
 {
     Allocate(Other.Rows(), Other.Columns());
 
@@ -49,7 +60,7 @@ Matrix::Matrix(const Matrix& Other) noexcept
         for (unsigned int j = 0; j < n; j++)
             Data[i][j] = Other.Data[i][j];
 }
-Matrix::Matrix(Matrix&& Other) noexcept
+Matrix::Matrix(Matrix&& Other) noexcept  : Matrix()
 {
     this->Data = std::exchange(Other.Data, nullptr);
     this->m = std::exchange(Other.m, 0);
@@ -612,7 +623,48 @@ Matrix Matrix::operator|(const Matrix& Two) const
 
     return Return;
 }
+
 Matrix Matrix::operator+(const Matrix& Two) const
+{
+    try
+    {
+        Matrix result(*this);
+        result += Two;
+        return result;
+    }
+    catch (OperatorException& e)
+    {
+        throw e;
+    }
+}
+Matrix Matrix::operator-(const Matrix& Two) const
+{
+    try
+    {
+        Matrix result(*this);
+        result -= Two;
+        return result;
+    }
+    catch (OperatorException& e)
+    {
+        throw e;
+    }
+}
+Matrix Matrix::operator*(const Matrix& Two) const
+{
+    try
+    {
+        Matrix result(*this);
+        result.operator*=(Two);
+        return result;
+    }
+    catch (OperatorException& e)
+    {
+        throw e;
+    }
+}
+
+Matrix& Matrix::operator+=(const Matrix& Two)
 {
     if (!this->IsValid() || !Two.IsValid())
         throw OperatorException('+', this->GetTypeString(), Two.GetTypeString(), "Empty Matrix");
@@ -620,14 +672,13 @@ Matrix Matrix::operator+(const Matrix& Two) const
     if (this->m != Two.m || this->n != Two.n)
         throw OperatorException('+', this->GetTypeString(), Two.GetTypeString(), "Dimension Mismatch");
 
-    Matrix result(*this);
-    for (unsigned i = 0; i < result.m && result.Data; i++)
-        for (unsigned j = 0; j < result.n; j++)
-            result.Data[i][j] += Two.Data[i][j];
+    for (unsigned i = 0; i < this->m && this->Data; i++)
+        for (unsigned j = 0; j < this->n; j++)
+            this->Data[i][j] += Two.Data[i][j];
 
-    return result;
+    return *this;
 }
-Matrix Matrix::operator-(const Matrix& Two) const
+Matrix& Matrix::operator-=(const Matrix& Two)
 {
     if (!this->IsValid() || !Two.IsValid())
         throw OperatorException('-', this->GetTypeString(), Two.GetTypeString(), "Empty Matrix");
@@ -635,14 +686,13 @@ Matrix Matrix::operator-(const Matrix& Two) const
     if (this->m != Two.m || this->n != Two.n)
         throw OperatorException('-', this->GetTypeString(), Two.GetTypeString(), "Dimension Mismatch");
 
-    Matrix result(*this);
-    for (unsigned i = 0; i < result.m && result.Data; i++)
-        for (unsigned j = 0; j < result.n; j++)
-            result.Data[i][j] -= Two.Data[i][j];
+    for (unsigned i = 0; i < this->m && this->Data; i++)
+        for (unsigned j = 0; j < this->n; j++)
+            this->Data[i][j] -= Two.Data[i][j];
 
-    return result;
+    return *this;
 }
-Matrix Matrix::operator*(const Matrix& Two) const
+Matrix& Matrix::operator*=(const Matrix& Two)
 {
     if (!this->IsValid() || !Two.IsValid())
         throw OperatorException('*', this->GetTypeString(), Two.GetTypeString(), "Empty Matrix");
@@ -651,123 +701,38 @@ Matrix Matrix::operator*(const Matrix& Two) const
         throw OperatorException('*', this->GetTypeString(), Two.GetTypeString(), "Dimension mismatch");
 
     unsigned r = this->m, c = Two.n;
-    Matrix result(r, c);
 
-    for (unsigned i = 0; i < r && result.Data; i++)
+    for (unsigned i = 0; i < r && this->Data; i++)
     {
         for (unsigned j = 0; j < c; j++)
         {
-            result.Data[i][j] = 0.00;
+            this->Data[i][j] = 0.00;
             for (unsigned k = 0; k < Two.m; k++)
-                result.Data[i][j] += this->Data[i][k] * Two.Data[k][j];
+                this->Data[i][j] += this->Data[i][k] * Two.Data[k][j];
         }
     }
 
-    return result;
+    return *this;
 }
-Matrix Matrix::operator*(const Scalar& Two) const
-{
-    try
-    {
-        return operator*(static_cast<double>(Two));
-    }
-    catch (OperatorException& e)
-    {
-        throw e;
-    }
-}
-Matrix Matrix::operator*(double Two) const
-{
-    if (!this->IsValid())
-        throw OperatorException('*', this->GetTypeString(), "(Scalar)", "Empty Matrix.");
 
-    Matrix result(this->m, this->n);
-    for (unsigned i = 0; i < result.m && result.Data; i++)
-        for (unsigned j = 0; j < result.n; j++)
-            result.Data[i][j] *= Two;
-
-    return result;
-}
-Matrix Matrix::operator/(const Scalar& Two) const
+[[nodiscard]] Matrix Matrix::Pow(unsigned long long Two) const
 {
-    try
-    {
-        return operator/(static_cast<double>(Two));
-    }
-    catch (OperatorException& e)
-    {
-        throw e;
-    }
-}
-Matrix Matrix::operator/(double Two) const
-{
-    if (!this->IsValid())
-        throw OperatorException('*', this->GetTypeString(), "(Scalar)", "Empty Matrix.");
-
-    Matrix result(this->m, this->n);
-    for (unsigned i = 0; i < result.m && result.Data; i++)
-        for (unsigned j = 0; j < result.n; j++)
-            result.Data[i][j] *= Two;
-
-    return result;
-}
-[[nodiscard]] Matrix Matrix::Pow(const Scalar& Two) const
-{
-    try
-    {
-        return this->Pow(static_cast<double>(Two));
-    }
-    catch (OperatorException& e)
-    {
-        throw e;
-    }
-    catch (std::exception& e)
-    {
-        throw e;
-    }
-}
-[[nodiscard]] Matrix Matrix::Pow(double Two) const
-{
-    /*
-     * for Pow to be valid on a matrix, the one of following criteria must be true.
-     *
-     * 1. Two == 0.00 -> IdentityMatrix of same dims
-     * 2. Two == 1.00 -> Return same matrix
-     * 3. Two > 1.00 && Two is integer && m == n -> Result of multiplication.
-     */
-
     if (!this->IsValid())
         throw OperatorException('^', this->GetTypeString(), "(Scalar)", "Empty Matrix");
 
-    if (Two == 0) //First case
+    if (Two == 0)
         return Matrix::Identity(this->m, this->n);
-    else if (Two == 1) //Second case
+    else if (Two == 1)
         return *this;
-    else if (Two > 1 && floor(Two) == Two && this->m == this->n) //Third case
+    else
     {
-        throw std::exception(); //Will finish in the Operators branch.
+        if (this->m != this->n)
+            throw OperatorException('^', this->GetTypeString(), "(Scalar)", "Non-square matrix does not support powers greater than 1");
+
+        Matrix result(*this);
+        for (unsigned long long i = 1; i < Two; i++)
+            result *= *this;
+
+        return result;
     }
-    else //Invalid
-        throw OperatorException('^', this->GetTypeString(), "(Scalar)",
-                                this->m != this->n ? "Matrix is not square" :
-                                Two < 0 ?                 "Operand is not a positive number" :
-                                                          "Operand is not a whole number");
-}
-
-bool operator==(const Matrix& One, const Matrix& Two)
-{
-    bool Return = true;
-    if (One.Columns() != Two.Columns() || One.Rows() != Two.Rows())
-        return false;
-
-    for (unsigned int i = 0; i < One.Rows(); i++)
-        for (unsigned int j = 0; j < One.Columns(); j++)
-            if (One[i][j] != Two[i][j])
-                return false;
-
-    return true;
-}
-bool operator!=(const Matrix& One, const Matrix& Two)
-{
-    return !(One == Two);
 }

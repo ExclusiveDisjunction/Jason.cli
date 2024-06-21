@@ -1,10 +1,16 @@
-#pragma once
+/*
+ * Created by exdisj
+ */
 
+#ifndef JASON_MATRIX_H
+#define JASON_MATRIX_H
+
+#include "Constraints.h"
 #include "../StdCalc.h"
 #include "../VariableType.h"
+#include "../OperatorException.h"
 #include <vector>
 
-class MATH_LIB Scalar;
 class MATH_LIB MathVector;
 
 /// <summary>
@@ -16,9 +22,9 @@ private:
     /// <summary>
     /// The data stored in the matrix.
     /// </summary>
-    double** Data = nullptr;
-    unsigned int m = 0;
-    unsigned int n = 0;
+    double** Data;
+    unsigned int m;
+    unsigned int n;
 
     void Allocate(unsigned int NewRows, unsigned int NewColumns, double Value = 0) noexcept;
     void DeAllocate() noexcept;
@@ -30,6 +36,7 @@ private:
 
 public:
     Matrix(unsigned int Rows, unsigned int Columns, double Value = 0) noexcept;
+    [[maybe_unused]] explicit Matrix(const MathVector& in);
     explicit Matrix(std::istream& in);
     Matrix(const Matrix& Other) noexcept;
     Matrix(Matrix&& Other) noexcept;
@@ -73,18 +80,30 @@ public:
     void ReducedRowEchelonForm();
 
     Matrix operator|(const Matrix& Two) const;
+
     Matrix operator+(const Matrix& Two) const;
-    Matrix& operator+=(const Matrix& Two) const;
     Matrix operator-(const Matrix& Two) const;
-    Matrix& operator-=(const Matrix& Two) const;
     Matrix operator*(const Matrix& Two) const;
-    Matrix& operator*=(const Matrix& Two) const;
-    Matrix operator*(double Two) const;
-    Matrix& operator+=(double Two) const;
-    Matrix operator/(double Two) const;
-    Matrix& operator/=(const Matrix& Two) const;
-    [[nodiscard]] Matrix Pow(long long Two) const;
+
+    template<typename T> requires IsScalarOrDouble<T>
+    Matrix operator*(const T& Two) const;
+    template<typename T> requires IsScalarOrDouble<T>
+    Matrix operator/(const T& Two) const;
+
+    Matrix& operator+=(const Matrix& Two);
+    Matrix& operator-=(const Matrix& Two);
+    Matrix& operator*=(const Matrix& Two);
+    template<typename T> requires IsScalarOrDouble<T>
+    Matrix& operator*=(const T& Two);
+    template<typename T> requires IsScalarOrDouble<T>
+    Matrix& operator/=(const T& Two);
+
+    [[nodiscard]] Matrix Pow(unsigned long long Two) const;
 
     bool operator==(const VariableType& two) const noexcept override;
     bool operator!=(const VariableType& two) const noexcept override;
 };
+
+#include "MatrixT.tpp"
+
+#endif //JASON_MATRIX_H

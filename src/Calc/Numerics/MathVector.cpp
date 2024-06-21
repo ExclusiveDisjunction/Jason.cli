@@ -1,14 +1,12 @@
 #include "MathVector.h"
-#include "Matrix.h"
-#include "Scalar.h"
 
 #include <utility>
 
-MathVector::MathVector()
+MathVector::MathVector() : d(0), Point(nullptr)
 {
     DeAllocate();
 }
-MathVector::MathVector(unsigned int Dim, double Val)
+[[maybe_unused]] MathVector::MathVector(unsigned int Dim, double Val) : MathVector()
 {
     if (Dim <= 0)
         throw std::logic_error("The dimension is equal to zero, and this is not allowed.");
@@ -18,7 +16,7 @@ MathVector::MathVector(unsigned int Dim, double Val)
     for (unsigned int i = 0; i < Dim; i++)
         Point[i] = Val;
 }
-MathVector::MathVector(std::istream &in)
+MathVector::MathVector(std::istream &in) : MathVector()
 {
     std::string header;
     in >> header;
@@ -45,7 +43,7 @@ MathVector::MathVector(std::istream &in)
         }
     }
 }
-MathVector::MathVector(const MathVector& Obj) noexcept
+MathVector::MathVector(const MathVector& Obj) noexcept : MathVector()
 {
     if (Obj.d == 0 || !Obj.Point)
     {
@@ -58,7 +56,7 @@ MathVector::MathVector(const MathVector& Obj) noexcept
     for (unsigned int i = 0; i < d; i++)
         Point[i] = Obj.Point[i];
 }
-MathVector::MathVector(MathVector&& Obj) noexcept
+[[maybe_unused]] MathVector::MathVector(MathVector&& Obj) noexcept : MathVector()
 {
     if (Obj.d == 0 || !Obj.Point)
     {
@@ -80,7 +78,7 @@ MathVector::~MathVector()
 
 MathVector& MathVector::operator=(const MathVector& Obj) noexcept
 {
-    if (*this == Obj)
+    if (this->Point == Obj.Point) //Self assignment
         return *this;
 
     if (Obj.d == 0 || !Obj.Point)
@@ -137,12 +135,12 @@ void MathVector::DeAllocate()
 
 MathVector MathVector::ErrorVector()
 {
-    return MathVector();
+    return {};
 }
 
 [[nodiscard]] VariableType* MathVector::MoveIntoPointer() noexcept
 {
-    MathVector* Return = new MathVector();
+    auto* Return = new MathVector();
     Return->Point = std::exchange(this->Point, nullptr);
     Return->d = std::exchange(this->d, 0);
 
@@ -165,7 +163,7 @@ double MathVector::operator[](unsigned int Index) const
 
     return Point[Index];
 }
-double MathVector::Magnitude() const
+[[maybe_unused]] [[nodiscard]] double MathVector::Magnitude() const
 {
     if (d == 1)
         return Point[0];
@@ -179,7 +177,7 @@ double MathVector::Magnitude() const
 
     return sqrt(Sum);
 }
-double MathVector::Angle() const
+[[maybe_unused]] [[nodiscard]] double MathVector::Angle() const
 {
     if (d <= 1)
         throw std::logic_error("Cannot measure the angle of a scalar or lower rank mathematical object.");
@@ -187,7 +185,7 @@ double MathVector::Angle() const
     return atan(Magnitude());
 }
 
-MathVector* MathVector::FromSterilized(const std::string &obj)
+[[maybe_unused]] [[nodiscard]] MathVector* MathVector::FromSterilized(const std::string &obj)
 {
     try
     {
@@ -204,6 +202,10 @@ void MathVector::Sterilize(std::ostream& out) const noexcept
     out << "VEC " << this->d;
     for (unsigned i = 0; i < this->d; i++)
         out << this->Point[i] << ' ';
+}
+[[nodiscard]] VariableTypes MathVector::GetType() const noexcept
+{
+    return VariableTypes::VT_Vector;
 }
 [[nodiscard]] std::string MathVector::GetTypeString() const noexcept
 {
@@ -227,7 +229,7 @@ std::ostream& MathVector::operator<<(std::ostream& out) const noexcept
     return out;
 }
 
-[[maybe_unused]] MathVector MathVector::CrossProduct(const MathVector& One, const MathVector& Two)
+[[maybe_unused]] [[nodiscard]] MathVector MathVector::CrossProduct(const MathVector& One, const MathVector& Two)
 {
     if (Two.Dim() != One.Dim())
         return ErrorVector();
@@ -249,7 +251,7 @@ std::ostream& MathVector::operator<<(std::ostream& out) const noexcept
 
     return MathVector((A[1] * B[2]) - (A[2] * B[1]), (A[2] * B[0]) - (A[0] * B[2]), (A[0] * B[1]) - (A[1] * B[0])); //Uses the cross product equation.
 }
-[[maybe_unused]] double MathVector::DotProduct(const MathVector& One, const MathVector& Two)
+[[maybe_unused]] [[nodiscard]] double MathVector::DotProduct(const MathVector& One, const MathVector& Two)
 {
     if (One.d != Two.d)
         throw std::logic_error("The dimensions of the two vectors do not match.");
@@ -263,61 +265,56 @@ std::ostream& MathVector::operator<<(std::ostream& out) const noexcept
 
 MathVector MathVector::operator+(const MathVector& in) const
 {
-    if (!this->IsValid() || !in.IsValid())
-        throw OperatorException('+', this->GetTypeString(), in.GetTypeString(), "Cannot combine error vectors.");
-
-    if (this->d != in.d)
-        throw OperatorException('+', this->GetTypeString(), in.GetTypeString(), "Dimension mismatch");
-
-    MathVector result(*this);
-    for (unsigned i = 0; i < result.d && result.Point; i++)
-        result.Point[i] += in.Point[i];
-
-    return result;
+    try
+    {
+        MathVector result(*this);
+        result += in;
+        return result;
+    }
+    catch (OperatorException& e)
+    {
+        throw e;
+    }
 }
 MathVector MathVector::operator-(const MathVector& in) const
 {
+    try
+    {
+        MathVector result(*this);
+        result -= in;
+        return result;
+    }
+    catch (OperatorException& e)
+    {
+        throw e;
+    }
+}
+
+MathVector& MathVector::operator+=(const MathVector& in)
+{
     if (!this->IsValid() || !in.IsValid())
         throw OperatorException('+', this->GetTypeString(), in.GetTypeString(), "Cannot combine error vectors.");
 
     if (this->d != in.d)
         throw OperatorException('+', this->GetTypeString(), in.GetTypeString(), "Dimension mismatch");
 
-    MathVector result(*this);
-    for (unsigned i = 0; i < result.d && result.Point; i++)
-        result.Point[i] -= in.Point[i];
+    for (unsigned i = 0; i < this->d && this->Point; i++)
+        this->Point[i] += in.Point[i];
 
-    return result;
+    return *this;
 }
-MathVector MathVector::operator*(const Scalar& in) const
+MathVector& MathVector::operator-=(const MathVector& in)
 {
-    return operator*(static_cast<double>(in));
-}
-MathVector MathVector::operator*(double in) const
-{
-    if (!this->Point || this->d == 0)
-        throw OperatorException('+', this->GetTypeString(), "(Scalar)", "Error vector detected");
+    if (!this->IsValid() || !in.IsValid())
+        throw OperatorException('+', this->GetTypeString(), in.GetTypeString(), "Cannot combine error vectors.");
 
-    MathVector result(*this);
-    for (unsigned i = 0; i < result.d && result.Point != nullptr; i++)
-        result.Point[i] *= in;
+    if (this->d != in.d)
+        throw OperatorException('+', this->GetTypeString(), in.GetTypeString(), "Dimension mismatch");
 
-    return result;
-}
-MathVector MathVector::operator/(const Scalar& in) const
-{
-    return operator/(static_cast<double>(in));
-}
-MathVector MathVector::operator/(double in) const
-{
-    if (!this->Point || this->d == 0)
-        throw OperatorException('+', this->GetTypeString(), "(Scalar)", "Error vector detected");
+    for (unsigned i = 0; i < this->d && this->Point; i++)
+        this->Point[i] -= in.Point[i];
 
-    MathVector result(*this);
-    for (unsigned i = 0; i < result.d && result.Point != nullptr; i++)
-        result.Point[i] /= in;
-
-    return result;
+    return *this;
 }
 
 bool MathVector::operator==(const VariableType& in) const noexcept
@@ -343,14 +340,4 @@ bool MathVector::operator==(const VariableType& in) const noexcept
 bool MathVector::operator!=(const VariableType& in) const noexcept
 {
     return !(*this == in);
-}
-
-MathVector::operator Matrix() const noexcept
-{
-    Matrix Return(d, 1);
-
-    for (unsigned int i = 0; i < d; i++)
-        Return[i][0] = Point[i];
-
-    return Return;
 }
