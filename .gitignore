@@ -1,5 +1,6 @@
 /target
-/.idea
+.idea
+rust-ver
 .DS_Store
 run_variables
 
