@@ -3,7 +3,9 @@ project(Jason)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(Jason src/Entry.cpp
+add_subdirectory(src)
+
+#[[add_executable(Jason src/Entry.cpp
 
         src/DateTime.cpp
         src/Log.cpp
@@ -15,7 +17,9 @@ add_executable(Jason src/Entry.cpp
         src/Calc/VariableType.cpp
 
         src/Calc/Function/FunctionBase.cpp
+        src/Calc/Function/Composite/Polynomial.cpp
         src/Calc/Function/Impls/GeneralFunctions.cpp
+        src/Calc/Function/Impls/VectorFunction.cpp
         src/Calc/Function/Impls/Core/AbsoluteValue.cpp
         src/Calc/Function/Impls/Core/Constant.cpp
         src/Calc/Function/Impls/Core/Exponent.cpp
@@ -28,4 +32,4 @@ add_executable(Jason src/Entry.cpp
         src/Calc/Numerics/Scalar.cpp
         src/Calc/Numerics/MathVector.cpp
         src/Calc/Numerics/Matrix.cpp
-)
+)]]

@@ -1,104 +1,49 @@
-#pragma once
+/*
+ * Created by exdisj
+ */
 
-#include "../Function.h"
-#include "CompositeFunction.h"
+#ifndef JASON_POLYNOMIAL_H
+#define JASON_POLYNOMIAL_H
+
+#include "../FunctionBase.h"
 
 #include <iostream>
 
-namespace Math::Function
+class MATH_LIB Polynomial : public FunctionBase
 {
-	class MATH_LIB Polynomial : public CompositeFunction
-	{
-	public:
-		enum PolynomialFlag
-		{
-			Negated = 1
-		};
+private:
+    void ChildRemoved(FunctionBase* Child) noexcept override {}
+public:
+    Polynomial(unsigned int InputDim, unsigned int OutputDim);
+    template<typename Iter> requires std::forward_iterator<Iter>
+    [[maybe_unused]] Polynomial(unsigned int InputDim, unsigned int OutputDim, Iter beg, Iter end);
+    template<std::convertible_to<FunctionBase*>... Args>
+    [[maybe_unused]] Polynomial(unsigned int InputDim, unsigned int OutputDim, Args... Objs);
+    Polynomial(const Polynomial& Obj) = delete;
+    Polynomial(Polynomial&& Obj) = delete;
 
-		Polynomial(unsigned int InputDim, unsigned int OutputDim);
-		Polynomial(FunctionBase* Obj);
-		template<std::convertible_to<FunctionBase*>... Args>
-		Polynomial(unsigned int InputDim, unsigned int OutputDim, Args... Objs) : CompositeFunction(InputDim, OutputDim)
-		{
-			std::vector<FunctionBase*> Func = std::vector<FunctionBase*>({ (static_cast<FunctionBase*>(Objs))... });
-			if (Func.size() == 2)
-				return;
+    Polynomial& operator=(const Polynomial& Obj) = delete;
+    Polynomial& operator=(Polynomial&& Obj) = delete;
 
-			for (FunctionBase* Item : Func)
-			{
-				if (Item->InputDim() == InputDim && Item->OutputDim() == OutputDim)
-				this->AddFunction(Item);
-			}
-		}
-		Polynomial(const Polynomial& Obj) = delete;
-		Polynomial(Polynomial&& Obj) = delete;
-		~Polynomial();
+    const FunctionBase& operator[](unsigned i) const;
+    FunctionBase& operator[](unsigned i);
 
-		Polynomial& operator=(const Polynomial& Obj) = delete;
-		Polynomial& operator=(Polynomial&& Obj) = delete;
+    [[maybe_unused]] void AddFunction(FunctionBase* Obj);
+    template<std::convertible_to<FunctionBase*>... Args>
+    [[maybe_unused]] void AddFunctions(Args... Obj);
+    [[maybe_unused]] void SubtractFunction(FunctionBase* Obj);
+    template<std::convertible_to<FunctionBase*>... Args>
+    [[maybe_unused]] void SubtractFunctions(Args... Obj);
 
-		void AddFunction(FunctionBase* Obj);
-		template<std::convertible_to<FunctionBase*>... Args>
-		void AddFunctions(Args... Obj)
-		{
-			std::vector<FunctionBase*> Conv = std::vector<FunctionBase*>({ ((FunctionBase*)Obj)... });
+    [[maybe_unused]] [[nodiscard]] bool RemoveFunction(FunctionBase* Obj, bool Delete);
 
-			FunctionRelationSeg* Current = Last;
-			for (FunctionBase* Item : Conv)
-			{
-				if (!Item || Item->InputDim() != InputDim() || Item->OutputDim() != OutputDim())
-					continue;
+    MathVector Evaluate(const MathVector& Obj, bool& Exists) const noexcept override;
 
-				FunctionRelationSeg* Seg = new FunctionRelationSeg(Obj, nullptr, nullptr);
-				AssignParent(Obj);
+    [[nodiscard]] bool EquatesTo(const FunctionBase* Obj) const noexcept override;
+    [[nodiscard]] bool ComparesTo(const FunctionBase* Obj) const noexcept override;
+    [[nodiscard]] FunctionBase* Clone() const noexcept override;
+};
 
-				if (Current)
-					Current->Next = Seg;
-				Seg->Previous = Current;
+#include "PolynomialT.tpp"
 
-				if (First == nullptr)
-					First = Seg;
-
-				Current = Seg;
-				Size++;
-			}
-
-			Last = Current;
-		}
-		void SubtractFunction(FunctionBase* Obj);
-		template<std::convertible_to<FunctionBase*>... Args>
-		void SubtractFunctions(Args... Obj)
-		{
-			std::vector<FunctionBase*> Conv = std::vector<FunctionBase*>({ ((FunctionBase*)Obj)... });
-
-			FunctionRelationSeg* Current = First;
-			for (FunctionBase* Item : Conv)
-			{
-				if (!Item || Item->InputDim() != InputDim() || Item->OutputDim() != OutputDim())
-					continue;
-
-				FunctionRelationSeg* Seg = new FunctionRelationSeg(Obj, nullptr, nullptr);
-				AssignParent(Obj);
-
-				Seg->Flag = PolynomialFlag::Negated;
-				if (Current)
-					Current->Next = Seg;
-				Seg->Previous = Current;
-
-				if (First == nullptr)
-					First = Seg;
-
-				Current = Seg;
-				Size++;
-			}
-			
-			Last = Current;
-		}
-
-		MathVector Evaluate(const MathVector& Obj, bool& Exists) const noexcept override;
-
-		bool EquatesTo(FunctionBase* const& Obj) const override;
-		bool ComparesTo(FunctionBase* const& Obj) const override;
-		FunctionBase* Clone() const noexcept override;
-	};
-}
+#endif //JASON_POLYNOMIAL_H

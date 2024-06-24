@@ -31,7 +31,7 @@ protected:
     /// \return True if the child was contained and deleted, false if not contained.
     [[nodiscard]] bool PopChild(FunctionBase* obj, bool Delete = true) noexcept;
 
-    [[nodiscard]] void PushAndBind(FunctionBase*& BindTo, FunctionBase* Child);
+    void PushAndBind(FunctionBase*& BindTo, FunctionBase* Child);
 
     [[nodiscard]] static FunctionBase& Get(FunctionBase* Binding);
 

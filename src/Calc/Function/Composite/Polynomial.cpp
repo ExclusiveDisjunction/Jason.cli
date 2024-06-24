@@ -1,128 +1,72 @@
 #include "Polynomial.h"
 
-namespace Math::Function
+Polynomial::Polynomial(unsigned int InputDim, unsigned int OutputDim) : FunctionBase(InputDim, OutputDim)
 {
-	Polynomial::Polynomial(unsigned int InputDim, unsigned int OutputDim) : CompositeFunction(InputDim, OutputDim)
-	{
 
-	}
-	Polynomial::Polynomial(FunctionBase* Obj) : CompositeFunction(!Obj ? 0 : Obj->InputDim(), !Obj ? 0 : Obj->OutputDim())
-	{
-		if (!Obj)
-			throw std::exception("The provided function cannot be nullptr.");
+}
 
-		AddFunction(Obj);
-	}
-	Polynomial::~Polynomial()
-	{
+void Polynomial::AddFunction(FunctionBase* Obj)
+{
+    if (!this->PushChild(Obj))
+        throw std::logic_error("Could not add function to the polynomial.");
+}
+void Polynomial::SubtractFunction(FunctionBase* Obj)
+{
+    AddFunction(Obj);
+    Obj->operator-();
+}
 
-	}
+[[maybe_unused]] [[nodiscard]] bool Polynomial::RemoveFunction(FunctionBase* Obj, bool Delete)
+{
+    return PopChild(Obj, Delete);
+}
 
-	void Polynomial::AddFunction(FunctionBase* Obj)
-	{
-		if (!Obj || Obj->InputDim() != InputDim())
-			return;
+const FunctionBase& Polynomial::operator[](unsigned i) const
+{
+    //TODO: REQUIRES ITERATORS
+}
+FunctionBase& Polynomial::operator[](unsigned i)
+{
+    //TODO: REQUIRES ITERATORS
+}
 
-		FunctionRelationSeg* Seg = new FunctionRelationSeg(Obj, nullptr, nullptr);
-		AssignParent(Obj);
-		PushChild(Seg);
-	}
-	void Polynomial::SubtractFunction(FunctionBase* Obj)
-	{
-		if (!Obj || Obj->InputDim() != InputDim() || Obj->OutputDim() != OutputDim())
-			return;
+MathVector Polynomial::Evaluate(const MathVector& Obj, bool& Exists) const noexcept
+{
+    Exists = true;
+    if (this->ChildCount() == 0)
+    {
+        Exists = false;
+        return MathVector::ErrorVector();
+    }
 
-		FunctionRelationSeg* Seg = new FunctionRelationSeg(Obj, nullptr, nullptr);
-		AssignParent(Obj);
-		Seg->Flag = PolynomialFlag::Negated;
+    MathVector Output(OutputDim);
 
-		PushChild(Seg);
-	}
+    //TODO: REQUIRES ITERATORS
 
-	MathVector Polynomial::Evaluate(const MathVector& Obj, bool& Exists) const
-	{
-		Exists = true;
-		if (this->Size == 0)
-		{
-			Exists = false;
-			return MathVector::ErrorVector();
-		}
+    return Output;
+}
 
-		MathVector Output(OutputDim());
-		for (FunctionRelationSeg* Current = First; Current != nullptr; Current = Current->Next)
-		{
-			if (!Current->Target || Current->Target->OutputDim() != OutputDim())
-			{
-				Exists = false;
-				return MathVector::ErrorVector();
-			}
+bool Polynomial::ComparesTo(const FunctionBase* Obj) const noexcept
+{
+    const auto* conv = dynamic_cast<const Polynomial*>(Obj);
+    return conv == this || (conv && conv->InputDim <= this->InputDim && conv->OutputDim <= this->OutputDim);
+}
+bool Polynomial::EquatesTo(const FunctionBase* Obj) const noexcept
+{
+    const auto* conv = dynamic_cast<const Polynomial*>(Obj);
+    if (!conv || conv->InputDim != this->InputDim || conv->OutputDim != this->OutputDim || conv->A != this->A)
+        return false;
 
-			MathVector Result = Current->Target->Evaluate(Obj, Exists);
-			if (!Exists)
-				return MathVector::ErrorVector();
+    //TODO: REQUIRES ITERATORS
 
-			Result *= static_cast<double>(Current->Flag & PolynomialFlag::Negated ? -1 : 1);
-			Output += Result;
-		}
+    return false;
+}
+FunctionBase* Polynomial::Clone() const noexcept
+{
+    if (this->ChildCount() == 0)
+        return new Polynomial(this->InputDim, this->OutputDim);
 
-		return Output;
-	}
+    //TODO: REQUIRES ITERATORS
 
-	bool Polynomial::EquatesTo(FunctionBase* const& Obj) const
-	{
-		Polynomial* Conv = dynamic_cast<Polynomial*>(Obj);
-		if (!Conv)
-			return false;
-
-		if (Conv->InputDim() != InputDim() || Conv->Size != Size)
-			return false;
-
-		bool Return = true;
-		for (FunctionRelationSeg* CurrentH = First, *CurrentO = Conv->First; CurrentH != nullptr && CurrentO != nullptr; CurrentH = CurrentH->Next, CurrentO = CurrentO->Next)
-			Return &= CurrentH->Target && CurrentH->Target->EquatesTo(CurrentO->Target) && CurrentH->Flag == CurrentO->Flag;
-
-		return Return;
-	}
-	bool Polynomial::ComparesTo(FunctionBase* const& Obj) const
-	{
-		Polynomial* Conv = dynamic_cast<Polynomial*>(Obj);
-		if (!Conv)
-			return false;
-
-		if (Conv->InputDim() != InputDim() || Conv->Size != Size)
-			return false;
-
-		bool Return = true;
-		for (FunctionRelationSeg* CurrentH = First, *CurrentO = Conv->First; CurrentH != nullptr && CurrentO != nullptr; CurrentH = CurrentH->Next, CurrentO = CurrentO->Next)
-			Return &= CurrentH->Target && CurrentH->Target->ComparesTo(CurrentO->Target) && CurrentH->Flag == CurrentO->Flag;
-
-		return Return;
-	}
-
-	FunctionBase* Polynomial::Clone() const
-	{
-		if (Size == 0)
-			return new Polynomial(InputDim(), OutputDim());
-
-		Polynomial* Return = new Polynomial(InputDim(), OutputDim());
-		FunctionRelationSeg* Current, * Temp = nullptr;
-		for (Current = this->First; Current != nullptr; Current = Current->Next)
-		{
-			FunctionRelationSeg* Other = new FunctionRelationSeg(Current->Target, nullptr, nullptr);
-			Other->Flag = Current->Flag;
-
-			if (Temp)
-				Temp->Next = Other;
-			Other->Previous = Temp;
-
-			if (Return->First != nullptr)
-				Return->First = Other;
-
-			Temp = Other;
-			Return->Size++;
-		}
-
-		Return->Last = Temp;
-		return Return;
-	}
+    return nullptr;
 }
