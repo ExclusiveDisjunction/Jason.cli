@@ -22,30 +22,16 @@ MathVector::MathVector(Args... Value) noexcept : MathVector()
 template<typename T> requires IsScalarOrDouble<T>
 MathVector MathVector::operator*(const T& in) const
 {
-    try
-    {
-        MathVector result(*this);
-        result *= in;
-        return result;
-    }
-    catch (OperatorException& e)
-    {
-        throw e;
-    }
+    MathVector result(*this);
+    result.operator*=<T>(in);
+    return result;
 }
 template<typename T> requires IsScalarOrDouble<T>
 MathVector MathVector::operator/(const T& in) const
 {
-    try
-    {
-        MathVector result(*this);
-        result /= in;
-        return result;
-    }
-    catch (OperatorException& e)
-    {
-        throw e;
-    }
+    MathVector result(*this);
+    result.operator/=<T>(in);
+    return result;
 }
 
 template<typename T> requires IsScalarOrDouble<T>

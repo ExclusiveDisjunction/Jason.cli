@@ -187,15 +187,8 @@ double MathVector::operator[](unsigned int Index) const
 
 [[maybe_unused]] [[nodiscard]] MathVector* MathVector::FromSterilized(const std::string &obj)
 {
-    try
-    {
-        std::stringstream ss(obj);
-        return new MathVector(ss);
-    }
-    catch (std::logic_error &e)
-    {
-        throw e;
-    }
+    std::stringstream ss(obj);
+    return new MathVector(ss);
 }
 void MathVector::Sterilize(std::ostream& out) const noexcept
 {
@@ -232,7 +225,7 @@ std::ostream& MathVector::operator<<(std::ostream& out) const noexcept
 [[maybe_unused]] [[nodiscard]] MathVector MathVector::CrossProduct(const MathVector& One, const MathVector& Two)
 {
     if (Two.Dim() != One.Dim())
-        return ErrorVector();
+        throw OperatorException('X', One.GetTypeString(), Two.GetTypeString(), "Cannot cross vectors with different dimensions.");
 
     MathVector A, B;
     switch (One.Dim())
@@ -246,7 +239,7 @@ std::ostream& MathVector::operator<<(std::ostream& out) const noexcept
         B = Two;
         break;
     default:
-        return ErrorVector();
+        throw OperatorException('X', One.GetTypeString(), Two.GetTypeString(), "Cannot cross with these dimensions.");
     }
 
     return MathVector((A[1] * B[2]) - (A[2] * B[1]), (A[2] * B[0]) - (A[0] * B[2]), (A[0] * B[1]) - (A[1] * B[0])); //Uses the cross product equation.
@@ -265,29 +258,15 @@ std::ostream& MathVector::operator<<(std::ostream& out) const noexcept
 
 MathVector MathVector::operator+(const MathVector& in) const
 {
-    try
-    {
-        MathVector result(*this);
-        result += in;
-        return result;
-    }
-    catch (OperatorException& e)
-    {
-        throw e;
-    }
+    MathVector result(*this);
+    result += in;
+    return result;
 }
 MathVector MathVector::operator-(const MathVector& in) const
 {
-    try
-    {
-        MathVector result(*this);
-        result -= in;
-        return result;
-    }
-    catch (OperatorException& e)
-    {
-        throw e;
-    }
+    MathVector result(*this);
+    result -= in;
+    return result;
 }
 
 MathVector& MathVector::operator+=(const MathVector& in)

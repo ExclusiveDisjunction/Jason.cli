@@ -28,9 +28,7 @@ MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept
     in >> header;
     in.seekg(std::ios::beg);
 
-    if (header == "NAN")
-        return nullptr;
-    else if (header == "SCA")
+    if (header == "SCA")
         return new Scalar(in);
     else if (header == "VEC")
         return new MathVector(in);
@@ -207,9 +205,5 @@ MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept
     catch (std::bad_cast& e)
     {
         throw std::logic_error("A bad cast exception was thrown, meaning that a type lied about its GetType.");
-    }
-    catch (OperatorException& e)
-    {
-        throw e;
     }
 }
