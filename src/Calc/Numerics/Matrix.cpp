@@ -626,42 +626,21 @@ Matrix Matrix::operator|(const Matrix& Two) const
 
 Matrix Matrix::operator+(const Matrix& Two) const
 {
-    try
-    {
-        Matrix result(*this);
-        result += Two;
-        return result;
-    }
-    catch (OperatorException& e)
-    {
-        throw e;
-    }
+    Matrix result(*this);
+    result += Two;
+    return result;
 }
 Matrix Matrix::operator-(const Matrix& Two) const
 {
-    try
-    {
-        Matrix result(*this);
-        result -= Two;
-        return result;
-    }
-    catch (OperatorException& e)
-    {
-        throw e;
-    }
+    Matrix result(*this);
+    result -= Two;
+    return result;
 }
 Matrix Matrix::operator*(const Matrix& Two) const
 {
-    try
-    {
-        Matrix result(*this);
-        result.operator*=(Two);
-        return result;
-    }
-    catch (OperatorException& e)
-    {
-        throw e;
-    }
+    Matrix result(*this);
+    result.operator*=(Two);
+    return result;
 }
 
 Matrix& Matrix::operator+=(const Matrix& Two)

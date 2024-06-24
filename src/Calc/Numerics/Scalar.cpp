@@ -21,15 +21,8 @@ void Scalar::Sterilize(std::ostream& out) const noexcept
 }
 Scalar* Scalar::FromSterilize(const std::string& in)
 {
-    try
-    {
-        std::stringstream ss(in);
-        return FromSterilize(ss);
-    }
-    catch (std::logic_error& e)
-    {
-        throw e;
-    }
+    std::stringstream ss(in);
+    return FromSterilize(ss);
 }
 Scalar* Scalar::FromSterilize(std::istream& in)
 {
