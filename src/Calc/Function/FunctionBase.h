@@ -12,13 +12,13 @@ private:
     FunctionBase* Next = nullptr, *Previous = nullptr;
     unsigned Children = 0;
 
-    [[nodiscard]] bool PushChild(FunctionBase* New) noexcept;
-    [[nodiscard]] bool PopChild(FunctionBase* obj) noexcept;
-
 protected:
     FunctionBase(unsigned int InputDim, unsigned int OutputDim);
 
-    virtual void ChildRemoved(FunctionBase* Child) = 0;
+    virtual void ChildRemoved(FunctionBase* Child) noexcept = 0;
+
+    [[nodiscard]] bool PushChild(FunctionBase* New) noexcept;
+    [[nodiscard]] bool PopChild(FunctionBase* obj, bool Delete = true) noexcept;
 
 public:
     FunctionBase(const FunctionBase& Obj) = delete;
@@ -32,22 +32,15 @@ public:
     const unsigned InputDim;
     const unsigned OutputDim;
 
-    [[nodiscard]] virtual bool CanHaveChildren() const noexcept = 0;
-    [[nodiscard]] virtual unsigned AllowedChildCount() const noexcept = 0;
-    [[nodiscard]] virtual bool AllowsChildAppend() const noexcept = 0;
     [[nodiscard]] bool RemoveParent() noexcept;
-
-    [[nodiscard]] bool AddChild(FunctionBase* Child) noexcept;
-    [[nodiscard]] bool RemoveChild(FunctionBase* Child, bool Delete = true) noexcept;
     void ClearChildren() noexcept;
-    [[nodiscard]] unsigned ChildCount() const noexcept { return Children; }
-    [[nodiscard]] bool IsFull() const { return Children >= AllowedChildCount(); }
+    [[nodiscard]] [[maybe_unused]] unsigned ChildCount() const noexcept { return Children; }
 
-    [[nodiscard]] virtual MathVector Evaluate(const MathVector& X, bool& Exists) const = 0;
+    [[nodiscard]] virtual MathVector Evaluate(const MathVector& X, bool& Exists) const noexcept = 0;
 
-    [[nodiscard]] virtual bool ComparesTo(const FunctionBase* Obj) const;
-    [[nodiscard]] virtual bool EquatesTo(const FunctionBase* Obj) const;
-    [[nodiscard]] [[maybe_unused]] virtual FunctionBase* Clone() const = 0;
+    [[nodiscard]] virtual bool ComparesTo(const FunctionBase* Obj) const noexcept = 0;
+    [[nodiscard]] virtual bool EquatesTo(const FunctionBase* Obj) const noexcept = 0;
+    [[nodiscard]] [[maybe_unused]] virtual FunctionBase* Clone() const noexcept = 0;
 
     virtual FunctionBase& operator-();
 };

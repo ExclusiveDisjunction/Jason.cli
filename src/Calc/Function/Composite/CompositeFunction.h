@@ -9,7 +9,7 @@ namespace Math::Function
 	class MATH_LIB CompositeFunction : public FunctionBase
 	{
 	private:
-		void ChildRemoved(FunctionBase* Child) override {}
+		void ChildRemoved(FunctionBase* Child) noexcept override {}
 
 	protected:
 		void AddChild(FunctionBase* Child) override

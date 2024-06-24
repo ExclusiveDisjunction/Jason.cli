@@ -17,7 +17,7 @@ namespace Math::Function
 		unsigned int Columns;
 
 	protected:
-		void ChildRemoved(FunctionBase* Child) override;
+		void ChildRemoved(FunctionBase* Child) noexcept override;
 
 	public:
 		MatrixFunction(unsigned int Rows, unsigned int Columns);
@@ -33,7 +33,7 @@ namespace Math::Function
 		unsigned int AllowedChildCount() const override { return 0; }
 		bool AllowsChildAppend() const override { return false; }
 
-		MathVector Evaluate(const MathVector& In, bool& Exists) const override;
+		MathVector Evaluate(const MathVector& In, bool& Exists) const noexcept override;
 
 		void ToMatrix(Matrix& Dest) const;
 		void FromMatrix(const Matrix& Obj);

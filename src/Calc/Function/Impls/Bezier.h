@@ -15,12 +15,12 @@ namespace Math::Function
 		int i = 0;
 		int n = 0;
 
-		MathVector Evaluate(const MathVector& T, bool& Exists) const override;
+		MathVector Evaluate(const MathVector& T, bool& Exists) const noexcept override;
 
 		bool AllowsChildAppend() const override { return false; }
 		unsigned int AllowedChildCount() const override { return 0; }
-		void ChildRemoved(FunctionBase* Child) override { }
-		FunctionBase* Clone() const override;
+		void ChildRemoved(FunctionBase* Child) noexcept override { }
+		FunctionBase* Clone() const noexcept override;
 	};
 
 	class Bezier : public FunctionBase
@@ -33,6 +33,6 @@ namespace Math::Function
 		Bezier(unsigned int Dim, unsigned int Rank, MathVector Obj[]);
 		virtual ~Bezier();
 
-		MathVector Evaluate(const MathVector& T, bool& Exists) const override;
+		MathVector Evaluate(const MathVector& T, bool& Exists) const noexcept override;
 	};
 }

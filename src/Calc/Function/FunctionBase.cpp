@@ -8,6 +8,7 @@ FunctionBase::FunctionBase(unsigned int Input, unsigned int Output) : InputDim(I
 FunctionBase::~FunctionBase()
 {
     ClearChildren();
+    (void)RemoveParent();
 }
 
 [[nodiscard]] bool FunctionBase::RemoveParent() noexcept
@@ -15,7 +16,7 @@ FunctionBase::~FunctionBase()
     if (!Parent)
         return true;
 
-    if (!Parent->RemoveChild(this, false))
+    if (!Parent->PopChild(this, false))
         return false;
 
     this->Parent = nullptr;
@@ -53,14 +54,7 @@ FunctionBase::~FunctionBase()
     Children++;
     return true;
 }
-[[nodiscard]] bool FunctionBase::AddChild(FunctionBase* Child) noexcept
-{
-    if (!Child || !AllowsChildAppend() || IsFull() || Child->Parent == this)
-        return false;
-
-    return Child->RemoveParent() && PushChild(Child);
-}
-[[nodiscard]] bool FunctionBase::PopChild(FunctionBase* obj) noexcept
+[[nodiscard]] bool FunctionBase::PopChild(FunctionBase* obj, bool Delete) noexcept
 {
     if (!obj || obj->Parent != this) //Null or not contained
         return false;
@@ -92,20 +86,11 @@ FunctionBase::~FunctionBase()
 
     Children--;
     obj->Next = obj->Previous = obj->Parent = nullptr;
-    return true;
-}
-[[nodiscard]] bool FunctionBase::RemoveChild(FunctionBase* Child, bool Delete) noexcept
-{
-    if (!Child || Child->Parent != this)
-        return false;
-
-    if (!PopChild(Child))
-        return false;
-
-    Child->Parent = nullptr;
-
     if (Delete)
-        delete Child;
+    {
+        delete obj;
+        obj = nullptr;
+    }
     return true;
 }
 void FunctionBase::ClearChildren() noexcept
@@ -127,47 +112,6 @@ void FunctionBase::ClearChildren() noexcept
 
     First = Last = nullptr;
     Children = 0;
-}
-
-[[nodiscard]] bool FunctionBase::ComparesTo(const FunctionBase* Obj) const
-{
-    if (!Obj)
-        return false;
-
-    if (this->InputDim != Obj->InputDim || this->OutputDim != Obj->OutputDim || this->AllowedChildCount() != Obj->AllowedChildCount() || this->A != A)
-        return false;
-
-    if (AllowedChildCount() != 0)
-    {
-        const auto* tC = this->First, *oC = Obj->First;
-        for (; tC && oC; tC = tC->Next, oC = oC->Next)
-        {
-            if (!tC->EquatesTo(oC))
-                return false;
-        }
-    }
-
-    return true;
-}
-[[nodiscard]] bool FunctionBase::EquatesTo(const FunctionBase* Obj) const
-{
-    if (!Obj)
-        return false;
-
-    if (this->InputDim != Obj->InputDim || this->OutputDim != Obj->OutputDim || this->AllowedChildCount() != Obj->AllowedChildCount() || this->A != A)
-        return false;
-
-    if (AllowedChildCount() != 0)
-    {
-        const auto* tC = this->First, *oC = Obj->First;
-        for (; tC && oC; tC = tC->Next, oC = oC->Next)
-        {
-            if (!tC->ComparesTo(oC))
-                return false;
-        }
-    }
-
-    return true;
 }
 
 FunctionBase& FunctionBase::operator-()

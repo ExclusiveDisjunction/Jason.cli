@@ -12,7 +12,7 @@ namespace Math::Function
 
 		FunctionBase** Func;
 	protected:
-		void ChildRemoved(FunctionBase* Item) override;
+		void ChildRemoved(FunctionBase* Item) noexcept override;
 
 		void AddChild(FunctionBase* Child) override {}
 		void RemoveChild(FunctionBase* Child, bool Delete = true) override {}
@@ -48,14 +48,14 @@ namespace Math::Function
 		void AssignFunction(unsigned int Index, FunctionBase* Func);
 		FunctionBase* operator[](unsigned int Index) const;
 
-		virtual MathVector Evaluate(const MathVector& In, bool& Exists) const override;
+		virtual MathVector Evaluate(const MathVector& In, bool& Exists) const noexcept override;
 
 		unsigned int AllowedChildCount() const override { return _Output; }
 		bool AllowsChildAppend() const override { return false; }
 
 		bool ComparesTo(FunctionBase* const& Obj) const override;
 		bool EquatesTo(FunctionBase* const& Obj) const override;
-		FunctionBase* Clone() const override;
+		FunctionBase* Clone() const noexcept override;
 
 		bool operator==(const VectorFunction& Obj)
 		{

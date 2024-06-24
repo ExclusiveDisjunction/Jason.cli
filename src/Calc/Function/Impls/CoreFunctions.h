@@ -1,265 +1,251 @@
-#pragma once
+
+#ifndef JASON_COREFUNCTIONS_H
+#define JASON_COREFUNCTIONS_H
 
 #include "../FunctionBase.h"
 
-namespace Math::Function
+class MATH_LIB Constant : public FunctionBase
 {
-	class MATH_LIB Constant : public FunctionBase
-	{
-	private:
-		MathVector _Data;
+private:
+    void ChildRemoved(FunctionBase* Child) noexcept override;
 
-		void ChildRemoved(FunctionBase* Child) override;
-	public:
-		Constant(unsigned int InputDim, double A = 1.0);
-		Constant(unsigned int InputDim, MathVector Data);
-		template<std::convertible_to<double>... Args>
-		Constant(unsigned int InputDim, unsigned int OutputDim, Args... Val) : FunctionBase(InputDim, OutputDim)
-		{
-			std::vector<double> Vals = std::vector<double>({ (static_cast<double>(Val))... });
-			if (Vals.size() != OutputDim)
-				return;
+public:
+    explicit Constant(unsigned int InputDim, double A = 1.0);
+    Constant(const Constant& Obj) = delete;
+    Constant(Constant&& Obj) = delete;
 
-			for (unsigned int i = 0; i < OutputDim; i++)
-				_Data[i] = Vals[i];
-		}
-		Constant(const Constant& Obj) = delete;
-		Constant(Constant&& Obj) = delete;
-		
-		Constant& operator=(const Constant& Obj) = delete;
-		Constant& operator=(Constant&& Obj) = delete;
+    Constant& operator=(const Constant& Obj) = delete;
+    Constant& operator=(Constant&& Obj) = delete;
 
-		MathVector Evaluate(const MathVector& X, bool& Exists) const override;
+    MathVector Evaluate(const MathVector& X, bool& Exists) const noexcept override;
 
-		bool ComparesTo(FunctionBase* const& Obj) const override;
-		bool EquatesTo(FunctionBase* const& Obj) const override;
-		FunctionBase* Clone() const override;
+    bool ComparesTo(const FunctionBase* Obj) const noexcept override;
+    bool EquatesTo(const FunctionBase* Obj) const noexcept override;
+    [[nodiscard]] [[maybe_unused]] FunctionBase* Clone() const noexcept override;
+};
 
-		unsigned int AllowedChildCount() const override { return 0; }
-		bool AllowsChildAppend() const override { return false; }
-	};
+/*
+* NOTE:
+*
+* There are 3 variants of monomials. THIS IS INTENTIONAL.
+*
+* The different types are to save on memory and complexity depending on the situation. It is situational as to when to use each different kind of monomial.
+*/
 
-	/*
-	* NOTE:
-	*
-	* There are 3 variants of monomials. THIS IS INTENTIONAL.
-	*
-	* The different types are to save on memory and complexity depending on the situation. It is situational as to when to use each different kind of monomial.
-	*/
+/// <summary>
+/// Represents a single monomial term with an A value, and N power, as well as a variable.
+/// </summary>
+class MATH_LIB Monomial : public FunctionBase
+{
+private:
+    void ChildRemoved(FunctionBase* Obj) noexcept override { }
 
-	/// <summary>
-	/// Represents a single monomial term with an A value, and N power, as well as a variable.
-	/// </summary>
-	class MATH_LIB Monomial : public FunctionBase
-	{
-	private:
-		void ChildRemoved(FunctionBase* Obj) override;
+public:
+    Monomial(unsigned int InputDim, unsigned int Var, double A = 1.0, double N = 1.0);
+    Monomial(const Monomial& Obj) = delete;
+    Monomial(Monomial&& Obj) = delete;
 
-	public:
-		Monomial(unsigned int InputDim, unsigned int Var, double A = 1.0, double N = 1.0);
-		Monomial(const Monomial& Obj) = delete;
-		Monomial(Monomial&& Obj) = delete;
+    Monomial& operator=(const Monomial& Obj) = delete;
+    Monomial& operator=(Monomial&& Obj) = delete;
 
-		Monomial& operator=(const Monomial& Obj) = delete;
-		Monomial& operator=(Monomial&& Obj) = delete;
+    double N = 1.0;
+    unsigned int VarLetter = 0;
 
-		double N = 1.0;
-		unsigned int VarLetter = 0;
+    MathVector Evaluate(const MathVector& X, bool& Exists) const noexcept override;
 
-		MathVector Evaluate(const MathVector& X, bool& Exists) const override;
+    [[nodiscard]] bool ComparesTo(const FunctionBase* Obj) const noexcept override;
+    [[nodiscard]] bool EquatesTo(const FunctionBase* Obj) const noexcept override;
+    [[nodiscard]] FunctionBase* Clone() const noexcept override;
+};
 
-		FunctionBase* Clone() const override;
+/// <summary>
+/// Represents a single monomial term with an A value, an N power, and a B base function. (Function Monomial)
+/// </summary>
+class MATH_LIB FnMonomial : public FunctionBase
+{
+private:
+    void ChildRemoved(FunctionBase* Obj) noexcept override;
 
-		unsigned int AllowedChildCount() const override { return 0; }
-		bool AllowsChildAppend() const override { return false; }
-	};
+    FunctionBase* B = nullptr;
+public:
+    FnMonomial(FunctionBase* Base, double Power, double A);
+    FnMonomial(const FnMonomial& Obj) = delete;
+    FnMonomial(FnMonomial&& Obj) = delete;
 
-	/// <summary>
-	/// Represents a single monomial term with an A value, an N power, and a B base function. (Function Monomial)
-	/// </summary>
-	class MATH_LIB FnMonomial : public FunctionBase
-	{
-	private:
-		void ChildRemoved(FunctionBase* Obj) override;
+    FnMonomial& operator=(const FnMonomial& Obj) = delete;
+    FnMonomial& operator=(FnMonomial&& Obj) = delete;
 
-		FunctionBase* _B = nullptr;
-	public:
-		FnMonomial(unsigned int InputDim, unsigned int Var);
-		FnMonomial(FunctionBase* InnerFunction, double A, double N);
-		FnMonomial(const FnMonomial& Obj) = delete;
-		FnMonomial(FnMonomial&& Obj) = delete;
+    [[nodiscard]] const FunctionBase& Base() const;
+    [[nodiscard]] FunctionBase& Base();
+    void Base(FunctionBase* NewB);
+    double N = 0.0;
 
-		FnMonomial& operator=(const FnMonomial& Obj) = delete;
-		FnMonomial& operator=(FnMonomial&& Obj) = delete;
+    MathVector Evaluate(const MathVector& X, bool& Exists) const noexcept override;
 
-		FunctionBase* Base() const;
-		void Base(FunctionBase* const& NewB);
-		double N = 0.0f;
+    [[nodiscard]] bool ComparesTo(const FunctionBase* Obj) const noexcept override;
+    [[nodiscard]] bool EquatesTo(const FunctionBase* Obj) const noexcept override;
+    [[nodiscard]] FunctionBase* Clone() const noexcept override;
+};
 
-		MathVector Evaluate(const MathVector& X, bool& Exists) const override;
+/// <summary>
+/// Represents a single monomial term with an A value, an N function power, and B base function. (Power Function Monomial)
+/// </summary>
+class MATH_LIB PFnMonomial : public FunctionBase
+{
+private:
+    void ChildRemoved(FunctionBase* Obj) noexcept override;
 
-		FunctionBase* Clone() const override;
+    FunctionBase* B = nullptr, * N = nullptr;
+public:
+    PFnMonomial(unsigned int InputDim, FunctionBase* B, FunctionBase* N, double A);
+    PFnMonomial(const PFnMonomial& Obj) = delete;
+    PFnMonomial(PFnMonomial&& Obj) = delete;
 
-		unsigned int AllowedChildCount() const override { return 1; }
-		bool AllowsChildAppend() const override { return false; }
-	};
+    PFnMonomial& operator=(const PFnMonomial& Obj) = delete;
+    PFnMonomial& operator=(PFnMonomial&& Obj) = delete;
 
-	/// <summary>
-	/// Represents a single monomial term with an A value, an N function power, and B base function. (Power Function Monomial)
-	/// </summary>
-	class MATH_LIB PFnMonomial : public FunctionBase
-	{
-	private:
-		void ChildRemoved(FunctionBase* Obj) override;
+    const FunctionBase& Base() const;
+    FunctionBase& Base();
+    const FunctionBase& Power() const;
+    FunctionBase& Power();
 
-		FunctionBase* _B = nullptr, * _N = nullptr;
-	public:
-		PFnMonomial(unsigned int InputDim, FunctionBase* B, FunctionBase* N, double A);
-		PFnMonomial(const PFnMonomial& Obj) = delete;
-		PFnMonomial(PFnMonomial&& Obj) = delete;
+    void Base(FunctionBase* New);
+    void Power(FunctionBase* New);
 
-		PFnMonomial& operator=(const PFnMonomial& Obj) = delete;
-		PFnMonomial& operator=(PFnMonomial&& Obj) = delete;
+    MathVector Evaluate(const MathVector& X, bool& Exists) const noexcept override;
 
-		FunctionBase* Base() const;
-		void Base(FunctionBase* const& NewB);
-		FunctionBase* Power() const;
-		void Power(FunctionBase* const& NewN);
+    [[nodiscard]] bool ComparesTo(const FunctionBase* Obj) const noexcept;
+    [[nodiscard]] bool EquatesTo(const FunctionBase* Obj) const noexcept;
+    FunctionBase* Clone() const noexcept override;
+};
 
-		MathVector Evaluate(const MathVector& X, bool& Exists) const override;
+/// <summary>
+/// Represents an absolute value function (V shape function).
+/// </summary>
+class MATH_LIB AbsoluteValue : public FunctionBase
+{
+private:
+    void ChildRemoved(FunctionBase* Child) noexcept override;
 
-		FunctionBase* Clone() const override;
+    FunctionBase* _N = nullptr;
+public:
+    AbsoluteValue(unsigned int InputDim, unsigned int Var, double A);
+    AbsoluteValue(FunctionBase* N, double A);
+    AbsoluteValue(const AbsoluteValue& Obj) = delete;
+    AbsoluteValue(AbsoluteValue& Obj) = delete;
 
-		unsigned int AllowedChildCount() const override { return 2; }
-		bool AllowsChildAppend() const override { return false; }
-	};
+    AbsoluteValue& operator=(const AbsoluteValue& Obj) = delete;
+    AbsoluteValue& operator=(AbsoluteValue&& Obj) = delete;
 
-	/// <summary>
-	/// Represents an absolute value function (V shape function).
-	/// </summary>
-	class MATH_LIB AbsoluteValue : public FunctionBase
-	{
-	private:
-		void ChildRemoved(FunctionBase* Child) override;
+    FunctionBase* Base() const;
+    void Base(FunctionBase* const& NewN);
 
-		FunctionBase* _N = nullptr;
-	public:
-		AbsoluteValue(unsigned int InputDim, unsigned int Var, double A);
-		AbsoluteValue(FunctionBase* N, double A);
-		AbsoluteValue(const AbsoluteValue& Obj) = delete;
-		AbsoluteValue(AbsoluteValue& Obj) = delete;
+    MathVector Evaluate(const MathVector& X, bool& Exists) const noexcept override;
 
-		AbsoluteValue& operator=(const AbsoluteValue& Obj) = delete;
-		AbsoluteValue& operator=(AbsoluteValue&& Obj) = delete;
+    FunctionBase* Clone() const noexcept override;
 
-		FunctionBase* Base() const;
-		void Base(FunctionBase* const& NewN);
+    unsigned int AllowedChildCount() const override { return 1; }
+    bool AllowsChildAppend() const override { return false; }
+};
 
-		MathVector Evaluate(const MathVector& X, bool& Exists) const override;
+/// <summary>
+/// Represents an exponental function of function base N and power B.
+/// </summary>
+class MATH_LIB Exponent : public FunctionBase
+{
+private:
+    void ChildRemoved(FunctionBase* Obj) noexcept override;
 
-		FunctionBase* Clone() const override;
+    FunctionBase* N = nullptr;
+public:
+    Exponent(unsigned int InputDim, unsigned int Var, double A, double B);
+    Exponent(FunctionBase* N, double A, double B);
+    Exponent(const Exponent& Obj) = delete;
+    Exponent(Exponent&& Obj) = delete;
 
-		unsigned int AllowedChildCount() const override { return 1; }
-		bool AllowsChildAppend() const override { return false; }
-	};
+    Exponent& operator=(const Exponent& Obj) = delete;
+    Exponent& operator=(Exponent&& Obj) = delete;
 
-	/// <summary>
-	/// Represents an exponental function of function base N and power B.
-	/// </summary>
-	class MATH_LIB Exponent : public FunctionBase
-	{
-	private:
-		void ChildRemoved(FunctionBase* Obj) override;
+    double Base;
+    FunctionBase* Power() const;
+    void Power(FunctionBase* const& NewFunction);
 
-		FunctionBase* N = nullptr;
-	public:
-		Exponent(unsigned int InputDim, unsigned int Var, double A, double B);
-		Exponent(FunctionBase* N, double A, double B);
-		Exponent(const Exponent& Obj) = delete;
-		Exponent(Exponent&& Obj) = delete;
+    MathVector Evaluate(const MathVector& X, bool& Exists) const noexcept override;
 
-		Exponent& operator=(const Exponent& Obj) = delete;
-		Exponent& operator=(Exponent&& Obj) = delete;
+    FunctionBase* Clone() const noexcept override;
 
-		double Base;
-		FunctionBase* Power() const;
-		void Power(FunctionBase* const& NewFunction);
+    unsigned int AllowedChildCount() const override { return 1; }
+    bool AllowsChildAppend() const override { return false; }
+};
 
-		MathVector Evaluate(const MathVector& X, bool& Exists) const override;
+/// <summary>
+/// Represents a logarithim of base B, evaluating function N.
+/// </summary>
+class MATH_LIB Logarithm : public FunctionBase
+{
+private:
+    void ChildRemoved(FunctionBase* Child) noexcept override;
 
-		FunctionBase* Clone() const override;
+    FunctionBase* _N = nullptr;
+public:
+    Logarithm(double A, double B, FunctionBase* N);
+    Logarithm(double A, double B, unsigned int InputDim, unsigned int Var);
+    Logarithm(const Logarithm& Obj) = delete;
+    Logarithm(Logarithm&& Obj) = delete;
 
-		unsigned int AllowedChildCount() const override { return 1; }
-		bool AllowsChildAppend() const override { return false; }
-	};
+    Logarithm& operator=(const Logarithm& Obj) = delete;
+    Logarithm& operator=(Logarithm&& Obj) = delete;
 
-	/// <summary>
-	/// Represents a logarithim of base B, evaluating function N.
-	/// </summary>
-	class MATH_LIB Logarithm : public FunctionBase
-	{
-	private:
-		void ChildRemoved(FunctionBase* Child) override;
+    double Base;
+    FunctionBase* Function() const;
+    void Function(FunctionBase* const& Obj);
 
-		FunctionBase* _N = nullptr;
-	public:
-		Logarithm(double A, double B, FunctionBase* N);
-		Logarithm(double A, double B, unsigned int InputDim, unsigned int Var);
-		Logarithm(const Logarithm& Obj) = delete;
-		Logarithm(Logarithm&& Obj) = delete;
+    MathVector Evaluate(const MathVector& X, bool& Exists) const noexcept override;
 
-		Logarithm& operator=(const Logarithm& Obj) = delete;
-		Logarithm& operator=(Logarithm&& Obj) = delete;
+    FunctionBase* Clone() const noexcept override;
 
-		double Base;
-		FunctionBase* Function() const;
-		void Function(FunctionBase* const& Obj);
+    unsigned int AllowedChildCount() const override { return 1; }
+    bool AllowsChildAppend() const override { return false; }
+};
 
-		MathVector Evaluate(const MathVector& X, bool& Exists) const override;
+enum TrigFunc
+{
+    Sine = 0,
+    Cosine = 1,
+    Tangent = 2,
+    Inverse = 4,//Use for arcsin/arccsc, arccos/arcsec, arctan/arccot
+    Reciprocal = 8 //Use for csc, sec, cot
+};
 
-		FunctionBase* Clone() const override;
+/// <summary>
+/// Represents the 3 common trig functions: sine, cosine, and tangent.
+/// </summary>
+class MATH_LIB Trig : public FunctionBase
+{
+private:
+    void ChildRemoved(FunctionBase* Obj) noexcept override;
 
-		unsigned int AllowedChildCount() const override { return 1; }
-		bool AllowsChildAppend() const override { return false; }
-	};
+    unsigned int _Type;
+    FunctionBase* _N = nullptr;
+public:
+    Trig(unsigned int Function, double A, unsigned int InputDim, unsigned int Var);
+    Trig(unsigned int Function, double A, FunctionBase* InputDim);
+    Trig(const Trig& Obj) = delete;
+    Trig(Trig&& Obj) = delete;
 
-	enum TrigFunc
-	{
-		Sine = 0,
-		Cosine = 1,
-		Tangent = 2,
-		Inverse = 4,//Use for arcsin/arccsc, arccos/arcsec, arctan/arccot
-		Reciprocal = 8 //Use for csc, sec, cot
-	};
+    Trig& operator=(const Trig& Obj) = delete;
+    Trig& operator=(Trig&& Obj) = delete;
 
-	/// <summary>
-	/// Represents the 3 common trig functions: sine, cosine, and tangent.
-	/// </summary>
-	class MATH_LIB Trig : public FunctionBase
-	{
-	private:
-		void ChildRemoved(FunctionBase* Obj) override;
+    unsigned int Type() const { return _Type; }
+    FunctionBase* Function() const;
+    void Function(FunctionBase* const& NewObj);
 
-		unsigned int _Type;
-		FunctionBase* _N = nullptr;
-	public:
-		Trig(unsigned int Function, double A, unsigned int InputDim, unsigned int Var);
-		Trig(unsigned int Function, double A, FunctionBase* InputDim);
-		Trig(const Trig& Obj) = delete;
-		Trig(Trig&& Obj) = delete;
-		
-		Trig& operator=(const Trig& Obj) = delete;
-		Trig& operator=(Trig&& Obj) = delete;
+    MathVector Evaluate(const MathVector& X, bool& Exists) const noexcept override;
 
-		unsigned int Type() const { return _Type; }
-		FunctionBase* Function() const;
-		void Function(FunctionBase* const& NewObj);
+    FunctionBase* Clone() const noexcept override;
 
-		MathVector Evaluate(const MathVector& X, bool& Exists) const override;
+    unsigned int AllowedChildCount() const override { return 1; }
+    bool AllowsChildAppend() const override { return false; }
+};
 
-		FunctionBase* Clone() const override;
-
-		unsigned int AllowedChildCount() const override { return 1; }
-		bool AllowsChildAppend() const override { return false; }
-	};
-}
+#endif //JASON_COREFUNCTIONS_H

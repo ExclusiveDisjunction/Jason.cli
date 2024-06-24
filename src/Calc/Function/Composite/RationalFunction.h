@@ -64,10 +64,10 @@ namespace Math::Function
 		}
 		void DivideFunction(FunctionBase* Obj);
 
-		MathVector Evaluate(const MathVector& X, bool& Exists) const override;
+		MathVector Evaluate(const MathVector& X, bool& Exists) const noexcept override;
 		
 		bool EquatesTo(FunctionBase* const& Obj) const override;
 		bool ComparesTo(FunctionBase* const& Obj) const override;
-		FunctionBase* Clone() const override;
+		FunctionBase* Clone() const noexcept override;
 	};
 }

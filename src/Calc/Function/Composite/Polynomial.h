@@ -95,10 +95,10 @@ namespace Math::Function
 			Last = Current;
 		}
 
-		MathVector Evaluate(const MathVector& Obj, bool& Exists) const override;
+		MathVector Evaluate(const MathVector& Obj, bool& Exists) const noexcept override;
 
 		bool EquatesTo(FunctionBase* const& Obj) const override;
 		bool ComparesTo(FunctionBase* const& Obj) const override;
-		FunctionBase* Clone() const override;
+		FunctionBase* Clone() const noexcept override;
 	};
 }

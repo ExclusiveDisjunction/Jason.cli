@@ -1,68 +1,76 @@
-#include "..\CoreFunctions.h"
+#include "../CoreFunctions.h"
 
-namespace Math::Function
+FnMonomial::FnMonomial(FunctionBase* InnerFunction, double A, double N) : FunctionBase(!InnerFunction ? 0 : InnerFunction->InputDim, 1)
 {
-	FnMonomial::FnMonomial(unsigned int InputDim, unsigned int Var) : FnMonomial(new Monomial(InputDim, Var), 1, 1)
-	{
+    if (!InnerFunction || InnerFunction->OutputDim != 1)
+        throw std::logic_error("The inner function must be valid, and the output dimension must be one.");
 
-	}
-	FnMonomial::FnMonomial(FunctionBase* InnerFunction, double A, double N) : FunctionBase(!InnerFunction ? 0 : InnerFunction->InputDim(), 1)
-	{
-		if (!InnerFunction || InnerFunction->OutputDim() != 1)
-			throw std::exception("The inner function must be valid, and the output dimension must be one.");
+    this->A = A;
+    this->N = N;
 
-		this->A = A;
-		this->N = N;
-		_B = InnerFunction;
-		AssignParent(_B);
-	}
+    Base(InnerFunction);
+}
 
-	FunctionBase* FnMonomial::Base() const
-	{
-		return _B;
-	}
-	void FnMonomial::Base(FunctionBase* const& NewB)
-	{
-		if (!NewB || NewB->InputDim() != InputDim() || NewB->OutputDim() != 1)
-			throw std::exception("The inner function must exist, and the input dimension must be the input dimension of this function, as well as the output dimension of the function being 1.");
-		if (_B)
-		{
-			FunctionBase* Temp = _B;
-			_B->RemoveParent();
-			delete Temp;
-		}
-		
-		_B = NewB;
-		AssignParent(_B);
-	}
+const FunctionBase& FnMonomial::Base() const
+{
+    if (!B)
+        throw std::logic_error("This instance does not contain a valid Base function.");
+    return *B;
+}
+FunctionBase& FnMonomial::Base()
+{
+    if (!B)
+        throw std::logic_error("This instance does not contain a valid Base function.");
+    return *B;
+}
+void FnMonomial::Base(FunctionBase* NewB)
+{
+    if (!NewB || NewB->InputDim != InputDim || NewB->OutputDim != 1) //IGNORE CMAKE warning because if !NewB, then InputDim == 0. So if !NewB, then this whole thing will fail and go to the exception.
+        throw std::logic_error("The inner function must exist, and the input dimension must be the input dimension of this function, as well as the output dimension of the function being 1.");
 
-	void FnMonomial::ChildRemoved(FunctionBase* Obj)
-	{
-		if (_B == Obj)
-			_B = nullptr;
-	}
-	
-	MathVector FnMonomial::Evaluate(const MathVector& X, bool& Exists) const
-	{
-		if (X.Dim() != InputDim() || !_B)
-		{
-			Exists = false;
-			return MathVector::ErrorVector();
-		}
+    delete B;
+    if (!this->PushChild(NewB))
+        throw std::logic_error("Could not append new base.");
 
-		Exists = true;
-		MathVector InnerEval = _B->Evaluate(X, Exists);
-		if (!Exists)
-			return MathVector::ErrorVector();
+    this->B = NewB;
+}
 
-		return A * pow(InnerEval[0], N);
-	}
+void FnMonomial::ChildRemoved(FunctionBase* Obj) noexcept
+{
+    if (B == Obj)
+        B = nullptr;
+}
 
-	FunctionBase* FnMonomial::Clone() const
-	{
-		if (!_B)
-			return nullptr;
+MathVector FnMonomial::Evaluate(const MathVector& X, bool& Exists) const noexcept
+{
+    if (X.Dim() != InputDim || !B)
+    {
+        Exists = false;
+        return MathVector::ErrorVector();
+    }
 
-		return new FnMonomial(_B->Clone(), A, N);
-	}
+    Exists = true;
+    MathVector InnerEval = B->Evaluate(X, Exists);
+    if (!Exists)
+        return MathVector::ErrorVector();
+
+    return MathVector(A * pow(InnerEval[0], N));
+}
+
+[[nodiscard]] bool FnMonomial::ComparesTo(const FunctionBase* Obj) const noexcept
+{
+    const auto* conv = dynamic_cast<const FnMonomial*>(Obj);
+    return this == conv || (conv && conv->N == this->N && conv->B->ComparesTo(this->B));
+}
+[[nodiscard]] bool FnMonomial::EquatesTo(const FunctionBase* Obj) const noexcept
+{
+    const auto* conv = dynamic_cast<const FnMonomial*>(Obj);
+    return this == conv || (conv && conv->N == this->N && conv->B->EquatesTo(this->B) && this->A == conv->A);
+}
+FunctionBase* FnMonomial::Clone() const noexcept
+{
+    if (!B)
+        return nullptr;
+
+    return new FnMonomial(B->Clone(), A, N);
 }
