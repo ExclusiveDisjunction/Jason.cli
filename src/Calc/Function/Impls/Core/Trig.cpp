@@ -1,127 +1,126 @@
-#include "..\CoreFunctions.h"
+#include "../CoreFunctions.h"
 
-namespace Math::Function
+Trig::Trig(FunctionBase* Func, unsigned Type, double A) : FunctionBase(!Func ? 0 : Func->InputDim, 1)
 {
-	Trig::Trig(unsigned int Function, double A, unsigned int InputDim, unsigned int Var) : Trig(Function, A, new Monomial(InputDim, Var))
-	{
+    this->Type = Type;
+    this->A = A;
+    Function(Func);
+}
 
-	}
-	Trig::Trig(unsigned int Function, double A, FunctionBase* Func) : FunctionBase(!Func ? 0 : Func->InputDim(), 1)
-	{
-		_Type = Function;
-		this->A = A;
+void Trig::ChildRemoved(FunctionBase* Child) noexcept
+{
+    if (Child == N)
+        N = nullptr;
+}
 
-		if (!Func || Func->OutputDim() != 1)
-			throw std::exception("The input function must exist and have an output dimension of 1.");
+const FunctionBase& Trig::Function() const
+{
+    return Get(N);
+}
+FunctionBase& Trig::Function()
+{
+   return Get(N);
+}
+void Trig::Function(FunctionBase* Obj)
+{
+    PushAndBind(N, Obj);
+}
 
-		_N = Func;
-		AssignParent(_N);
-	}
+MathVector Trig::Evaluate(const MathVector& X, bool& Exists) const noexcept
+{
+    if (!N || X.Dim() != InputDim)
+    {
+        Exists = false;
+        return MathVector::ErrorVector();
+    }
 
-	void Trig::ChildRemoved(FunctionBase* Child)
-	{
-		if (Child == _N)
-			_N = nullptr;
-	}
+    Exists = true;
+    MathVector TResult = N->Evaluate(X, Exists);
+    if (!Exists)
+        return MathVector::ErrorVector();
+    double Result = TResult[0];
 
-	FunctionBase* Trig::Function() const
-	{
-		return _N;
-	}
-	void Trig::Function(FunctionBase* const& Obj)
-	{
-		if (!Obj || Obj->InputDim() != InputDim() || Obj->OutputDim() != 1)
-			throw std::exception("The input function has a dimension mismatch, or does not exist.");
+    unsigned type = this->Type;
+    bool IsInverse = type & TrigFunc::Inverse, IsRecip = type & TrigFunc::Reciprocal;
+    type &= (IsInverse ? ~TrigFunc::Inverse : type) & (IsRecip ? ~TrigFunc::Reciprocal : type);
 
-		if (_N)
-		{
-			FunctionBase* Temp = _N;
-			_N->RemoveParent();
-			delete Temp;
-		}
+    Exists = true;
+    switch (type)
+    {
+    case TrigFunc::Sine:
+    {
+        if (IsInverse)
+        {
+            if (Result < -1 || Result > 1)
+            {
+                Exists = false;
+                return MathVector::ErrorVector();
+            }
 
-		_N = Obj;
-		AssignParent(_N);
-	}
+            return MathVector( asin(Result) );
+        }
 
-	MathVector Trig::Evaluate(const MathVector& X, bool& Exists) const
-	{
-		if (!_N || X.Dim() != InputDim())
-		{
-			Exists = false;
-			return MathVector::ErrorVector();
-		}
+        double Val = sin(Result);
+        return MathVector( A * (IsRecip ? 1 / Val : Val) );
+    }
+    case TrigFunc::Cosine:
+    {
+        if (IsInverse)
+        {
+            if (Result < -1 || Result > 1)
+            {
+                Exists = false;
+                return MathVector::ErrorVector();
+            }
 
-		Exists = true;
-		MathVector TResult = _N->Evaluate(X, Exists);
-		if (!Exists)
-			return MathVector::ErrorVector();
-		double Result = TResult[0];
+            return MathVector(acos((Result)));
+        }
 
-		unsigned int Type = _Type;
-		bool IsInverse = Type & TrigFunc::Inverse, IsRecip = Type & TrigFunc::Reciprocal;		
-		Type &= (IsInverse ? ~TrigFunc::Inverse : Type) & (IsRecip ? ~TrigFunc::Reciprocal : Type);
+        double Val = sin(Result);
+        return MathVector( A * (IsRecip ? 1 / Val : Val) );
+    }
+    case TrigFunc::Tangent:
+    {
+        if (IsInverse)
+            return MathVector(atan(Result));
 
-		Exists = true;
-		switch (Type)
-		{
-		case TrigFunc::Sine:
-		{
-			if (IsInverse)
-			{
-				if (Result < -1 || Result > 1)
-				{
-					Exists = false;
-					return MathVector::ErrorVector();
-				}
+        double Val = tan(Result);
+        if (Val == std::numeric_limits<double>::infinity())
+        {
+            Exists = false;
+            return MathVector::ErrorVector();
+        }
+        else
+            return MathVector( A * (IsRecip ? 1 / Val : Val) );
+    }
+    default:
+        Exists = false;
+        return MathVector::ErrorVector();
+    }
 
-				return asin(Result);
-			}
+}
 
-			double Val = sin(Result);
-			return A * IsRecip ? 1 / Val : Val;
-		}
-		case TrigFunc::Cosine:
-		{
-			if (IsInverse)
-			{
-				if (Result < -1 || Result > 1)
-				{
-					Exists = false;
-					return MathVector::ErrorVector();
-				}
+bool Trig::ComparesTo(const FunctionBase* Obj) const noexcept
+{
+    const auto* conv = dynamic_cast<const Trig*>(Obj);
+    return this == conv || (conv && conv->Type == this->Type && conv->N->EquatesTo(this->N));
+}
+bool Trig::EquatesTo(const FunctionBase* Obj) const noexcept
+{
+    const auto* conv = dynamic_cast<const Trig*>(Obj);
+    return this == conv || (conv && conv->Type == this->Type && conv->N->EquatesTo(this->N) && conv->A == this->A);
+}
+FunctionBase* Trig::Clone() const noexcept
+{
+    if (!N)
+        return nullptr;
 
-				return asin(Result);
-			}
-
-			double Val = sin(Result);
-			return A * IsRecip ? 1 / Val : Val;
-		}
-		case TrigFunc::Tangent:
-		{
-			if (IsInverse)			
-				return atan(Result);
-
-			double Val = tan(Result);
-			if (Val == std::numeric_limits<double>::infinity())
-			{
-				Exists = false;
-				return MathVector::ErrorVector();
-			}
-			else
-				return A * IsRecip ? 1 / Val : Val;
-		}
-		default:
-			Exists = false;
-			return MathVector::ErrorVector();
-		}
-	
-	}
-	FunctionBase* Trig::Clone() const
-	{
-		if (!_N)
-			return nullptr;
-
-		return new Trig(_Type, A, _N->Clone());
-	}
+    try
+    {
+        return new Trig(N->Clone(), Type, A);
+    }
+    catch (std::exception& e)
+    {
+        return nullptr;
+    }
 }

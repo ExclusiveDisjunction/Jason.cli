@@ -25,7 +25,7 @@ FunctionBase::~FunctionBase()
 
 [[nodiscard]] bool FunctionBase::PushChild(FunctionBase* New) noexcept
 {
-    if (!New || New->Parent == this || IsFull()) //Empty, already contained, or full.
+    if (!New || New->Parent == this || New->InputDim != this->InputDim || New->OutputDim != this->OutputDim) //Empty, already contained, or full.
         return false;
 
     if (New->Parent != nullptr && !New->RemoveParent())
@@ -93,6 +93,19 @@ FunctionBase::~FunctionBase()
     }
     return true;
 }
+void FunctionBase::PushAndBind(FunctionBase*& BindTo, FunctionBase* Child)
+{
+    if (BindTo == Child)
+        return;
+
+    delete BindTo;
+    BindTo = nullptr;
+
+    if (!this->PushChild(Child))
+        throw std::logic_error("Could not append this child.");
+
+    BindTo = Child;
+}
 void FunctionBase::ClearChildren() noexcept
 {
     if (!First && !Last)
@@ -112,6 +125,14 @@ void FunctionBase::ClearChildren() noexcept
 
     First = Last = nullptr;
     Children = 0;
+}
+
+FunctionBase& FunctionBase::Get(FunctionBase* Binding)
+{
+    if (!Binding)
+        throw std::logic_error("Cannot dereference an empty function.");
+
+    return *Binding;
 }
 
 FunctionBase& FunctionBase::operator-()

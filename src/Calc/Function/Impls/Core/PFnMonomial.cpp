@@ -3,86 +3,89 @@
 PFnMonomial::PFnMonomial(unsigned int InputDim, FunctionBase* B, FunctionBase* N, double A) : FunctionBase(InputDim, 1)
 {
     if (!B || !N || B->InputDim != InputDim || N->InputDim != InputDim || B->OutputDim != 1 || N->OutputDim != 1)
-        throw std::exception("The functions provided must have the following criteria: 1) Exist, 2) Their input dimension must match the provided input dimension, 3) Their output dimension must be one. One or more of these critera are not met.");
+        throw std::logic_error("The functions provided must have the following criteria: 1) Exist, 2) Their input dimension must match the provided input dimension, 3) Their output dimension must be one. One or more of these critera are not met.");
 
-    _B = B;
-    _N = N;
-    AssignParent(B);
-    AssignParent(N);
+    Base(B);
+    Power(N);
     this->A = A;
 }
 
-void PFnMonomial::ChildRemoved(FunctionBase* Obj)
+void PFnMonomial::ChildRemoved(FunctionBase* Obj) noexcept
 {
-    if (Obj == _B)
-        _B = nullptr;
-    else if (Obj == _N)
-        _N = nullptr;
+    if (Obj == B)
+        B = nullptr;
+    else if (Obj == N)
+        N = nullptr;
 }
 
-FunctionBase* PFnMonomial::Base() const
+const FunctionBase& PFnMonomial::Base() const
 {
-    return _B;
+    return Get(B);
 }
-void PFnMonomial::Base(FunctionBase* const& Obj)
+FunctionBase& PFnMonomial::Base()
 {
-    if (!Obj || Obj->InputDim() != InputDim() || Obj->OutputDim() != 1)
-        throw std::exception("The input dimensions do not match, or the new functiond does not exist.");
-
-    if (_B)
-    {
-        FunctionBase* Temp = _B;
-        _B->RemoveParent();
-        delete Temp;
-    }
-
-    _B = Obj;
-    AssignParent(_B);
+    return Get(B);
 }
-FunctionBase* PFnMonomial::Power() const
+const FunctionBase& PFnMonomial::Power() const
 {
-    return _N;
+    return Get(N);
 }
-void PFnMonomial::Power(FunctionBase* const& Obj)
+FunctionBase& PFnMonomial::Power()
 {
-    if (!Obj || Obj->InputDim() != InputDim() || Obj->OutputDim() != 1)
-        throw std::exception("The input dimensions do not match, or the new functiond does not exist.");
-
-    if (_N)
-    {
-        FunctionBase* Temp = _N;
-        _N->RemoveParent();
-        delete Temp;
-    }
-
-    _N = Obj;
-    AssignParent(_N);
+    return Get(N);
 }
 
-MathVector PFnMonomial::Evaluate(const MathVector& X, bool& Exists) const
+void PFnMonomial::Base(FunctionBase* New)
 {
-    if (X.Dim() != InputDim() || !_B || !_N)
+    PushAndBind(B, New);
+}
+void PFnMonomial::Power(FunctionBase* New)
+{
+    PushAndBind(N, New);
+}
+
+[[nodiscard]] bool PFnMonomial::ComparesTo(const FunctionBase* Obj) const noexcept
+{
+    const auto* conv = dynamic_cast<const PFnMonomial*>(Obj);
+    return conv == this || (conv && conv->N->EquatesTo(this->N) && conv->B->EquatesTo(this->B));
+}
+[[nodiscard]] bool PFnMonomial::EquatesTo(const FunctionBase* Obj) const noexcept
+{
+    const auto* conv = dynamic_cast<const PFnMonomial*>(Obj);
+    return conv == this || (conv && conv->N->EquatesTo(this->N) && conv->B->EquatesTo(this->B) && conv->A == this->A);
+}
+
+MathVector PFnMonomial::Evaluate(const MathVector& X, bool& Exists) const noexcept
+{
+    if (X.Dim() != InputDim || !B || !N)
     {
         Exists = false;
         return MathVector::ErrorVector();
     }
 
     Exists = true;
-    MathVector BaseV = _B->Evaluate(X, Exists);
+    MathVector BaseV = B->Evaluate(X, Exists);
     if (!Exists)
         return MathVector::ErrorVector();
 
-    MathVector PowerV = _N->Evaluate(X, Exists);
+    MathVector PowerV = N->Evaluate(X, Exists);
     if (!Exists)
         return MathVector::ErrorVector();
 
-    return A * pow(BaseV[0], PowerV[0]);
+    return MathVector(A * pow(BaseV[0], PowerV[0]));
 }
 
-FunctionBase* PFnMonomial::Clone() const
+FunctionBase* PFnMonomial::Clone() const noexcept
 {
-    if (!_B || !_N)
+    if (!B || !N)
         return nullptr;
 
-    return new PFnMonomial(InputDim(), _B->Clone(), _N->Clone(), A);
+    try
+    {
+        return new PFnMonomial(InputDim, B->Clone(), N->Clone(), A);
+    }
+    catch (std::exception& e)
+    {
+        return  nullptr;
+    }
 }

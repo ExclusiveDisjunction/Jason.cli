@@ -1,68 +1,67 @@
-#include "..\CoreFunctions.h"
+#include "../CoreFunctions.h"
 
-namespace Math::Function
+AbsoluteValue::AbsoluteValue(FunctionBase* N, double A) : FunctionBase(!N ? 0 : N->InputDim, 1)
 {
-	AbsoluteValue::AbsoluteValue(unsigned int InputDim, unsigned int Var, double A) : AbsoluteValue(new Monomial(InputDim, Var), A)
-	{
+    this->A = A;
+    Base(N);
+}
 
-	}
-	AbsoluteValue::AbsoluteValue(FunctionBase* N, double A) : FunctionBase(!N ? 0 : N->InputDim(), 1)
-	{
-		if (!N)
-			throw std::exception("The input function cannot be nullptr.");
+void AbsoluteValue::ChildRemoved(FunctionBase* Child) noexcept
+{
+    if (Child == N)
+        N = nullptr;
+}
 
-		this->A = A;
-		AssignParent(N);
-		_N = N;
-	}
+const FunctionBase& AbsoluteValue::Base() const
+{
+    return Get(N);
+}
+FunctionBase& AbsoluteValue::Base()
+{
+    return Get(N);
+}
+void AbsoluteValue::Base(FunctionBase* New)
+{
+    PushAndBind(N, New);
+}
 
-	void AbsoluteValue::ChildRemoved(FunctionBase* Child)
-	{
-		if (Child == _N)
-			_N = nullptr;
-	}
+MathVector AbsoluteValue::Evaluate(const MathVector& X, bool& Exists) const noexcept
+{
+    if (!N || X.Dim() != InputDim)
+    {
+        Exists = false;
+        return MathVector::ErrorVector();
+    }
 
-	FunctionBase* AbsoluteValue::Base() const
-	{
-		return _N;
-	}
-	void AbsoluteValue::Base(FunctionBase* const& NewB)
-	{
-		if (!NewB || NewB->InputDim() != InputDim())
-			throw std::exception("The new function must exist and have the same input dimension.");
+    Exists = true;
+    MathVector Base = N->Evaluate(X, Exists);
+    if (!Exists)
+        return MathVector::ErrorVector();
 
-		if (_N)
-		{
-			FunctionBase* Temp = _N;
-			_N->RemoveParent(); //Remove parent calls FunctionRelation::ChildRemoved, which will set _N to nullptr.
-			delete Temp;
-		}
-		
-		_N = NewB;
-		AssignParent(_N);
-	}
+    return MathVector(A * Base.Magnitude());
+}
 
-	MathVector AbsoluteValue::Evaluate(const MathVector& X, bool& Exists) const
-	{
-		if (!_N || X.Dim() != InputDim())
-		{
-			Exists = false;
-			return MathVector::ErrorVector();
-		}
+[[nodiscard]] bool AbsoluteValue::ComparesTo(const FunctionBase* Obj) const noexcept
+{
+    const auto* conv = dynamic_cast<const AbsoluteValue*>(Obj);
+    return this == conv || (conv && conv->N->EquatesTo(this->N));
+}
+[[nodiscard]] bool AbsoluteValue::EquatesTo(const FunctionBase* Obj) const noexcept
+{
+    const auto* conv = dynamic_cast<const AbsoluteValue*>(Obj);
+    return this == conv || (conv && conv->N->EquatesTo(this->N) && conv->A == this->A);
+}
+FunctionBase* AbsoluteValue::Clone() const noexcept
+{
+    if (!N)
+        return nullptr;
 
-		Exists = true;
-		MathVector Base = _N->Evaluate(X, Exists);
-		if (!Exists)
-			return MathVector::ErrorVector();
-
-		return A * Base.Magnitude();
-	}
-
-	FunctionBase* AbsoluteValue::Clone() const
-	{
-		if (!_N)
-			return nullptr;
-
-		return new AbsoluteValue(_N->Clone(), A);
-	}
+    try
+    {
+        return new AbsoluteValue(N->Clone(), A);
+    }
+    catch (std::exception& e)
+    {
+        return nullptr;
+    }
 }
