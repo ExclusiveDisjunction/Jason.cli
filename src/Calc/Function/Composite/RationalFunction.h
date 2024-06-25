@@ -18,7 +18,7 @@ public:
     template<typename Iter> requires std::forward_iterator<Iter>
     [[maybe_unused]] RationalFunction(unsigned Dim, Iter beg, Iter end);
     template<std::convertible_to<FunctionBase*>... Args>
-    [[maybe_unused]] RationalFunction(unsigned Dim, Args... Objs);
+    [[maybe_unused]] explicit RationalFunction(unsigned Dim, Args... Objs);
 
     void MultiplyFunction(FunctionBase* Obj);
     template<std::convertible_to<FunctionBase*>... Args>

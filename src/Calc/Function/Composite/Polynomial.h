@@ -13,6 +13,7 @@ class MATH_LIB Polynomial : public FunctionBase
 {
 private:
     void ChildRemoved(FunctionBase* Child) noexcept override {}
+
 public:
     Polynomial(unsigned int InputDim, unsigned int OutputDim);
     template<typename Iter> requires std::forward_iterator<Iter>
