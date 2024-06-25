@@ -4,6 +4,12 @@
 #include "../Numerics/MathVector.h"
 #include "../Numerics/Matrix.h"
 
+enum FunctionFlags
+{
+    FF_Poly_Neg = 1, //For negation, polynomials
+    FF_Rat_Inv = 2, //For inversion, rational functions
+};
+
 /// \brief Represents a function, or a mathematical object with a specified number of inputs and output. This class also handles all children of a function.
 class MATH_LIB FunctionBase
 {
@@ -12,6 +18,8 @@ private:
     FunctionBase* First = nullptr, *Last = nullptr;
     FunctionBase* Next = nullptr, *Previous = nullptr;
     unsigned Children = 0;
+
+    unsigned char Flags = 0;
 
 protected:
     /// \brief Stores the values of Input and Output in the variables of the class. Throws if either one is zero.
@@ -63,6 +71,9 @@ public:
     /// \param Exists When true, the function as properly evaluated, and if false, do not use the output of the function.
     /// \return MathVector::ErrorVector() if 'Exists' is false, otherwise a MathVector of dimension 'this->OutputDim' containing the result of the computation.
     [[nodiscard]] virtual MathVector Evaluate(const MathVector& X, bool& Exists) const noexcept = 0;
+
+    [[nodiscard]] bool FlagActive(FunctionFlags Flag) const noexcept;
+    void SetFlag(FunctionFlags Flag, bool Active) noexcept;
 
     /// \breif Compares two functions and determines if they are comparable.
     /// \return True if the functions are comparable, or can be added together & simplify, false otherwise.

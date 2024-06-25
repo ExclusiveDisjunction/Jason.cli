@@ -20,10 +20,15 @@ public:
     template<std::convertible_to<FunctionBase*>... Args>
     [[maybe_unused]] explicit RationalFunction(unsigned Dim, Args... Objs);
 
+    const FunctionBase& operator[](unsigned i) const;
+    FunctionBase& operator[](unsigned i);
+
     void MultiplyFunction(FunctionBase* Obj);
     template<std::convertible_to<FunctionBase*>... Args>
     void MultiplyFunctions(Args... Obj);
     void DivideFunction(FunctionBase* Obj);
+
+    [[maybe_unused]] [[nodiscard]] bool RemoveFunction(FunctionBase* Obj, bool Delete);
 
     MathVector Evaluate(const MathVector& X, bool& Exists) const noexcept override;
 

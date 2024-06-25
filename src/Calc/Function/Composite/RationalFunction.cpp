@@ -13,7 +13,21 @@ void RationalFunction::MultiplyFunction(FunctionBase* Obj)
 void RationalFunction::DivideFunction(FunctionBase* Obj)
 {
     MultiplyFunction(Obj);
-    //TODO: ADD FLAGS TO FUNCTIONS
+    Obj->SetFlag(FF_Rat_Inv, true);
+}
+
+const FunctionBase& RationalFunction::operator[](unsigned i) const
+{
+    //TODO: REQUIRES ITERATORS
+}
+FunctionBase& RationalFunction::operator[](unsigned i)
+{
+    //TODO: REQUIRES ITERATORS
+}
+
+[[maybe_unused]] [[nodiscard]] bool RationalFunction::RemoveFunction(FunctionBase* Obj, bool Delete)
+{
+    return PopChild(Obj, Delete);
 }
 
 MathVector RationalFunction::Evaluate(const MathVector& X, bool& Exists) const noexcept

@@ -91,6 +91,9 @@ FunctionBase::~FunctionBase()
         delete obj;
         obj = nullptr;
     }
+    else
+        Flags = 0; //Clears all flags from the function, so they can be re-used without problems.
+
     return true;
 }
 void FunctionBase::PushAndBind(FunctionBase*& BindTo, FunctionBase* Child)
@@ -125,6 +128,20 @@ void FunctionBase::ClearChildren() noexcept
 
     First = Last = nullptr;
     Children = 0;
+}
+
+[[nodiscard]] bool FunctionBase::FlagActive(FunctionFlags Flag) const noexcept
+{
+    return Flags & Flag;
+}
+void FunctionBase::SetFlag(FunctionFlags Flag, bool Active) noexcept
+{
+    bool Prev = FlagActive(Flag);
+    if (Prev == Active)
+        return;
+
+    unsigned char NewFlag = Active ? Flag : ~Flag;
+    this->Flags &= NewFlag;
 }
 
 FunctionBase& FunctionBase::Get(FunctionBase* Binding)

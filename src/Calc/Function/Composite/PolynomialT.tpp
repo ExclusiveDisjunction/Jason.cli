@@ -24,7 +24,8 @@ template<std::convertible_to<FunctionBase*>... Args>
 template<std::convertible_to<FunctionBase*>... Args>
 [[maybe_unused]] void Polynomial::SubtractFunctions(Args... Obj)
 {
-    AddFunctions(Obj...);
+    auto items = std::vector<FunctionBase*>({ (static_cast<FunctionBase*>(Obj))... });
 
-    //TODO: REQUIRES FLAGS
+    for (const auto& item : items)
+        SubtractFunction(item);
 }

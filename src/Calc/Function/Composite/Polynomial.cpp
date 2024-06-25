@@ -13,7 +13,7 @@ void Polynomial::AddFunction(FunctionBase* Obj)
 void Polynomial::SubtractFunction(FunctionBase* Obj)
 {
     AddFunction(Obj);
-    Obj->operator-();
+    Obj->SetFlag(FF_Poly_Neg, true);
 }
 
 [[maybe_unused]] [[nodiscard]] bool Polynomial::RemoveFunction(FunctionBase* Obj, bool Delete)
