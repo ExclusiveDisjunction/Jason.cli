@@ -10,3 +10,5 @@ cmake-build-release
 CMakeFiles
 *.out
 .vscode
+
+Command To Run.txt
