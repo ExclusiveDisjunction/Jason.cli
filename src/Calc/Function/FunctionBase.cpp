@@ -130,6 +130,23 @@ void FunctionBase::ClearChildren() noexcept
     Children = 0;
 }
 
+FunctionIterator FunctionBase::FirstChild() noexcept
+{
+    return !First ? LastChild() : FunctionIterator(First);
+}
+FunctionIterator FunctionBase::LastChild() noexcept
+{
+    return FunctionIterator(Last);
+}
+ConstFunctionIterator FunctionBase::FirstChild() const noexcept
+{
+    return !First ? LastChild() : ConstFunctionIterator(First);
+}
+ConstFunctionIterator FunctionBase::LastChild() const noexcept
+{
+    return ConstFunctionIterator(Last);
+}
+
 [[nodiscard]] bool FunctionBase::FlagActive(FunctionFlags Flag) const noexcept
 {
     return Flags & Flag;

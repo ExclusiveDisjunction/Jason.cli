@@ -1,5 +1,11 @@
-#pragma once
+/*
+ * Created by exdisj
+ */
 
+#ifndef JASON_FUNCTIONBASE_H
+#define JASON_FUNCTIONBASE_H
+
+#include "FunctionIterator.h"
 #include "../StdCalc.h"
 #include "../Numerics/MathVector.h"
 #include "../Numerics/Matrix.h"
@@ -40,13 +46,21 @@ protected:
     [[nodiscard]] bool PopChild(FunctionBase* obj, bool Delete = true) noexcept;
 
     void PushAndBind(FunctionBase*& BindTo, FunctionBase* Child);
-
     [[nodiscard]] static FunctionBase& Get(FunctionBase* Binding);
+
+    [[nodiscard]] ConstFunctionIterator FirstChild() const noexcept;
+    [[nodiscard]] ConstFunctionIterator LastChild() const noexcept;
+
+    [[nodiscard]] FunctionIterator FirstChild() noexcept;
+    [[nodiscard]] FunctionIterator LastChild() noexcept;
 
 public:
     FunctionBase(const FunctionBase& Obj) = delete;
     FunctionBase(FunctionBase&& Obj) = delete;
     virtual ~FunctionBase();
+
+    friend class FunctionIterator;
+    friend class ConstFunctionIterator;
 
     FunctionBase& operator=(const FunctionBase& Obj) = delete;
     FunctionBase& operator=(FunctionBase&& Obj) = delete;
@@ -86,3 +100,7 @@ public:
 
     virtual FunctionBase& operator-();
 };
+
+#include "FunctionIterator.h"
+
+#endif
