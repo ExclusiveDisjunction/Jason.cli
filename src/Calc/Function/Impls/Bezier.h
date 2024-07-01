@@ -1,38 +1,26 @@
 #pragma once
 
-#include "..\StdCalc.h"
-#include "../Function.h"
+#include "../../StdCalc.h"
+#include "../FunctionBase.h"
 #include "../Composite/Polynomial.h"
 
-namespace Math::Function
+class MATH_LIB BezierMonomial : public FunctionBase
 {
-	class MATH_LIB BezierMonomial : public FunctionBase
-	{
-	public:
-		BezierMonomial(unsigned int Dim, int i, int n, MathVector Target);
+private:
+    void ChildRemoved(FunctionBase* Child) noexcept override {}
 
-		MathVector Point;
-		int i = 0;
-		int n = 0;
+    MathVector Point;
+    unsigned i = 0;
+    unsigned n = 0;
 
-		MathVector Evaluate(const MathVector& T, bool& Exists) const noexcept override;
+public:
+    BezierMonomial(unsigned int Dim, unsigned i, unsigned n, const MathVector& Target);
 
-		bool AllowsChildAppend() const override { return false; }
-		unsigned int AllowedChildCount() const override { return 0; }
-		void ChildRemoved(FunctionBase* Child) noexcept override { }
-		FunctionBase* Clone() const noexcept override;
-	};
+    MathVector Evaluate(const MathVector& T, bool& Exists) const noexcept override;
 
-	class Bezier : public FunctionBase
-	{
-	private:
-		unsigned int Rank = 0;
-		Polynomial* Segments = nullptr;
-	public:
-		Bezier(unsigned int Dim, unsigned int Rank);
-		Bezier(unsigned int Dim, unsigned int Rank, MathVector Obj[]);
-		virtual ~Bezier();
+    [[nodiscard]] bool ComparesTo(const FunctionBase* obj) const noexcept override;
+    [[nodiscard]] bool EquatesTo(const FunctionBase* obj) const noexcept override;
+    [[nodiscard]] FunctionBase* Clone() const noexcept override;
+};
 
-		MathVector Evaluate(const MathVector& T, bool& Exists) const noexcept override;
-	};
-}
+[[nodiscard]] [[maybe_unused]] Polynomial* CreateBezier(unsigned Dim, unsigned Rank, const std::vector<MathVector>& Points);
