@@ -48,6 +48,11 @@ protected:
     void PushAndBind(FunctionBase*& BindTo, FunctionBase* Child);
     [[nodiscard]] static FunctionBase& Get(FunctionBase* Binding);
 
+    //Clones all children from another function, and if ClearCurr is true, clears this instance beforehand.
+    void CloneChildrenFrom(const FunctionBase* Obj, bool ClearCurr);
+    //Takes all children from another function, and if ClearCurr is true, clears this instance beforehand.
+    void StealChildrenFrom(FunctionBase* Obj, bool ClearCurr) noexcept;
+
     [[nodiscard]] ConstFunctionIterator FirstChild() const noexcept;
     [[nodiscard]] ConstFunctionIterator LastChild() const noexcept;
 
@@ -88,6 +93,7 @@ public:
 
     [[nodiscard]] bool FlagActive(FunctionFlags Flag) const noexcept;
     void SetFlag(FunctionFlags Flag, bool Active) noexcept;
+    void InvertFlag(FunctionFlags Flag) noexcept;
 
     /// \breif Compares two functions and determines if they are comparable.
     /// \return True if the functions are comparable, or can be added together & simplify, false otherwise.

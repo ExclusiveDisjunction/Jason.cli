@@ -7,13 +7,34 @@ Polynomial::Polynomial(unsigned int InputDim, unsigned int OutputDim) : Function
 
 void Polynomial::AddFunction(FunctionBase* Obj)
 {
-    if (!this->PushChild(Obj))
+    if (!Obj)
+        throw std::logic_error("Cannot add a nullptr");
+
+    auto* conv = dynamic_cast<Polynomial*>(Obj);
+    if (conv)
+        this->StealChildrenFrom(conv, false);
+    else if (!this->PushChild(Obj))
         throw std::logic_error("Could not add function to the polynomial.");
 }
 void Polynomial::SubtractFunction(FunctionBase* Obj)
 {
-    AddFunction(Obj);
-    Obj->SetFlag(FF_Poly_Neg, true);
+    if (!Obj)
+        throw std::logic_error("Cannot subtract a nullptr");
+
+    auto* conv = dynamic_cast<Polynomial*>(Obj);
+    if (conv)
+    {
+        auto end = conv->LastChild();
+        for (auto curr = conv->FirstChild(); curr != end; curr++)
+            curr->InvertFlag(FunctionFlags::FF_Poly_Neg);
+
+        this->StealChildrenFrom(conv, false);
+    }
+    else
+    {
+        AddFunction(Obj);
+        Obj->SetFlag(FF_Poly_Neg, true);
+    }
 }
 
 [[maybe_unused]] [[nodiscard]] bool Polynomial::RemoveFunction(FunctionBase* Obj, bool Delete)
@@ -23,11 +44,25 @@ void Polynomial::SubtractFunction(FunctionBase* Obj)
 
 const FunctionBase& Polynomial::operator[](unsigned i) const
 {
-    //TODO: REQUIRES ITERATORS
+    if (i >= this->ChildCount())
+        throw std::logic_error("Out of bounds");
+
+    ConstFunctionIterator iter = this->FirstChild(), last = this->LastChild();
+    for (int j = 0; j < i && iter != last; j++)
+        iter++;
+
+    return *iter;
 }
 FunctionBase& Polynomial::operator[](unsigned i)
 {
-    //TODO: REQUIRES ITERATORS
+    if (i >= this->ChildCount())
+        throw std::logic_error("Out of bounds");
+
+    FunctionIterator iter = this->FirstChild(), last = this->LastChild();
+    for (int j = 0; j < i && iter != last; j++)
+        iter++;
+
+    return *iter;
 }
 
 MathVector Polynomial::Evaluate(const MathVector& Obj, bool& Exists) const noexcept
@@ -41,7 +76,27 @@ MathVector Polynomial::Evaluate(const MathVector& Obj, bool& Exists) const noexc
 
     MathVector Output(OutputDim);
 
-    //TODO: REQUIRES ITERATORS
+    try
+    {
+        auto end = this->LastChild();
+        for (auto iter = this->FirstChild(); iter != end; iter++)
+        {
+            const FunctionBase& func = *iter;
+            MathVector eval = func.Evaluate(Obj, Exists);
+            if (!Exists)
+                return MathVector::ErrorVector();
+
+            if (func.FlagActive(FunctionFlags::FF_Poly_Neg))
+                Output -= eval;
+            else
+                Output += eval;
+        }
+    }
+    catch (std::logic_error& e)
+    {
+        Exists = false;
+        return MathVector::ErrorVector();
+    }
 
     return Output;
 }
@@ -57,16 +112,15 @@ bool Polynomial::EquatesTo(const FunctionBase* Obj) const noexcept
     if (!conv || conv->InputDim != this->InputDim || conv->OutputDim != this->OutputDim || conv->A != this->A)
         return false;
 
-    //TODO: REQUIRES ITERATORS
+    //TODO: Requires matching.
 
     return false;
 }
 FunctionBase* Polynomial::Clone() const noexcept
 {
-    if (this->ChildCount() == 0)
-        return new Polynomial(this->InputDim, this->OutputDim);
+    auto* Return = new Polynomial(this->InputDim, this->OutputDim);
+    if (this->ChildCount() != 0)
+        Return->CloneChildrenFrom(this, false);
 
-    //TODO: REQUIRES ITERATORS
-
-    return nullptr;
+    return Return;
 }

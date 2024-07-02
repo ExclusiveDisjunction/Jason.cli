@@ -130,6 +130,50 @@ void FunctionBase::ClearChildren() noexcept
     Children = 0;
 }
 
+void FunctionBase::CloneChildrenFrom(const FunctionBase* Obj, bool ClearCurr)
+{
+    if (!Obj)
+        return;
+
+    if (ClearCurr)
+        this->ClearChildren();
+
+    auto end = Obj->LastChild();
+    for (auto curr = Obj->FirstChild(); curr != end; curr++)
+    {
+        if (!PushChild(curr->Clone()))
+            throw std::logic_error("Could not one of the children functions.");
+    }
+}
+void FunctionBase::StealChildrenFrom(FunctionBase* Obj, bool ClearCurr) noexcept
+{
+    if (!Obj)
+        return;
+
+    if (ClearCurr)
+        this->ClearChildren();
+
+    if (ClearCurr) //Optimized, easy case
+    {
+        this->First = std::exchange(Obj->First, nullptr);
+        this->Last = std::exchange(Obj->Last, nullptr);
+        this->Children = std::exchange(Obj->Children, 0);
+
+        for (FunctionBase* curr = this->First; curr != nullptr; curr = curr->Next)
+            curr->Parent = this;
+    }
+    else
+    {
+        //First, change ownership with children.
+        for (FunctionBase* curr = Obj->First; curr != nullptr; curr = curr->Next)
+            curr->Parent = this;
+
+        this->Last->Next = std::exchange(Obj->First, nullptr);
+        this->Last = std::exchange(Obj->Last, nullptr);
+        this->Children += std::exchange(Obj->Children, 0);
+    }
+}
+
 FunctionIterator FunctionBase::FirstChild() noexcept
 {
     return !First ? LastChild() : FunctionIterator(First);
@@ -159,6 +203,17 @@ void FunctionBase::SetFlag(FunctionFlags Flag, bool Active) noexcept
 
     unsigned char NewFlag = Active ? Flag : ~Flag;
     this->Flags &= NewFlag;
+}
+void FunctionBase::InvertFlag(FunctionFlags Flag) noexcept
+{
+    bool Prev = FlagActive(Flag);
+    unsigned char Result;
+    if (Prev)
+        Result = static_cast<unsigned char>(~Flag);
+    else
+        Result = static_cast<unsigned char>(Flag);
+
+    this->Flags &= Result;
 }
 
 FunctionBase& FunctionBase::Get(FunctionBase* Binding)
