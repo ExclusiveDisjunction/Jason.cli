@@ -18,11 +18,11 @@ void RationalFunction::DivideFunction(FunctionBase* Obj)
 
 const FunctionBase& RationalFunction::operator[](unsigned i) const
 {
-    //TODO: REQUIRES ITERATORS
+    return GetChildAt(i);
 }
 FunctionBase& RationalFunction::operator[](unsigned i)
 {
-    //TODO: REQUIRES ITERATORS
+    return GetChildAt(i);
 }
 
 [[maybe_unused]] [[nodiscard]] bool RationalFunction::RemoveFunction(FunctionBase* Obj, bool Delete)
@@ -41,7 +41,27 @@ MathVector RationalFunction::Evaluate(const MathVector& X, bool& Exists) const n
 
     double Return = 1;
 
-    //TODO: REQUIRES ITERATORS
+    try
+    {
+        auto end = this->LastChild();
+        for (auto iter = this->FirstChild(); iter != end; iter++)
+        {
+            const FunctionBase& func = *iter;
+            MathVector eval = func.Evaluate(X, Exists);
+            if (!Exists)
+                return MathVector::ErrorVector();
+
+            if (func.FlagActive(FunctionFlags::FF_Rat_Inv))
+                Return /= eval[0];
+            else
+                Return *= eval[0];
+        }
+    }
+    catch (std::logic_error&)
+    {
+        Exists = false;
+        return MathVector::ErrorVector();
+    }
 
     return MathVector(Return);
 }
@@ -57,16 +77,15 @@ bool RationalFunction::EquatesTo(const FunctionBase* Obj) const noexcept
     if (!conv || conv->InputDim != this->InputDim || conv->OutputDim != this->OutputDim || conv->A != this->A)
         return false;
 
-    //TODO: REQUIRES ITERATORS
+    //TODO: Requires matching.
 
     return false;
 }
 FunctionBase* RationalFunction::Clone() const noexcept
 {
-    if (this->ChildCount() == 0)
-        return new RationalFunction(InputDim);
+    auto* Return = new RationalFunction(this->InputDim);
+    if (this->ChildCount())
+        Return->CloneChildrenFrom(this, false);
 
-    //TODO: REQUIRES ITERATORS
-
-    return nullptr;
+    return Return;
 }

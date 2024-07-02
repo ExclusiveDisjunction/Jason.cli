@@ -48,6 +48,9 @@ protected:
     void PushAndBind(FunctionBase*& BindTo, FunctionBase* Child);
     [[nodiscard]] static FunctionBase& Get(FunctionBase* Binding);
 
+    [[nodiscard]] const FunctionBase& GetChildAt(unsigned i) const;
+    [[nodiscard]] FunctionBase& GetChildAt(unsigned i);
+
     //Clones all children from another function, and if ClearCurr is true, clears this instance beforehand.
     void CloneChildrenFrom(const FunctionBase* Obj, bool ClearCurr);
     //Takes all children from another function, and if ClearCurr is true, clears this instance beforehand.

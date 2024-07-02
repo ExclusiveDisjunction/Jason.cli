@@ -12,7 +12,10 @@ void Polynomial::AddFunction(FunctionBase* Obj)
 
     auto* conv = dynamic_cast<Polynomial*>(Obj);
     if (conv)
+    {
         this->StealChildrenFrom(conv, false);
+        delete conv;
+    }
     else if (!this->PushChild(Obj))
         throw std::logic_error("Could not add function to the polynomial.");
 }
@@ -29,6 +32,8 @@ void Polynomial::SubtractFunction(FunctionBase* Obj)
             curr->InvertFlag(FunctionFlags::FF_Poly_Neg);
 
         this->StealChildrenFrom(conv, false);
+
+        delete conv;
     }
     else
     {
@@ -44,25 +49,11 @@ void Polynomial::SubtractFunction(FunctionBase* Obj)
 
 const FunctionBase& Polynomial::operator[](unsigned i) const
 {
-    if (i >= this->ChildCount())
-        throw std::logic_error("Out of bounds");
-
-    ConstFunctionIterator iter = this->FirstChild(), last = this->LastChild();
-    for (int j = 0; j < i && iter != last; j++)
-        iter++;
-
-    return *iter;
+    return GetChildAt(i);
 }
 FunctionBase& Polynomial::operator[](unsigned i)
 {
-    if (i >= this->ChildCount())
-        throw std::logic_error("Out of bounds");
-
-    FunctionIterator iter = this->FirstChild(), last = this->LastChild();
-    for (int j = 0; j < i && iter != last; j++)
-        iter++;
-
-    return *iter;
+    return GetChildAt(i);
 }
 
 MathVector Polynomial::Evaluate(const MathVector& Obj, bool& Exists) const noexcept
@@ -92,7 +83,7 @@ MathVector Polynomial::Evaluate(const MathVector& Obj, bool& Exists) const noexc
                 Output += eval;
         }
     }
-    catch (std::logic_error& e)
+    catch (std::logic_error&)
     {
         Exists = false;
         return MathVector::ErrorVector();

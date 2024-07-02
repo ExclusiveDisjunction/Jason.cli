@@ -29,6 +29,11 @@ public:
     const FunctionBase& operator[](unsigned i) const;
     FunctionBase& operator[](unsigned i);
 
+    /*
+     * NOTICE: By passing a function into any of the next four functions, you should not hold onto pointers to those objects.
+     * In these functions, if the passed object is a Polynomial*, then it will take all the members from that object, and then delete it.
+     * Therefore, if you pass a polynomial, and then attempt to access that pointer later on, then the program will crash!
+     */
     [[maybe_unused]] void AddFunction(FunctionBase* Obj);
     template<std::convertible_to<FunctionBase*>... Args>
     [[maybe_unused]] void AddFunctions(Args... Obj);

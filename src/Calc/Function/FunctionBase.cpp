@@ -1,4 +1,5 @@
 #include "FunctionBase.h"
+#include <utility>
 
 FunctionBase::FunctionBase(unsigned int Input, unsigned int Output) : InputDim(Input), OutputDim(Output)
 {
@@ -172,6 +173,22 @@ void FunctionBase::StealChildrenFrom(FunctionBase* Obj, bool ClearCurr) noexcept
         this->Last = std::exchange(Obj->Last, nullptr);
         this->Children += std::exchange(Obj->Children, 0);
     }
+}
+
+const FunctionBase& FunctionBase::GetChildAt(unsigned i) const
+{
+    if (i >= this->ChildCount())
+        throw std::logic_error("Out of bounds");
+
+    ConstFunctionIterator iter = this->FirstChild(), last = this->LastChild();
+    for (int j = 0; j < i && iter != last; j++)
+        iter++;
+
+    return *iter;
+}
+FunctionBase& FunctionBase::GetChildAt(unsigned i)
+{
+    return const_cast<FunctionBase&>(const_cast<const FunctionBase*>(this)->GetChildAt(i));
 }
 
 FunctionIterator FunctionBase::FirstChild() noexcept
