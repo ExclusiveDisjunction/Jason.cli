@@ -13,6 +13,7 @@ class MATH_LIB RationalFunction : public FunctionBase
 {
 private:
     void ChildRemoved(FunctionBase* Child) noexcept override { }
+
 public:
     explicit RationalFunction(unsigned int InputDim);
     template<typename Iter> requires std::forward_iterator<Iter>
