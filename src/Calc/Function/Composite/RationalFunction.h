@@ -1,73 +1,43 @@
-#pragma once
+/*
+ * Created by exdisj
+ */
+
+#ifndef JASON_RATIONALFUNCTION_H
+#define JASON_RATIONALFUNCTION_H
 
 #include "../FunctionBase.h"
-#include "CompositeFunction.h"
 
 #include <iostream>
 
-namespace Math::Function
+class MATH_LIB RationalFunction : public FunctionBase
 {
-	class MATH_LIB RationalFunction : public CompositeFunction
-	{
-	public:
-		enum RationalFuncFlag
-		{
-			Inverted = 1
-		};
+private:
+    void ChildRemoved(FunctionBase* Child) noexcept override { }
 
-		RationalFunction(unsigned int InputDim);
-		RationalFunction(FunctionBase* Obj);
-		template<std::convertible_to<FunctionBase*>... Args>
-		RationalFunction(unsigned int Dim, Args... Objs) : CompositeFunction(Dim, 1)
-		{
-			std::vector<FunctionBase*> Func = std::vector<FunctionBase*>({ (static_cast<FunctionBase*>(Objs))... });
-			if (Func.size() == 0)
-				return;
+public:
+    explicit RationalFunction(unsigned int InputDim);
+    template<typename Iter> requires std::forward_iterator<Iter>
+    [[maybe_unused]] RationalFunction(unsigned Dim, Iter beg, Iter end);
+    template<std::convertible_to<FunctionBase*>... Args>
+    [[maybe_unused]] explicit RationalFunction(unsigned Dim, Args... Objs);
 
-			for (FunctionBase* Obj : { Func... })
-			{
-				if (Obj->InputDim() != Dim || Obj->OutputDim() != 1)
-					continue;
+    const FunctionBase& operator[](unsigned i) const;
+    FunctionBase& operator[](unsigned i);
 
-				MultiplyFunction(Obj);
-			}
-		}
-		~RationalFunction();
+    void MultiplyFunction(FunctionBase* Obj);
+    template<std::convertible_to<FunctionBase*>... Args>
+    void MultiplyFunctions(Args... Obj);
+    void DivideFunction(FunctionBase* Obj);
 
-		void MultiplyFunction(FunctionBase* Obj);
-		template<std::convertible_to<FunctionBase*>... Args>
-		void MultiplyFunctions(Args... Obj)
-		{
-			unsigned int Dim = InputDim();
+    [[maybe_unused]] [[nodiscard]] bool RemoveFunction(FunctionBase* Obj, bool Delete);
 
-			FunctionRelationSeg* Current = Last;
-			for (FunctionBase* Item : { ((FunctionBase*)Obj)... })
-			{
-				if (!Item || Item->InputDim() != Dim)
-					continue;
+    MathVector Evaluate(const MathVector& X, bool& Exists) const noexcept override;
 
-				FunctionRelationSeg* Seg = new FunctionRelationSeg(Obj, nullptr, nullptr);
-				AssignParent(Obj);
+    [[nodiscard]] bool EquatesTo(const FunctionBase* Obj) const noexcept override;
+    [[nodiscard]] bool ComparesTo(const FunctionBase* Obj) const noexcept override;
+    [[nodiscard]] FunctionBase* Clone() const noexcept override;
+};
 
-				if (Current)
-					Current->Next = Seg;
-				Seg->Previous = Current;
+#include "RationalFunctionT.tpp"
 
-				if (First == nullptr)
-					First = Seg;
-				
-				Current = Seg;
-				Size++;
-			}
-
-			Last = Current;
-		}
-		void DivideFunction(FunctionBase* Obj);
-
-		MathVector Evaluate(const MathVector& X, bool& Exists) const override;
-		
-		bool EquatesTo(FunctionBase* const& Obj) const override;
-		bool ComparesTo(FunctionBase* const& Obj) const override;
-		FunctionBase* Clone() const override;
-	};
-}
+#endif //JASON_RATIONALFUNCTION_H

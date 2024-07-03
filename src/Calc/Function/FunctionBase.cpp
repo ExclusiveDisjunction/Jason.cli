@@ -1,4 +1,5 @@
 #include "FunctionBase.h"
+#include <utility>
 
 FunctionBase::FunctionBase(unsigned int Input, unsigned int Output) : InputDim(Input), OutputDim(Output)
 {
@@ -8,6 +9,7 @@ FunctionBase::FunctionBase(unsigned int Input, unsigned int Output) : InputDim(I
 FunctionBase::~FunctionBase()
 {
     ClearChildren();
+    (void)RemoveParent();
 }
 
 [[nodiscard]] bool FunctionBase::RemoveParent() noexcept
@@ -15,7 +17,7 @@ FunctionBase::~FunctionBase()
     if (!Parent)
         return true;
 
-    if (!Parent->RemoveChild(this, false))
+    if (!Parent->PopChild(this, false))
         return false;
 
     this->Parent = nullptr;
@@ -24,7 +26,7 @@ FunctionBase::~FunctionBase()
 
 [[nodiscard]] bool FunctionBase::PushChild(FunctionBase* New) noexcept
 {
-    if (!New || New->Parent == this || IsFull()) //Empty, already contained, or full.
+    if (!New || New->Parent == this || New->InputDim != this->InputDim || New->OutputDim != this->OutputDim) //Empty, already contained, or full.
         return false;
 
     if (New->Parent != nullptr && !New->RemoveParent())
@@ -53,14 +55,7 @@ FunctionBase::~FunctionBase()
     Children++;
     return true;
 }
-[[nodiscard]] bool FunctionBase::AddChild(FunctionBase* Child) noexcept
-{
-    if (!Child || !AllowsChildAppend() || IsFull() || Child->Parent == this)
-        return false;
-
-    return Child->RemoveParent() && PushChild(Child);
-}
-[[nodiscard]] bool FunctionBase::PopChild(FunctionBase* obj) noexcept
+[[nodiscard]] bool FunctionBase::PopChild(FunctionBase* obj, bool Delete) noexcept
 {
     if (!obj || obj->Parent != this) //Null or not contained
         return false;
@@ -92,21 +87,28 @@ FunctionBase::~FunctionBase()
 
     Children--;
     obj->Next = obj->Previous = obj->Parent = nullptr;
+    if (Delete)
+    {
+        delete obj;
+        obj = nullptr;
+    }
+    else
+        Flags = 0; //Clears all flags from the function, so they can be re-used without problems.
+
     return true;
 }
-[[nodiscard]] bool FunctionBase::RemoveChild(FunctionBase* Child, bool Delete) noexcept
+void FunctionBase::PushAndBind(FunctionBase*& BindTo, FunctionBase* Child)
 {
-    if (!Child || Child->Parent != this)
-        return false;
+    if (BindTo == Child)
+        return;
 
-    if (!PopChild(Child))
-        return false;
+    delete BindTo;
+    BindTo = nullptr;
 
-    Child->Parent = nullptr;
+    if (!this->PushChild(Child))
+        throw std::logic_error("Could not append this child.");
 
-    if (Delete)
-        delete Child;
-    return true;
+    BindTo = Child;
 }
 void FunctionBase::ClearChildren() noexcept
 {
@@ -129,45 +131,114 @@ void FunctionBase::ClearChildren() noexcept
     Children = 0;
 }
 
-[[nodiscard]] bool FunctionBase::ComparesTo(const FunctionBase* Obj) const
+void FunctionBase::CloneChildrenFrom(const FunctionBase* Obj, bool ClearCurr)
 {
     if (!Obj)
-        return false;
+        return;
 
-    if (this->InputDim != Obj->InputDim || this->OutputDim != Obj->OutputDim || this->AllowedChildCount() != Obj->AllowedChildCount() || this->A != A)
-        return false;
+    if (ClearCurr)
+        this->ClearChildren();
 
-    if (AllowedChildCount() != 0)
+    auto end = Obj->LastChild();
+    for (auto curr = Obj->FirstChild(); curr != end; curr++)
     {
-        const auto* tC = this->First, *oC = Obj->First;
-        for (; tC && oC; tC = tC->Next, oC = oC->Next)
-        {
-            if (!tC->EquatesTo(oC))
-                return false;
-        }
+        if (!PushChild(curr->Clone()))
+            throw std::logic_error("Could not one of the children functions.");
     }
-
-    return true;
 }
-[[nodiscard]] bool FunctionBase::EquatesTo(const FunctionBase* Obj) const
+void FunctionBase::StealChildrenFrom(FunctionBase* Obj, bool ClearCurr) noexcept
 {
     if (!Obj)
-        return false;
+        return;
 
-    if (this->InputDim != Obj->InputDim || this->OutputDim != Obj->OutputDim || this->AllowedChildCount() != Obj->AllowedChildCount() || this->A != A)
-        return false;
+    if (ClearCurr)
+        this->ClearChildren();
 
-    if (AllowedChildCount() != 0)
+    if (ClearCurr) //Optimized, easy case
     {
-        const auto* tC = this->First, *oC = Obj->First;
-        for (; tC && oC; tC = tC->Next, oC = oC->Next)
-        {
-            if (!tC->ComparesTo(oC))
-                return false;
-        }
-    }
+        this->First = std::exchange(Obj->First, nullptr);
+        this->Last = std::exchange(Obj->Last, nullptr);
+        this->Children = std::exchange(Obj->Children, 0);
 
-    return true;
+        for (FunctionBase* curr = this->First; curr != nullptr; curr = curr->Next)
+            curr->Parent = this;
+    }
+    else
+    {
+        //First, change ownership with children.
+        for (FunctionBase* curr = Obj->First; curr != nullptr; curr = curr->Next)
+            curr->Parent = this;
+
+        this->Last->Next = std::exchange(Obj->First, nullptr);
+        this->Last = std::exchange(Obj->Last, nullptr);
+        this->Children += std::exchange(Obj->Children, 0);
+    }
+}
+
+const FunctionBase& FunctionBase::GetChildAt(unsigned i) const
+{
+    if (i >= this->ChildCount())
+        throw std::logic_error("Out of bounds");
+
+    ConstFunctionIterator iter = this->FirstChild(), last = this->LastChild();
+    for (int j = 0; j < i && iter != last; j++)
+        iter++;
+
+    return *iter;
+}
+FunctionBase& FunctionBase::GetChildAt(unsigned i)
+{
+    return const_cast<FunctionBase&>(const_cast<const FunctionBase*>(this)->GetChildAt(i));
+}
+
+FunctionIterator FunctionBase::FirstChild() noexcept
+{
+    return !First ? LastChild() : FunctionIterator(First);
+}
+FunctionIterator FunctionBase::LastChild() noexcept
+{
+    return FunctionIterator(Last);
+}
+ConstFunctionIterator FunctionBase::FirstChild() const noexcept
+{
+    return !First ? LastChild() : ConstFunctionIterator(First);
+}
+ConstFunctionIterator FunctionBase::LastChild() const noexcept
+{
+    return ConstFunctionIterator(Last);
+}
+
+[[nodiscard]] bool FunctionBase::FlagActive(FunctionFlags Flag) const noexcept
+{
+    return Flags & Flag;
+}
+void FunctionBase::SetFlag(FunctionFlags Flag, bool Active) noexcept
+{
+    bool Prev = FlagActive(Flag);
+    if (Prev == Active)
+        return;
+
+    unsigned char NewFlag = Active ? Flag : ~Flag;
+    this->Flags &= NewFlag;
+}
+void FunctionBase::InvertFlag(FunctionFlags Flag) noexcept
+{
+    bool Prev = FlagActive(Flag);
+    unsigned char Result;
+    if (Prev)
+        Result = static_cast<unsigned char>(~Flag);
+    else
+        Result = static_cast<unsigned char>(Flag);
+
+    this->Flags &= Result;
+}
+
+FunctionBase& FunctionBase::Get(FunctionBase* Binding)
+{
+    if (!Binding)
+        throw std::logic_error("Cannot dereference an empty function.");
+
+    return *Binding;
 }
 
 FunctionBase& FunctionBase::operator-()

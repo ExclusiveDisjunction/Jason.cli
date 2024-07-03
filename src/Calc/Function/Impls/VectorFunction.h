@@ -1,69 +1,45 @@
-#pragma once
+/*
+ * Created by exdisj
+ */
+
+#ifndef JASON_VECTORFUNCTION_H
+#define JASON_VECTORFUNCTION_H
 
 #include "../FunctionBase.h"
 
-namespace Math::Function
+class MATH_LIB VectorFunction : public FunctionBase
 {
-	class MATH_LIB VectorFunction : public FunctionBase
-	{
-	private:
-		void Fill(unsigned int OutputDim);
-		void Clear();
+private:
+    void Fill(unsigned int OutputDim);
+    void Clear();
 
-		FunctionBase** Func;
-	protected:
-		void ChildRemoved(FunctionBase* Item) override;
+    FunctionBase** Func = nullptr;
+protected:
+    void ChildRemoved(FunctionBase* Item) noexcept override;
 
-		void AddChild(FunctionBase* Child) override {}
-		void RemoveChild(FunctionBase* Child, bool Delete = true) override {}
-	public:
-		VectorFunction(unsigned int InputDim, unsigned int OutputDim);
-		VectorFunction(unsigned int InputDim, unsigned int OutputDim, FunctionBase** ToHost);
-		VectorFunction(unsigned int InputDim, unsigned int OutputDim, Core::SequenceBase<FunctionBase*>* ToHost);
-		template<std::convertible_to<FunctionBase*>... Args>
-		VectorFunction(unsigned int InputDim, unsigned int OutputDim, Args... Value) : FunctionBase(InputDim, OutputDim)
-		{
-			Fill(OutputDim);
+public:
+    VectorFunction(unsigned int InputDim, unsigned int OutputDim) ;
+    template<typename Iter> requires std::forward_iterator<Iter>
+    [[maybe_unused]] VectorFunction(unsigned int InputDim, unsigned int OutputDim, Iter beg, Iter end);
+    template<std::convertible_to<FunctionBase*>... Args>
+    [[maybe_unused]] VectorFunction(unsigned int InputDim, unsigned int OutputDim, Args... Value);
+    VectorFunction(const VectorFunction& Obj) = delete;
+    VectorFunction(VectorFunction&& Obj) = delete;
 
-			std::vector<FunctionBase*> ToFill = std::vector<FunctionBase*>({ (static_cast<FunctionBase*>(Value))... });
-			if (ToFill.size() != OutputDim)
-				return;
+    VectorFunction& operator=(const VectorFunction& Obj) = delete;
+    VectorFunction& operator=(VectorFunction&& Obj) = delete;
 
-			for (unsigned int i = 0; i < OutputDim; i++)
-			{
-				if (!ToFill[i] || ToFill[i]->InputDim() != _Input || ToFill[i]->OutputDim() != 1)
-					continue;
+    [[maybe_unused]] void AssignFunction(unsigned int Index, FunctionBase* Func);
+    [[nodiscard]] [[maybe_unused]] const FunctionBase& operator[](unsigned i) const;
+    [[nodiscard]] [[maybe_unused]] FunctionBase& operator[](unsigned i);
 
-				AssignParent(ToFill[i]);
-				Func[i] = ToFill[i];
-			}
-		}
-		VectorFunction(const VectorFunction& Obj) = delete;
-		VectorFunction(VectorFunction&& Obj) = delete;
-		virtual ~VectorFunction();
+    MathVector Evaluate(const MathVector& In, bool& Exists) const noexcept override;
 
-		VectorFunction& operator=(const VectorFunction& Obj) = delete;
-		VectorFunction& operator=(VectorFunction&& Obj) = delete;
+    [[nodiscard]] bool ComparesTo(const FunctionBase* Obj) const noexcept override;
+    [[nodiscard]] bool EquatesTo(const FunctionBase* Obj) const noexcept override;
+    [[nodiscard]] FunctionBase* Clone() const noexcept override;
+};
 
-		void AssignFunction(unsigned int Index, FunctionBase* Func);
-		FunctionBase* operator[](unsigned int Index) const;
+#include "VectorFunctionT.tpp"
 
-		virtual MathVector Evaluate(const MathVector& In, bool& Exists) const override;
-
-		unsigned int AllowedChildCount() const override { return _Output; }
-		bool AllowsChildAppend() const override { return false; }
-
-		bool ComparesTo(FunctionBase* const& Obj) const override;
-		bool EquatesTo(FunctionBase* const& Obj) const override;
-		FunctionBase* Clone() const override;
-
-		bool operator==(const VectorFunction& Obj)
-		{
-			return Obj.EquatesTo(this);
-		}
-		bool operator!=(const VectorFunction& Obj)
-		{
-			return !Obj.EquatesTo(this);
-		}
-	};
-}
+#endif // JASON_VECTORFUNCTION_H

@@ -9,11 +9,9 @@
 
 //Impls
 #include "Impls/CoreFunctions.h"
-#include "Impls/MatrixFunction.h"
 #include "Impls/VectorFunction.h"
 #include "Impls/GeneralFunctions.h"
 
 //Composite Functions
-#include "Composite/CompositeFunction.h"
 #include "Composite/Polynomial.h"
 #include "Composite/RationalFunction.h"

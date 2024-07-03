@@ -1,155 +1,130 @@
 #include "VectorFunction.h"
 
-using namespace Core;
-
-namespace Math::Function
+VectorFunction::VectorFunction(unsigned int InputDim, unsigned int OutputDim) : FunctionBase(InputDim, OutputDim)
 {
-	VectorFunction::VectorFunction(unsigned int InputDim, unsigned int OutputDim) : FunctionBase(InputDim, OutputDim)
-	{
-		Fill(OutputDim);
-	}
-	VectorFunction::VectorFunction(unsigned int InputDim, unsigned int OutputDim, FunctionBase** ToHost) : FunctionBase(InputDim, OutputDim)
-	{
-		Fill(OutputDim);
+    Fill(OutputDim);
+}
 
-		for (unsigned int i = 0; i < OutputDim; i++)
-		{
-			if (!ToHost[i] || ToHost[i]->InputDim() != InputDim || ToHost[i]->OutputDim() != 1)
-				continue;
+void VectorFunction::Fill(unsigned int Dim)
+{
+    Clear();
 
-			AssignParent(ToHost[i]);
-			Func[i] = ToHost[i];
-		}
-	}
-	VectorFunction::VectorFunction(unsigned int InputDim, unsigned int OutputDim, Core::SequenceBase<FunctionBase*>* ToHost) : FunctionBase(InputDim, OutputDim)
-	{
-		Fill(OutputDim);
+    Func = new FunctionBase*[Dim];
 
-		if (ToHost->Length() != OutputDim)
-			return;
+    for (unsigned int i = 0; i < Dim; i++)
+        Func[i] = nullptr;
+}
+void VectorFunction::Clear()
+{
+    if (Func)
+    {
+        for (unsigned int i = 0; i < OutputDim; i++)
+            delete Func[i];
 
-		for (unsigned int i = 0; i < OutputDim; i++)
-		{
-			FunctionBase* Current = ToHost->Item(i);
-			if (!Current || Current->InputDim() != InputDim || Current->OutputDim() != 1)
-				continue;
+        delete[] Func;
+    }
 
-			AssignParent(Current);
-			Func[i] = Current;
-		}
-	}
-	VectorFunction::~VectorFunction()
-	{
-		for (unsigned int i = 0; i < _Output; i++)
-		{
-			delete Func[i];
-			Func[i] = nullptr;
-		}
-	}
+    Func = nullptr;
+}
+void VectorFunction::ChildRemoved(FunctionBase* Item) noexcept
+{
+    if (!Func)
+        return;
 
-	void VectorFunction::Fill(unsigned int Dim)
-	{
-		Clear();
+    for (unsigned i = 0; i < OutputDim; i++)
+    {
+        if (Func[i] == Item)
+        {
+            Func[i] = nullptr;
+            return;
+        }
+    }
+}
 
-		Func = new FunctionBase*[Dim];
+const FunctionBase& VectorFunction::operator[](unsigned i) const
+{
+    if (!Func)
+        throw std::logic_error("No functions contained.");
+    else if (i > OutputDim)
+        throw std::logic_error("Out of bounds");
 
-		for (unsigned int i = 0; i < Dim; i++)
-			Func[i] = nullptr;
+    return Get(Func[i]);
+}
+FunctionBase& VectorFunction::operator[](unsigned i)
+{
+    if (!Func)
+        throw std::logic_error("No functions contained.");
+    else if (i > OutputDim)
+        throw std::logic_error("Out of bounds");
 
-		this->Size = Dim;
-	}
-	void VectorFunction::Clear()
-	{
-		if (Func)
-		{
-			for (unsigned int i = 0; i < _Output; i++)
-				delete Func[i];
+    return Get(Func[i]);
+}
+void VectorFunction::AssignFunction(unsigned int Index, FunctionBase* New)
+{
+    if (Index > OutputDim || !Func)
+        throw std::logic_error("Out of bounds or this instance has no children functions.");
 
-			delete[] Func;
-		}
+    delete Func[Index];
 
-		Func = nullptr;
-		Size = 0;
-	}
-	void VectorFunction::ChildRemoved(FunctionBase* Item)
-	{
-		//Vector Funtions cannot have children
-	}
+    if (New && !this->PushChild(New)) //If !New, PushChild will always return false. So we only care if PushChild fails, provided that New is not nullptr.
+        throw std::logic_error("Cannot push child.");
 
-	FunctionBase* VectorFunction::operator[](unsigned int Index) const
-	{
-		if (Index >= _Output)
-			return nullptr;
+    Func[Index] = New;
+}
 
-		return Func[Index];
-	}
-	void VectorFunction::AssignFunction(unsigned int Index, FunctionBase* Func)
-	{
-		if (Index >= _Output || !Func || Func->InputDim() != _Input || Func->OutputDim() != 1)
-			return;
+MathVector VectorFunction::Evaluate(const MathVector& In, bool& Exists) const noexcept
+{
+    if (!Func || In.Dim() != InputDim)
+    {
+        Exists = false;
+        return MathVector::ErrorVector();
+    }
 
-		this->Func[Index] = Func;
-		AssignParent(Func);
-	}
+    MathVector Return(OutputDim);
+    Exists = true;
+    for (unsigned int i = 0; i < OutputDim; i++)
+    {
+        if (!Func[i])
+        {
+            Exists = false;
+            return MathVector::ErrorVector();
+        }
 
-	MathVector VectorFunction::Evaluate(const MathVector& In, bool& Exists) const
-	{
-		if (_Output == 0 || !Func || In.Dim() != _Input)
-		{
-			Exists = false;
-			return MathVector::ErrorVector();
-		}
+        MathVector Result = Func[i]->Evaluate(In, Exists);
+        if (!Exists)
+            return MathVector::ErrorVector();
+        else
+            Return[i] = Result[0];
+    }
 
-		MathVector Return(_Output);
-		Exists = true;
-		for (unsigned int i = 0; i < _Output; i++)
-		{
-			MathVector Result = Func[i]->Evaluate(In, Exists);
-			if (!Exists)
-				return MathVector::ErrorVector();
-			else
-				Return[i] = Result;
-		}
+    return Return;
+}
 
-		return Return;
-	}
+bool VectorFunction::ComparesTo(const FunctionBase* Obj) const noexcept
+{
+    const auto* conv = dynamic_cast<const VectorFunction*>(Obj);
+    return conv == this || (conv && conv->InputDim == this->InputDim && conv->OutputDim == this->OutputDim); //Vector functions can always be added, if the dimensions match.
+}
+bool VectorFunction::EquatesTo(const FunctionBase* Obj) const noexcept
+{
+    const auto* conv = dynamic_cast<const VectorFunction*>(Obj);
+    if (conv == this)
+        return true;
 
-	bool VectorFunction::ComparesTo(FunctionBase* const& Obj) const
-	{
-		const VectorFunction* Conv = dynamic_cast<const VectorFunction*>(Obj);
-		if (!Conv)
-			return false;
+    if (!conv || conv->InputDim != this->InputDim || conv->OutputDim != this->OutputDim || conv->A != this->A)
+        return false;
 
-		if (Conv->_Output != _Output || Conv->_Input != _Input)
-			return false;
+    bool result = true;
+    for (unsigned i = 0; i < this->OutputDim; i++)
+        result &= this->Func[i] && conv->Func[i] && this->Func[i]->EquatesTo(conv->Func[i]);
 
-		bool Return = true;
-		for (unsigned int i = 0; i < _Output; i++)
-			Return &= Conv->Func[i]->ComparesTo(Func[i]);
+    return result;
+}
+FunctionBase* VectorFunction::Clone() const noexcept
+{
+    auto* Return = new VectorFunction(InputDim, OutputDim);
+    for (unsigned int i = 0; i < OutputDim; i++)
+        Return->Func[i] = Func[i]->Clone();
 
-		return Return;
-	}
-	bool VectorFunction::EquatesTo(FunctionBase* const& Obj) const
-	{
-		const VectorFunction* Conv = dynamic_cast<const VectorFunction*>(Obj);
-		if (!Conv)
-			return false;
-
-		if (Conv->_Output != _Output || Conv->_Input != _Input)
-			return false;
-
-		bool Return = true;
-		for (unsigned int i = 0; i < _Output; i++)
-			Return &= Conv->Func[i]->EquatesTo(Func[i]);
-
-		return Return;
-	}
-	FunctionBase* VectorFunction::Clone() const
-	{
-		VectorFunction* Return = new VectorFunction(_Input, _Output);
-		for (unsigned int i = 0; i < _Output; i++)
-			Return->Func[i] = Func[i]->Clone();
-
-		return Return;
-	}
+    return Return;
 }

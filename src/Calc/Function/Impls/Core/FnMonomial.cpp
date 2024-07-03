@@ -1,68 +1,72 @@
-#include "..\CoreFunctions.h"
+#include "../CoreFunctions.h"
 
-namespace Math::Function
+FnMonomial::FnMonomial(FunctionBase* InnerFunction, double Power, double A) : FunctionBase(!InnerFunction ? 0 : InnerFunction->InputDim, 1)
 {
-	FnMonomial::FnMonomial(unsigned int InputDim, unsigned int Var) : FnMonomial(new Monomial(InputDim, Var), 1, 1)
-	{
+    if (!InnerFunction || InnerFunction->OutputDim != 1)
+        throw std::logic_error("The inner function must be valid, and the output dimension must be one.");
 
-	}
-	FnMonomial::FnMonomial(FunctionBase* InnerFunction, double A, double N) : FunctionBase(!InnerFunction ? 0 : InnerFunction->InputDim(), 1)
-	{
-		if (!InnerFunction || InnerFunction->OutputDim() != 1)
-			throw std::exception("The inner function must be valid, and the output dimension must be one.");
+    this->A = A;
+    this->N = N;
 
-		this->A = A;
-		this->N = N;
-		_B = InnerFunction;
-		AssignParent(_B);
-	}
+    Base(InnerFunction);
+}
 
-	FunctionBase* FnMonomial::Base() const
-	{
-		return _B;
-	}
-	void FnMonomial::Base(FunctionBase* const& NewB)
-	{
-		if (!NewB || NewB->InputDim() != InputDim() || NewB->OutputDim() != 1)
-			throw std::exception("The inner function must exist, and the input dimension must be the input dimension of this function, as well as the output dimension of the function being 1.");
-		if (_B)
-		{
-			FunctionBase* Temp = _B;
-			_B->RemoveParent();
-			delete Temp;
-		}
-		
-		_B = NewB;
-		AssignParent(_B);
-	}
+const FunctionBase& FnMonomial::Base() const
+{
+    return Get(B);
+}
+FunctionBase& FnMonomial::Base()
+{
+    return Get(B);
+}
+void FnMonomial::Base(FunctionBase* NewB)
+{
+    PushAndBind(B, NewB);
+}
 
-	void FnMonomial::ChildRemoved(FunctionBase* Obj)
-	{
-		if (_B == Obj)
-			_B = nullptr;
-	}
-	
-	MathVector FnMonomial::Evaluate(const MathVector& X, bool& Exists) const
-	{
-		if (X.Dim() != InputDim() || !_B)
-		{
-			Exists = false;
-			return MathVector::ErrorVector();
-		}
+void FnMonomial::ChildRemoved(FunctionBase* Obj) noexcept
+{
+    if (B == Obj)
+        B = nullptr;
+}
 
-		Exists = true;
-		MathVector InnerEval = _B->Evaluate(X, Exists);
-		if (!Exists)
-			return MathVector::ErrorVector();
+MathVector FnMonomial::Evaluate(const MathVector& X, bool& Exists) const noexcept
+{
+    if (X.Dim() != InputDim || !B)
+    {
+        Exists = false;
+        return MathVector::ErrorVector();
+    }
 
-		return A * pow(InnerEval[0], N);
-	}
+    Exists = true;
+    MathVector InnerEval = B->Evaluate(X, Exists);
+    if (!Exists)
+        return MathVector::ErrorVector();
 
-	FunctionBase* FnMonomial::Clone() const
-	{
-		if (!_B)
-			return nullptr;
+    return MathVector(A * pow(InnerEval[0], N));
+}
 
-		return new FnMonomial(_B->Clone(), A, N);
-	}
+[[nodiscard]] bool FnMonomial::ComparesTo(const FunctionBase* Obj) const noexcept
+{
+    const auto* conv = dynamic_cast<const FnMonomial*>(Obj);
+    return this == conv || (conv && conv->N == this->N && conv->B->EquatesTo(this->B));
+}
+[[nodiscard]] bool FnMonomial::EquatesTo(const FunctionBase* Obj) const noexcept
+{
+    const auto* conv = dynamic_cast<const FnMonomial*>(Obj);
+    return this == conv || (conv && conv->N == this->N && conv->B->EquatesTo(this->B) && this->A == conv->A);
+}
+FunctionBase* FnMonomial::Clone() const noexcept
+{
+    if (!B)
+        return nullptr;
+
+    try
+    {
+        return new FnMonomial(B->Clone(), N, A);
+    }
+    catch (std::exception& e)
+    {
+        return  nullptr;
+    }
 }
