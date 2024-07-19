@@ -207,3 +207,9 @@ MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept
         throw std::logic_error("A bad cast exception was thrown, meaning that a type lied about its GetType.");
     }
 }
+
+std::ostream& operator<<(std::ostream& out, const VariableType& obj)
+{
+    obj.Print(out);
+    return out;
+}

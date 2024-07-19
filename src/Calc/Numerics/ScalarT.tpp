@@ -51,13 +51,13 @@ Scalar& Scalar::operator+=(const T& in) noexcept
 template<typename T> requires IsScalarOrDouble<T>
 Scalar& Scalar::operator-=(const T& in) noexcept
 {
-    this->Data += static_cast<double>(in);
+    this->Data -= static_cast<double>(in);
     return *this;
 }
 template<typename T> requires IsScalarOrDouble<T>
 Scalar& Scalar::operator*=(const T& in) noexcept
 {
-    this->Data += static_cast<double>(in);
+    this->Data *= static_cast<double>(in);
     return *this;
 }
 template<typename T> requires IsScalarOrDouble<T>

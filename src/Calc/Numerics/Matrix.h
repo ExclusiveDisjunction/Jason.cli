@@ -36,6 +36,8 @@ private:
 
 public:
     Matrix(unsigned int Rows, unsigned int Columns, double Value = 0) noexcept;
+    template<std::convertible_to<double>... args>
+    [[maybe_unused]] Matrix(unsigned Rows, unsigned Columns, args... vals);
     [[maybe_unused]] explicit Matrix(const MathVector& in);
     explicit Matrix(std::istream& in);
     Matrix(const Matrix& Other) noexcept;
@@ -50,7 +52,7 @@ public:
 
     [[nodiscard]] VariableTypes GetType() const noexcept override;
     void Sterilize(std::ostream& out) const noexcept override;
-    std::ostream& operator<<(std::ostream& out) const noexcept override;
+    void Print(std::ostream& out) const noexcept override;
 
     [[nodiscard]] [[maybe_unused]] static Matrix* FromSterilize(const std::string& sterilized);
     [[nodiscard]] std::string GetTypeString() const noexcept override;

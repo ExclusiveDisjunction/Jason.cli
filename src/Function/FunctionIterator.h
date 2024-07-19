@@ -6,7 +6,7 @@
 #define JASON_FUNCTIONITERATOR_H
 
 #include <iterator>
-#include "../StdCalc.h"
+#include "../Calc/StdCalc.h"
 
 class MATH_LIB FunctionBase;
 

@@ -55,4 +55,6 @@ MathVector& MathVector::operator/=(const T& in)
     auto fac = static_cast<double>(in);
     for (unsigned i = 0; i < this->d && this->Point; i++)
         this->Point[i] /= fac;
+
+    return *this;
 }

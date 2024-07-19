@@ -83,9 +83,16 @@ bool Scalar::operator!=(const VariableType& obj) const noexcept
 {
     return !(*this == obj);
 }
-
-std::ostream& Scalar::operator<<(std::ostream& out) const noexcept
+bool Scalar::operator==(double obj) const noexcept
 {
-    out << std::scientific << this->Data;
-    return out;
+    return this->Data == obj;
+}
+bool Scalar::operator!=(double obj) const noexcept
+{
+    return this->Data != obj;
+}
+
+void Scalar::Print(std::ostream& out) const noexcept
+{
+    out << this->Data;
 }

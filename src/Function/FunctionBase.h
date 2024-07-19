@@ -6,9 +6,9 @@
 #define JASON_FUNCTIONBASE_H
 
 #include "FunctionIterator.h"
-#include "../StdCalc.h"
-#include "../Numerics/MathVector.h"
-#include "../Numerics/Matrix.h"
+#include "../Calc/StdCalc.h"
+#include "../Calc/Numerics/MathVector.h"
+#include "../Calc/Numerics/Matrix.h"
 
 enum FunctionFlags
 {

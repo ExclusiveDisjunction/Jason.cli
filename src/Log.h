@@ -31,7 +31,6 @@ private:
             return false;
 
         this->State = level;
-        std::cout << "State is " << this->State << std::endl;
 
         if (!CurrentLogIsIgnored())
         {

@@ -565,12 +565,11 @@ std::string Matrix::GetRowString(unsigned row, std::vector<std::pair<bool, unsig
     ss << close;
     return ss.str();
 }
-std::ostream& Matrix::operator<<(std::ostream& out) const noexcept
+void Matrix::Print(std::ostream& out) const noexcept
 {
     if (!this->IsValid())
     {
         out << "[ ]";
-        return out;
     }
 
     auto schema = this->GetColumnWidthSchematic();
@@ -595,8 +594,6 @@ std::ostream& Matrix::operator<<(std::ostream& out) const noexcept
             out << this->GetRowString(i, schema, open, close) << '\n';
         }
     }
-
-    return out;
 }
 
 Matrix Matrix::operator|(const Matrix& Two) const

@@ -39,7 +39,7 @@ public:
     void Sterilize(std::ostream& out) const noexcept override;
     [[maybe_unused]] [[nodiscard]] static MathVector* FromSterilized(const std::string &obj);
     [[nodiscard]] std::string GetTypeString() const noexcept override;
-    std::ostream& operator<<(std::ostream& out) const noexcept override;
+    void Print(std::ostream& out) const noexcept override;
 
     MathVector& operator=(const MathVector &Obj) noexcept;
     MathVector& operator=(MathVector &&Obj) noexcept;

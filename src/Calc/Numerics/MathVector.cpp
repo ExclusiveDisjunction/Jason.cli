@@ -212,14 +212,12 @@ void MathVector::Sterilize(std::ostream& out) const noexcept
 
     return ss.str();
 }
-std::ostream& MathVector::operator<<(std::ostream& out) const noexcept
+void MathVector::Print(std::ostream& out) const noexcept
 {
     out << "{ ";
     for (unsigned i = 0; i < d; i++)
-        out << this->Point[i] << ' ';
+        out << this->Point[i] << (i == d - 1 ? " " : ", ");
     out << '}';
-
-    return out;
 }
 
 [[maybe_unused]] [[nodiscard]] MathVector MathVector::CrossProduct(const MathVector& One, const MathVector& Two)
