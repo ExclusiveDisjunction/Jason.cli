@@ -35,7 +35,7 @@ private:
     Matrix();
 
 public:
-    Matrix(unsigned int Rows, unsigned int Columns, double Value = 0) noexcept;
+    Matrix(unsigned int Rows, unsigned int Columns) noexcept;
     template<std::convertible_to<double>... args>
     [[maybe_unused]] Matrix(unsigned Rows, unsigned Columns, args... vals);
     [[maybe_unused]] explicit Matrix(const MathVector& in);

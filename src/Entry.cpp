@@ -65,11 +65,18 @@ void testCalc()
         Matrix a(2, 2, 3.4, 1.6, 2.3, 1.1),
                 b = Matrix::Identity(2);
 
+        cout << "a = \n" << a << "\nb = \n" << b << endl;
+
         Matrix c = a+b;
         cout << "a + b = \n" << c << endl;
         cout << "a - b = \n" << a - b << endl;
         cout << "a * b = \n" << a * b << endl;
         cout << "a / 1.3 = \n" << a / 1.3 << endl;
+
+        Matrix d(3, 3, -1,    -4.23, 1.6,
+                                      2.34, -1.93, 4,
+                                      2,     0.55, 3);
+        cout << endl << "d = \n" << d << endl;
     }
 }
 

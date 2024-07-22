@@ -10,9 +10,9 @@ Matrix::Matrix() : m(0), n(0), Data(nullptr)
 {
     DeAllocate();
 }
-Matrix::Matrix(unsigned int Rows, unsigned int Columns, double Value) noexcept : Matrix()
+Matrix::Matrix(unsigned int Rows, unsigned int Columns) noexcept : Matrix()
 {
-    Allocate(Rows, Columns, Value);
+    Allocate(Rows, Columns, 0);
 }
 [[maybe_unused]] Matrix::Matrix(const MathVector& in) : Matrix()
 {
@@ -141,7 +141,7 @@ Matrix Matrix::Identity(unsigned int Size)
 }
 Matrix Matrix::Identity(unsigned int Rows, unsigned int Cols)
 {
-    Matrix result(Rows, Cols, 0);
+    Matrix result(Rows, Cols);
     for (unsigned i = 0; i < Rows && i < Cols; i++)
         result[i][i] = 1;
 
@@ -508,9 +508,15 @@ std::vector<std::pair<bool, unsigned long>> Matrix::GetColumnWidthSchematic() co
             double curr = this->Data[i][j];
             if (curr < 0)
                 negative_found = true;
-            largest_num = std::max(
-                    static_cast<unsigned long>(std::to_string(curr).length()),
-                    largest_num);
+
+            unsigned long as_str_l;
+            {
+                std::stringstream temp;
+                temp << curr;
+                as_str_l = static_cast<unsigned long>(temp.str().length());
+            }
+
+            largest_num = std::max(as_str_l, largest_num);
         }
 
         result.emplace_back(negative_found, largest_num);
@@ -546,13 +552,21 @@ std::string Matrix::GetRowString(unsigned row, std::vector<std::pair<bool, unsig
             continue;
         }
 
-        std::string curr_str = std::to_string(curr);
+        std::string curr_str;
+        {
+            std::stringstream temp;
+            temp << curr;
+            curr_str = temp.str();
+        }
+
         if (has_negative && (curr_str.length()) < width + 1 || (curr_str.length() < width))
         {
             unsigned long diff = width - (curr_str.length());
             std::string space_str;
-            if (has_negative)
+            /*
+             * if (has_negative)
                 diff++;
+             */
 
             for (unsigned t = 0; t < diff; t++)
                 space_str += ' ';
