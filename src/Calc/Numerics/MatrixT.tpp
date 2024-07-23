@@ -9,10 +9,9 @@ template<std::convertible_to<double>... args>
     if (conv.size() != Rows * Columns)
         throw std::logic_error("Not enough or too many numbers provided.");
 
-    unsigned k = 0;
-    for (unsigned i = 0; i < Rows; i++, k++)
-        for (unsigned j = 0; j < Columns; j++, k++)
-            this->Data[i][j] = conv[k];
+    for (unsigned i = 0; i < Rows; i++)
+        for (unsigned j = 0; j < Columns; j++)
+            this->Data[i][j] = conv[(Columns * i) + j];
 }
 
 template<typename T> requires IsScalarOrDouble<T>

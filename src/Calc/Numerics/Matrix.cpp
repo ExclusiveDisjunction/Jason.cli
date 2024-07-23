@@ -563,10 +563,8 @@ std::string Matrix::GetRowString(unsigned row, std::vector<std::pair<bool, unsig
         {
             unsigned long diff = width - (curr_str.length());
             std::string space_str;
-            /*
-             * if (has_negative)
+             if (has_negative)
                 diff++;
-             */
 
             for (unsigned t = 0; t < diff; t++)
                 space_str += ' ';
