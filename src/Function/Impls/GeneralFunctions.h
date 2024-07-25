@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../StdCalc.h"
+#include "../../Calc/StdCalc.h"
 
 class MATH_LIB FunctionBase;
 

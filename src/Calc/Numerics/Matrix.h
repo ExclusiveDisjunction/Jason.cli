@@ -30,17 +30,21 @@ private:
     void DeAllocate() noexcept;
 
     [[nodiscard]] std::vector<std::pair<bool, unsigned long>> GetColumnWidthSchematic() const;
-    std::string GetRowString(unsigned row, std::vector<std::pair<bool, unsigned long>>& schema, char open, char close) const;
+    [[nodiscard]] bool GetRowString(std::ostream& out, unsigned row, std::vector<std::pair<bool, unsigned long>>& schema, char open, char close) const;
 
     Matrix();
 
 public:
-    Matrix(unsigned int Rows, unsigned int Columns, double Value = 0) noexcept;
+    Matrix(unsigned int Rows, unsigned int Columns) noexcept;
+    template<std::convertible_to<double>... args>
+    [[maybe_unused]] Matrix(unsigned Rows, unsigned Columns, args... vals);
     [[maybe_unused]] explicit Matrix(const MathVector& in);
     explicit Matrix(std::istream& in);
     Matrix(const Matrix& Other) noexcept;
     Matrix(Matrix&& Other) noexcept;
     ~Matrix();
+
+    friend void PrintMatrixSingleLine(std::ostream&, const Matrix&) noexcept;
 
     [[nodiscard]] unsigned int Rows() const { return m; }
     [[nodiscard]] unsigned int Columns() const { return n; }
@@ -50,7 +54,7 @@ public:
 
     [[nodiscard]] VariableTypes GetType() const noexcept override;
     void Sterilize(std::ostream& out) const noexcept override;
-    std::ostream& operator<<(std::ostream& out) const noexcept override;
+    void Print(std::ostream& out) const noexcept override;
 
     [[nodiscard]] [[maybe_unused]] static Matrix* FromSterilize(const std::string& sterilized);
     [[nodiscard]] std::string GetTypeString() const noexcept override;
@@ -103,6 +107,16 @@ public:
     bool operator==(const VariableType& two) const noexcept override;
     bool operator!=(const VariableType& two) const noexcept override;
 };
+
+struct MatrixSingleLinePrint {
+    const Matrix& Target;
+};
+inline MatrixSingleLinePrint PrintMatrixOneLine(const Matrix& obj) noexcept
+{
+    return MatrixSingleLinePrint { obj };
+}
+
+std::ostream& operator<<(std::ostream& out, const MatrixSingleLinePrint& Obj);
 
 #include "MatrixT.tpp"
 

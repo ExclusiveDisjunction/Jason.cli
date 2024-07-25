@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../StdCalc.h"
+#include "../../Calc/StdCalc.h"
 #include "../FunctionBase.h"
 #include "../Composite/Polynomial.h"
 

@@ -31,7 +31,7 @@ public:
     [[nodiscard]] virtual std::string Sterilize() const noexcept; //Writes to a string value
     virtual void Sterilize(std::ostream& out) const noexcept = 0; //Writes to a file, can be retrieved.
     [[nodiscard]] virtual std::string GetTypeString() const noexcept = 0; //Displays (None), (Scalar), (Vector:D), (Matrix:mxn)
-    virtual std::ostream& operator<<(std::ostream& out) const noexcept = 0; //Pretty prints
+    virtual void Print(std::ostream& out) const noexcept = 0; //Pretty prints
 
     [[nodiscard]] static VariableType* ApplyOperation(const VariableType* One, const VariableType* Two, char oper);
 
@@ -41,5 +41,7 @@ public:
 
 MATH_LIB VariableType* FromSterilized(const std::string& val) noexcept;
 MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept;
+
+std::ostream& operator<<(std::ostream& out, const VariableType& Obj);
 
 #endif //JASON_VARIABLETYPE_H

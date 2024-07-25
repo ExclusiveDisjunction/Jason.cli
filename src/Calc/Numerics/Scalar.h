@@ -55,8 +55,10 @@ public:
 
     bool operator==(const VariableType& obj) const noexcept override;
     bool operator!=(const VariableType& obj) const noexcept override;
+    bool operator==(double obj) const noexcept;
+    bool operator!=(double obj) const noexcept;
 
-    std::ostream& operator<<(std::ostream& out) const noexcept override;
+    void Print(std::ostream& out) const noexcept override;
 
     [[maybe_unused]] constexpr explicit operator double() const noexcept;
 };
