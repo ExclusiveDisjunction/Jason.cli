@@ -30,7 +30,7 @@ private:
     void DeAllocate() noexcept;
 
     [[nodiscard]] std::vector<std::pair<bool, unsigned long>> GetColumnWidthSchematic() const;
-    std::string GetRowString(unsigned row, std::vector<std::pair<bool, unsigned long>>& schema, char open, char close) const;
+    [[nodiscard]] bool GetRowString(std::ostream& out, unsigned row, std::vector<std::pair<bool, unsigned long>>& schema, char open, char close) const;
 
     Matrix();
 
@@ -43,6 +43,8 @@ public:
     Matrix(const Matrix& Other) noexcept;
     Matrix(Matrix&& Other) noexcept;
     ~Matrix();
+
+    friend void PrintMatrixSingleLine(std::ostream&, const Matrix&) noexcept;
 
     [[nodiscard]] unsigned int Rows() const { return m; }
     [[nodiscard]] unsigned int Columns() const { return n; }
@@ -105,6 +107,16 @@ public:
     bool operator==(const VariableType& two) const noexcept override;
     bool operator!=(const VariableType& two) const noexcept override;
 };
+
+struct MatrixSingleLinePrint {
+    const Matrix& Target;
+};
+inline MatrixSingleLinePrint PrintMatrixOneLine(const Matrix& obj) noexcept
+{
+    return MatrixSingleLinePrint { obj };
+}
+
+std::ostream& operator<<(std::ostream& out, const MatrixSingleLinePrint& Obj);
 
 #include "MatrixT.tpp"
 

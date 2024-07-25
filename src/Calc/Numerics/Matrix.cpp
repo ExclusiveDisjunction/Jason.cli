@@ -514,6 +514,9 @@ std::vector<std::pair<bool, unsigned long>> Matrix::GetColumnWidthSchematic() co
                 std::stringstream temp;
                 temp << curr;
                 as_str_l = static_cast<unsigned long>(temp.str().length());
+
+                if (curr < 0) //Removes negative from the computation.
+                    as_str_l--;
             }
 
             largest_num = std::max(as_str_l, largest_num);
@@ -524,10 +527,10 @@ std::vector<std::pair<bool, unsigned long>> Matrix::GetColumnWidthSchematic() co
 
     return result;
 }
-std::string Matrix::GetRowString(unsigned row, std::vector<std::pair<bool, unsigned long>>& schema, char open, char close) const
+bool Matrix::GetRowString(std::ostream& out, unsigned row, std::vector<std::pair<bool, unsigned long>>& schema, char open, char close) const
 {
     if (row > this->m)
-        return {};
+        return false;
 
     /*
         Convert the number to a string
@@ -536,8 +539,7 @@ std::string Matrix::GetRowString(unsigned row, std::vector<std::pair<bool, unsig
         Repeat this for each number for each column and row, and put a space between columns.
     */
 
-    std::stringstream ss;
-    ss << open << ' ';
+    out << open << ' ';
     const double* host = this->Data[row];
     for (unsigned i = 0; i < this->n; i++)
     {
@@ -547,10 +549,7 @@ std::string Matrix::GetRowString(unsigned row, std::vector<std::pair<bool, unsig
 
         double curr = host[i];
         if (curr >= 0 && has_negative)
-        {
-            ss << ' ' << curr;
-            continue;
-        }
+            out << ' ';
 
         std::string curr_str;
         {
@@ -559,23 +558,24 @@ std::string Matrix::GetRowString(unsigned row, std::vector<std::pair<bool, unsig
             curr_str = temp.str();
         }
 
-        if (has_negative && (curr_str.length()) < width + 1 || (curr_str.length() < width))
+
+        if (((has_negative && curr_str.length() < width + 1) || curr_str.length() < width))
         {
-            unsigned long diff = width - (curr_str.length());
+            unsigned long diff = width - (curr_str.length()) + (curr < 0 ? 1 : 0);
             std::string space_str;
-             if (has_negative)
-                diff++;
+            //if (has_negative && i != this->n - 1) //If not in last row
+            //   diff += (curr < 0 ? 1 : 0); //If negative, add one extra space after.
 
             for (unsigned t = 0; t < diff; t++)
                 space_str += ' ';
 
             curr_str += space_str;
         }
-        ss << curr_str << ' ';
+        out << curr_str << ' ';
     }
 
-    ss << close;
-    return ss.str();
+    out << close;
+    return static_cast<bool>(out); //If out.bad(), this returns false.
 }
 void Matrix::Print(std::ostream& out) const noexcept
 {
@@ -587,7 +587,12 @@ void Matrix::Print(std::ostream& out) const noexcept
     auto schema = this->GetColumnWidthSchematic();
 
     if (this->m == 1)
-        out << this->GetRowString(0, schema, '[', ']');
+    {
+        if (!this->GetRowString(out, 0, schema, '[', ']'))
+            std::cerr << "FAILED TO PRINT LINE 0" << std::endl;
+        else
+            out << '\n';
+    }
     else
     {
         // ⌊ ⌋ ⌈ ⌉ |
@@ -603,9 +608,14 @@ void Matrix::Print(std::ostream& out) const noexcept
             else
                 open = close = '|';
 
-            out << this->GetRowString(i, schema, open, close) << '\n';
+            if (!this->GetRowString(out, i, schema, open, close)) //Returns false if could not print properly.
+                std::cerr << "FAILED TO PRINT LINE " << i << std::endl;
+            else
+                out << '\n';
         }
     }
+
+
 }
 
 Matrix Matrix::operator|(const Matrix& Two) const
@@ -694,9 +704,11 @@ Matrix& Matrix::operator*=(const Matrix& Two)
     {
         for (unsigned j = 0; j < c; j++)
         {
-            this->Data[i][j] = 0.00;
+            double calc = 0; //Since this is a matrix multiplication, I cannot reset the value at Data[i][j] since it will interfere with the calculation.
             for (unsigned k = 0; k < Two.m; k++)
-                this->Data[i][j] += this->Data[i][k] * Two.Data[k][j];
+                calc += this->Data[i][k] * Two.Data[k][j];
+
+            this->Data[i][j] = calc;
         }
     }
 
@@ -723,4 +735,37 @@ Matrix& Matrix::operator*=(const Matrix& Two)
 
         return result;
     }
+}
+
+std::ostream& operator<<(std::ostream& out, const MatrixSingleLinePrint& Obj)
+{
+    const auto& Target = Obj.Target;
+
+    if (!Target.IsValid())
+        out << "[ ]";
+    else
+    {
+        out << '[';
+        unsigned r = Target.Rows(), c = Target.Columns();
+
+        try
+        {
+            for (unsigned i = 0; i < r; i++)
+            {
+                for (unsigned j = 0; j < c; j++)
+                    out << (j == 0 ? " " : ", ") << Target[i][j];
+
+                if (i != r - 1)
+                    out << ";";
+            }
+        }
+        catch (std::logic_error& e) //This should not ever happen, but it is here as a safe-gaurd.
+        {
+            out << "Error while printing!\n";
+        }
+
+        out << ']';
+    }
+
+    return out;
 }
