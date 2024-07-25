@@ -4,3 +4,7 @@ project(Jason)
 set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(src)
+
+add_executable(Jason src/Entry.cpp)
+
+target_link_libraries(Jason src)
