@@ -9,13 +9,42 @@
 
 #include "../Calc/VariableType.h"
 
+using VarStorageKey = unsigned;
+
 class VarStorageEntry
 {
 private:
-    std::string Name;
-    VariableType* Data;
+    VarStorageKey key;
+    std::string name;
+    VariableType* data;
+    bool write_to_file = false;
+
+    VarStorageEntry(VarStorageKey key, const std::string& name, VariableType* data, bool write_to_files = true);
+
+    bool& IsWritingToFiles() noexcept;
+
+    bool SaveToPath(const std::string& path) const noexcept;
+    bool LoadFromPath(const std::string& path) noexcept;
+
+    void SetData(VariableType* New);
+
 public:
+    VarStorageEntry(const VarStorageEntry& obj) = delete;
+    VarStorageEntry(VarStorageEntry&& obj) = delete;
+    ~VarStorageEntry();
+
+    VarStorageEntry& operator=(const VarStorageEntry& obj) = delete;
+    VarStorageEntry& operator=(VarStorageEntry& Obj) = delete;
+
+    [[nodiscard]] bool HasData() const noexcept;
+    [[nodiscard]] const VariableType& Data() const;
+    VarStorageKey Key() const noexcept;
+    const std::string& Name() const noexcept;
+
+    void Print(std::ostream& out) const noexcept;
 };
+
+std::ostream& operator<<(std::ostream& out, const VarStorageEntry& obj) noexcept;
 
 class VarStorage
 {

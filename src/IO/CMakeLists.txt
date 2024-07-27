@@ -1,4 +1,3 @@
-#[[
 add_library(IO SHARED IoThread.cpp
-        VarStorage.cpp)
-#]]
+        VarStorage.cpp
+        VarStorageEntry.cpp)

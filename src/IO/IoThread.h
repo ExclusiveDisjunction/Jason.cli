@@ -6,10 +6,4 @@
 #define JASON_IOTHREAD_H
 
 
-class IOThread
-{
-
-};
-
-
 #endif //JASON_IOTHREAD_H
