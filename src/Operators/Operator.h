@@ -5,7 +5,7 @@
 #ifndef JASON_OPERATOR_H
 #define JASON_OPERATOR_H
 
-#include "Expression.h"
+#include "ExpressionElement.h"
 
 #include <functional>
 #include <utility>
@@ -20,14 +20,14 @@ private:
     OperatorFunc eval;
 
 public:
-    Operator(char symbol, unsigned precedence, OperatorFunc eval) : symbol(symbol), precedence(precedence), eval(std::move(eval)) {}
+    Operator(char symbol, unsigned precedence, OperatorFunc eval);
     Operator(const Operator& obj) = delete;
     Operator(Operator&& obj) noexcept = delete;
 
     Operator& operator=(const Operator& obj) = delete;
     Operator& operator=(Operator&& obj) = delete;
 
-    [[nodiscard]] VariableType* Evaluate() const;
+    [[nodiscard]] VariableType* Evaluate(const VariableType& a, const VariableType& b) const;
 
     [[nodiscard]] constexpr unsigned GetPrecedence() const noexcept;
 
@@ -39,7 +39,7 @@ public:
     bool operator>(const Operator& obj) const noexcept;
     bool operator>=(const Operator& obj) const noexcept;
 
-    void Print();
+    void Print(std::ostream& out) const noexcept override;
 };
 
 
