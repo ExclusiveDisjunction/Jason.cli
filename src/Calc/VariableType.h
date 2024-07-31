@@ -23,6 +23,8 @@ enum VariableTypes
 class MATH_LIB VariableType
 {
 public:
+    virtual ~VariableType() = default;
+
     [[nodiscard]] virtual VariableTypes GetType() const noexcept = 0;
 
     //Moves all information out of the current instance and makes a pointer to the corresponding type. Saves on calling the memory constructor.
@@ -37,10 +39,10 @@ public:
 
     virtual bool operator==(const VariableType& obj) const noexcept = 0;
     virtual bool operator!=(const VariableType& obj) const noexcept = 0;
-};
 
-MATH_LIB VariableType* FromSterilized(const std::string& val) noexcept;
-MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept;
+    [[nodiscard]] static VariableType* FromSterilized(const std::string& val) noexcept;
+    [[nodiscard]] static VariableType* FromSterilized(std::istream& in) noexcept;
+};
 
 std::ostream& operator<<(std::ostream& out, const VariableType& Obj);
 

@@ -64,7 +64,7 @@ impl VarStorageEntry {
 
         let file_t = File::open(path);
         let result: VariableType;
-        match file_t {
+        match file_t
             Ok(mut file) => {
                 let mut contents: String = String::new();
                 if let Err(e) = file.read_to_string(&mut contents) { 

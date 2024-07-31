@@ -17,12 +17,12 @@ std::string VariableType::Sterilize() const noexcept
     return ss.str();
 }
 
-MATH_LIB VariableType* FromSterilized(const std::string& val) noexcept
+[[nodiscard]]VariableType* VariableType::FromSterilized(const std::string& val) noexcept
 {
     std::stringstream ss(val);
     return FromSterilized(ss);
 }
-MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept
+[[nodiscard]] VariableType* VariableType::FromSterilized(std::istream& in) noexcept
 {
     std::string header;
     in >> header;
