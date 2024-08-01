@@ -67,13 +67,13 @@ private:
     std::string root;
     bool save_to_files;
 
-    std::string GetVariablePath(const std::string& name);
+    [[nodiscard]] static std::string GetVariablePath(const std::string& name);
 
-    [[nodiscard]] std::optional<const VarStorageEntry&> GetEntry(VarStorageKey key) const noexcept;
-    [[nodiscard]] std::optional<VarStorageEntry&> GetEntry(VarStorageKey key) noexcept;
+    [[nodiscard]] const VarStorageEntry* GetEntry(VarStorageKey key) const noexcept;
+    [[nodiscard]] VarStorageEntry* GetEntry(VarStorageKey key) noexcept;
 
 public:
-    VarStorage(std::string root);
+    explicit VarStorage(std::string root);
     VarStorage(const VarStorage& obj) = delete;
     VarStorage(VarStorage&& obj) noexcept = delete;
     ~VarStorage();
@@ -95,7 +95,7 @@ public:
     [[nodiscard]] std::optional<VarStorageKey> GetEntryKey(const std::string& name, VarEntryType type) noexcept;
 
     [[nodiscard]] bool DoesEntryExist(VarStorageKey key) const noexcept;
-    [[nodiscard]] std::optional<const VariableType&> GetEntryValue(VarStorageKey key) const noexcept;
+    [[nodiscard]] std::pair<const VariableType&, bool> GetEntryValue(VarStorageKey key) const noexcept;
     [[nodiscard]] bool SetEntryValue(VarStorageKey key) noexcept;
 
     [[nodiscard]] bool LoadEntry(VarStorageKey key) noexcept; //Loads a variable from a stored file, if it is stored there.
