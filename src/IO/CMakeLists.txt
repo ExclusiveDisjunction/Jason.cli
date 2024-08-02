@@ -1,3 +1,3 @@
-add_library(IO SHARED IoThread.cpp
+add_library(IO SHARED
         VarStorage.cpp
         VarStorageEntry.cpp)

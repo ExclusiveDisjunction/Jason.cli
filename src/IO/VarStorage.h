@@ -19,6 +19,7 @@ enum VarEntryType
     VET_Temp,
     VET_Env
 };
+std::string GetVETPrefix(const VarEntryType& t) noexcept;
 
 class VarStorageEntry
 {
@@ -67,7 +68,7 @@ private:
     std::string root;
     bool save_to_files;
 
-    [[nodiscard]] static std::string GetVariablePath(const std::string& name);
+    [[nodiscard]] std::string GetVariablePath(const std::string& name);
 
     [[nodiscard]] const VarStorageEntry* GetEntry(VarStorageKey key) const noexcept;
     [[nodiscard]] VarStorageEntry* GetEntry(VarStorageKey key) noexcept;
@@ -95,7 +96,8 @@ public:
     [[nodiscard]] std::optional<VarStorageKey> GetEntryKey(const std::string& name, VarEntryType type) noexcept;
 
     [[nodiscard]] bool DoesEntryExist(VarStorageKey key) const noexcept;
-    [[nodiscard]] std::pair<const VariableType&, bool> GetEntryValue(VarStorageKey key) const noexcept;
+    [[nodiscard]] const VariableType& GetEntryValue(VarStorageKey key) const;
+    [[nodiscard]] VariableType& GetEntryValue(VarStorageKey key);
     [[nodiscard]] bool SetEntryValue(VarStorageKey key) noexcept;
 
     [[nodiscard]] bool LoadEntry(VarStorageKey key) noexcept; //Loads a variable from a stored file, if it is stored there.

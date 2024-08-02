@@ -10,7 +10,8 @@
 VarStorageEntry::VarStorageEntry(VarStorageKey key, std::string name, VariableType* data, VarEntryType type, bool write_to_files) :
 key(key), name(std::move(name)), data(data), type(type), write_to_file(write_to_files)
 {
-
+    if (type != VET_Temp && name.empty())
+        throw std::logic_error("Name cannot be empty if the type is not a temporary.");
 }
 VarStorageEntry::~VarStorageEntry()
 {
@@ -24,7 +25,9 @@ bool& VarStorageEntry::IsWritingToFiles() noexcept
 
 bool VarStorageEntry::SaveToPath(const std::string& path) const noexcept
 {
-    if (!this->write_to_file)
+    if (this->type == VET_Temp) //Temporaries are not written to files.
+        return true;
+    else if (!this->write_to_file)
         return false;
 
     std::ofstream file(path, std::ios::trunc);
@@ -41,7 +44,7 @@ bool VarStorageEntry::SaveToPath(const std::string& path) const noexcept
 }
 bool VarStorageEntry::LoadFromPath(const std::string& path) noexcept
 {
-    std::ifstream file(path, std::ios::beg);
+    std::ifstream file(path);
     if (!file)
         return false;
 
