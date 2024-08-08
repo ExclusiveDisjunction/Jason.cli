@@ -7,7 +7,7 @@ add_library(src DateTime.cpp
         Log.cpp
         Testing.cpp)
 
-# Entry.cpp is handled by topmost CMakeFile.
+# PackageEntry.cpp is handled by topmost CMakeFile.
 
 target_link_libraries(src Calc)
 target_link_libraries(src Function)
