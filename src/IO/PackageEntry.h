@@ -6,6 +6,7 @@
 #define JASON_PACKAGEENTRY_H
 
 #include <string>
+#include <filesystem>
 
 #include "PackageEntryKey.h"
 #include "../Calc/VariableType.h"
@@ -37,6 +38,7 @@ public:
 
     [[nodiscard]] bool Write(std::ostream& out) const noexcept;
     [[nodiscard]] bool WriteData(std::ostream& out) const noexcept;
+    [[nodiscard]] bool ReadFromFile(std::istream& in) noexcept;
 
     [[nodiscard]] const VariableType& Data() const;
     void Data(VariableType* New) noexcept;
@@ -44,6 +46,9 @@ public:
     [[nodiscard]] bool HasData() const noexcept;
     [[nodiscard]] PackageEntryKey Key() const noexcept;
     [[nodiscard]] const std::string& Name() const noexcept;
+    [[nodiscard]] bool LoadImm() const noexcept;
+    [[nodiscard]] bool IsTemporary() const noexcept { return this->type == Temporary; }
+    [[nodiscard]] std::filesystem::path GetPath(const std::filesystem::path& source) const noexcept;
 };
 
 

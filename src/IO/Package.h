@@ -10,6 +10,7 @@
 #include <utility>
 #include <vector>
 #include <optional>
+#include <filesystem>
 
 #include "PackageEntryKey.h"
 #include "PackageEntry.h"
@@ -18,7 +19,10 @@
 class Package
 {
 private:
-    std::string dir_path, name;
+    Package(std::string dir_path, PackageHandle& pack, PackageHandle& links, PackageHandle& header, unsigned long ID);
+
+    std::filesystem::path dir_path;
+    std::string name;
     PackageHandle pack;
     PackageHandle links;
     PackageHandle header;
@@ -34,15 +38,22 @@ private:
     std::string GetEntryPath(unsigned long ID) noexcept;
 
     [[nodiscard]] const PackageEntry* GetEntry(unsigned long ID) const noexcept;
-    [[nodsicard]] PackageEntry* GetEntry(unsigned long ID) noexcept;
+    [[nodiscard]] PackageEntry* GetEntry(unsigned long ID) noexcept;
+
+    bool LoadEntries(bool all) noexcept; //Loads all entries marked with load_imm.
 
 public:
     Package(const Package& obj) = delete;
     Package(Package& obj) noexcept = delete;
     ~Package();
 
+    friend class Session;
+
     Package& operator=(const Package& obj) = delete;
     Package& operator=(Package&& obj) noexcept = delete;
+
+    [[nodiscard]] bool Save() noexcept;
+    void Close() noexcept;
 
     std::optional<PackageEntryKey> ResolveEntry(std::string& name) noexcept;
 

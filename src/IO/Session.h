@@ -6,6 +6,7 @@
 #define JASON_SESSION_H
 
 #include <optional>
+#include <filesystem>
 
 #include "PackageUtility.h"
 #include "Package.h"
@@ -15,41 +16,46 @@ class Session
 private:
     std::vector<Package*> packages;
     std::vector<UnloadedPackage*> unloadedPackages;
+    unsigned long currID;
+    bool initiated = false;
 
-    bool FindUserPackage(PackageHandle& usr);
+    [[nodiscard]] unsigned long GetNextID() noexcept { return currID++; }
 
-    bool PreProcessPackages(std::vector<PreProcessedPackage>& result);
-    bool PreProcessPackage(PreProcessedPackage& target, std::vector<PreProcessedPackage>& resolvedLinks);
-    void SiveThroughToLoad(std::vector<PreProcessedPackage>& source); //This function will take all items in 'source' that are marked 'toLoad == false', and put the file handles in this->unloadedPackages.
+    [[nodiscard]] static std::optional<PackageHandle> FindUserPackage();
 
-    bool IndexPackages(std::vector<PreProcessedPackage&> toIndex, std::vector<IndexedPackage>& output);
-    bool IndexPackage(PreProcessedPackage& toIndex, IndexedPackage& result);
+    [[nodiscard]] bool PreProcessPackages(PackageHandle& usr, std::vector<PreProcessedPackage*>& result);
+    [[nodiscard]] static PreProcessedPackage* PreProcessPackage(PackageHandle& target);
 
-    bool InflatePackage(std::vector<IndexedPackage>& indexed);
-    Package* InflatePackage(IndexedPackage& target);
+    [[nodiscard]] static bool ExtractLinks(PreProcessedPackage& target, std::vector<std::pair<PackageHandle, bool>>& result);
 
-    bool LoadPackageEntries(Package& pack, bool all = false);
+    [[nodiscard]] bool IndexPackages(std::vector<PreProcessedPackage*>& toIndex, std::vector<IndexedPackage*>& output); //Note that the ProjectHandles that were in toIndex are now in the IndexedPackage, and all entries have been deleted.
+    [[nodiscard]] static IndexedPackage* IndexPackage(PreProcessedPackage*& toIndex);
+
+    [[nodiscard]] bool InflatePackages(std::vector<IndexedPackage*>& indexed);
+    [[nodiscard]] Package* InflatePackage(IndexedPackage*& target);
+
+    [[nodiscard]] bool LoadInflatedEntries();
+
+    [[nodiscard]] const Package* ResolvePackage(const std::string& name) const noexcept;
+    [[nodiscard]] Package* ResolvePackage(const std::string& name) noexcept;
+
+    void LoadFromPreviousPackages(const std::filesystem::path& hostDir);
 
 public:
-    Session() = default;
-    ~Session()
-    {
-        for (Package*& item : packages)
-            delete item;
-        for (UnloadedPackage*& item : unloadedPackages)
-            delete item;
+    Session();
+    ~Session();
 
-        packages.clear();
-        unloadedPackages.clear();
-    }
+    [[nodiscard]] bool Initiate();
+    [[nodiscard]] bool CheckForUnclosedPackages() noexcept; //If this returns true, exit the program.
+    [[nodiscard]] bool Save(bool DeleteDir = false) noexcept;
+    [[nodiscard]] bool Close();
+    void ForceClose();
 
-    bool Initiate();
+    [[nodiscard]] std::optional<unsigned long> GetPackageID(const std::string& name) const noexcept;
+    [[nodiscard]] std::optional<PackageEntryKey> ResolveEntry(const std::string& name) const noexcept;
 
-    std::optional<unsigned long> GetPackageID(std::string& name);
-    std::optional<PackageEntryKey> ResolveEntry(std::string& name);
-
-    bool LoadPackage(unsigned long ID);
-    bool UnloadPackage(unsigned long ID);
+    [[nodiscard]] bool LoadPackage(unsigned long ID);
+    [[nodiscard]] bool UnloadPackage(unsigned long ID);
 };
 
 #endif //JASON_SESSION_H

@@ -7,35 +7,21 @@
 
 #include <string>
 #include <fstream>
+#include <vector>
+#include <cstring>
+#include <sstream>
+
+#include "PackageEntry.h"
 
 struct PackageHandle
 {
 public:
-    explicit PackageHandle(std::string path) : path(std::move(path)), file()
-    {
-        this->file.open(path, (std::ios::app | std::ios::in | std::ios::out));
-        if (!this->file)
-            throw std::logic_error("The file at that path could not be opened.");
-
-        this->file.seekg(0, std::ios::beg);
-    }
-    PackageHandle(std::fstream file, std::string path) : path(std::move(path)), file(std::move(file))
-    {
-        if (!this->file)
-            throw std::logic_error("The input stream provided is invalid.");
-
-        this->file.seekg(0, std::ios::beg);
-    }
+    explicit PackageHandle(std::string path, std::ios::openmode flags = (std::ios::out | std::ios::in));
     PackageHandle(const PackageHandle& obj) = delete;
-    PackageHandle(PackageHandle&& obj) noexcept : path(std::move(obj.path)), file(std::move(obj.file))
-    {
+    PackageHandle(PackageHandle&& obj) noexcept;
+    ~PackageHandle();
 
-    }
-    ~PackageHandle()
-    {
-        file.close();
-    }
-
+    void Close() noexcept;
 
     std::string path;
     std::fstream file;
@@ -44,10 +30,12 @@ public:
 struct PreProcessedPackage
 {
 public:
-    PreProcessedPackage(PackageHandle& handle, bool toLoad, bool processed = false) : handle(std::move(handle)), processed(processed), toLoad(toLoad) {}
+    explicit PreProcessedPackage(PackageHandle& handle) : handle(std::move(handle)) {}
+    PreProcessedPackage(const PreProcessedPackage& obj) = delete;
 
     PackageHandle handle;
-    bool processed, toLoad;
+
+    std::streampos header, links, entries, functions;
 };
 
 class IndexedEntry
@@ -64,14 +52,19 @@ public:
 class IndexedPackage
 {
 public:
+    IndexedPackage(PackageHandle& handle, std::vector<IndexedEntry> entries) : handle(std::move(handle)), entries(std::move(entries)) {}
+    IndexedPackage(const IndexedPackage& obj) = delete;
+
     PackageHandle handle;
     std::vector<IndexedEntry> entries;
+    std::streampos headerLoc, linksLoc, entriesLoc, functionsLoc;
 };
 
 class UnloadedPackage
 {
 public:
     UnloadedPackage(PackageHandle& handle, unsigned long PackageID) : handle(std::move(handle)), ID(PackageID) {}
+    UnloadedPackage(const UnloadedPackage& obj) = delete;
 
     PackageHandle handle;
     unsigned long ID;
@@ -80,6 +73,7 @@ public:
 class Version
 {
 public:
+    Version() : Version(0, 0, 0) {}
     Version(unsigned Major, unsigned Minor, unsigned Release) : Major(Major), Minor(Minor), Release(Release) {}
 
     unsigned Major;

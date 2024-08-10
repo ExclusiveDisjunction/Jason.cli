@@ -52,6 +52,10 @@ PackageEntry::~PackageEntry()
     this->data->Sterilize(out);
     return out.good();
 }
+[[nodiscard]] bool PackageEntry::ReadFromFile(std::istream& in) noexcept
+{
+
+}
 
 [[nodiscard]] const VariableType& PackageEntry::Data() const
 {
@@ -77,6 +81,16 @@ void PackageEntry::Data(VariableType* New) noexcept
 [[nodiscard]] const std::string& PackageEntry::Name() const noexcept
 {
     return this->name;
+}
+[[nodiscard]] bool PackageEntry::LoadImm() const noexcept
+{
+    return this->load_imm;
+}
+[[nodiscard]] std::filesystem::path PackageEntry::GetPath(const std::filesystem::path& source) const noexcept
+{
+    if (this->type == Temporary)
+        return source / std::to_string(this->key.EntryID) / ".temp";
+    return source / (this->type == Variable ? "VET" : "ENV") / "." / this->name / (this->load_imm ? "!" : "");
 }
 
 
