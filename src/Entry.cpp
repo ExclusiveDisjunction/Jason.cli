@@ -38,6 +38,10 @@ int main(int ArgsCount, char** Args)
         l << Info << "Jason Session & Packages loaded." << EndLog;
     }
 
+    std::string thing;
+    std::cout << "Press any string and type enter to exit: ";
+    std::cin >> thing;
+
     delete sess;
     l << Info << "Exiting Jason, Exit Code 0" << EndLog;
     return 0;

@@ -10,6 +10,8 @@
 
 #include "PackageUtility.h"
 #include "Package.h"
+#include "PackageLinkTree.h"
+#include "PackageHandle.h"
 
 class Session
 {
@@ -23,18 +25,15 @@ private:
 
     [[nodiscard]] static std::optional<PackageHandle> FindUserPackage();
 
-    [[nodiscard]] bool PreProcessPackages(PackageHandle& usr, std::vector<PreProcessedPackage*>& result);
-    [[nodiscard]] static PreProcessedPackage* PreProcessPackage(PackageHandle& target);
+    [[nodiscard]] static bool GetLinksTree(PackageLinkTree& tree, PackageHandle&& usr);
+    [[nodiscard]] static bool FillLinkTree(PackageLinkNode& parent, const PackageLinkTree& tree) noexcept;
+    [[nodiscard]] static std::optional<PackageIndex> GetPackageIndex(PackageHandle& target) noexcept;
+    [[nodiscard]] static bool ExtractLinks(PackageLinkNode& target, std::vector<PackageLink>& result);
 
-    [[nodiscard]] static bool ExtractLinks(PreProcessedPackage& target, std::vector<std::pair<PackageHandle, bool>>& result);
+    [[nodiscard]] bool IndexPackageEntries(); //Note that the ProjectHandles that were in toIndex are now in the IndexedPackage, and all entries have been deleted.
 
-    [[nodiscard]] bool IndexPackages(std::vector<PreProcessedPackage*>& toIndex, std::vector<IndexedPackage*>& output); //Note that the ProjectHandles that were in toIndex are now in the IndexedPackage, and all entries have been deleted.
-    [[nodiscard]] static IndexedPackage* IndexPackage(PreProcessedPackage*& toIndex);
-
-    [[nodiscard]] bool InflatePackages(std::vector<IndexedPackage*>& indexed);
-    [[nodiscard]] Package* InflatePackage(IndexedPackage*& target);
-
-    [[nodiscard]] bool LoadInflatedEntries();
+    [[nodiscard]] bool InflatePackages(std::vector<PreProcessedPackage*>& indexed);
+    [[nodiscard]] Package* InflatePackage(PreProcessedPackage*& target);
 
     [[nodiscard]] const Package* ResolvePackage(const std::string& name) const noexcept;
     [[nodiscard]] Package* ResolvePackage(const std::string& name) noexcept;

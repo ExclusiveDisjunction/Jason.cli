@@ -5,6 +5,7 @@
 #include "Session.h"
 
 #include "../Common.h"
+#include "PackageHandle.h"
 
 #include <filesystem>
 #include <algorithm>
@@ -31,46 +32,74 @@ bool Session::Initiate()
     if (this->initiated)
         return true;
 
-    std::optional<PackageHandle> rawUsr = FindUserPackage();
+    auto rawUsr = FindUserPackage();
     if (!rawUsr)
     {
-        std::cerr << "Indexing Error: Could not locate the `usr` package." << std::endl;
+        std::cerr << "Locating Error: Could not locate the `usr` package." << std::endl;
+        return false;
+    }
+
+    auto* tree = new PackageLinkTree();
+    if (!GetLinksTree(*tree, std::move(*rawUsr)))
+    {
+        std::cerr << "Pre Processing Error: Could not load the link tree." << std::endl;
+        delete tree;
         return false;
     }
 
     std::vector<PreProcessedPackage*> preProc;
-    if (!PreProcessPackages(*rawUsr, preProc))
-    {
-        for (PreProcessedPackage*& item : preProc)
-            delete item;
-        preProc.clear();
+    tree->Flatten(preProc);
+    delete tree;
 
-        std::cerr << "Pre Processing Error: Could not complete pre-processing phase." << std::endl;
-        return false;
+    //Clean up packages that are not to be loaded.
+    {
+        for (auto& curr : preProc)
+        {
+            if (!curr->handle.IsEnabled())
+            {
+                this->unloadedPackages.push_back(new UnloadedPackage(std::move(curr->handle.GetHost()), GetNextID()));
+                delete curr;
+                curr = nullptr;
+
+                //Further functions that use the array will skip over nullptr items.
+            }
+        }
     }
 
-    std::vector<IndexedPackage*> indexed;
-    if (!IndexPackages(preProc, indexed)) //Note that if failed, IndexPackages will clean up both indexed and preProc. preProc is cleaned up no matter what.
-    {
-        std::cerr << "Indexing Error: Could not complete indexing phase." << std::endl;
-        return false;
-    }
-
-    if (!InflatePackages(indexed))
+    if (!InflatePackages(preProc))
     {
         std::cerr << "Inflating Error: Could not complete inflation phase." << std::endl;
+
+        for (auto& item : preProc)
+        {
+            delete item;
+            item = nullptr;
+        }
+        preProc.clear();
+
         return false;
     }
 
-    if (!LoadInflatedEntries())
+    //Clean up pre-processed packages.
     {
-        std::cerr << "Loading Error: Could not load the variables marked with 'Load Immediately'." << std::endl;
+        for (auto& item : preProc)
+        {
+            delete item;
+            item = nullptr;
+        }
+        preProc.clear();
+    }
+
+    if (!IndexPackageEntries()) //Note that if failed, IndexPackageEntries will clean up both indexed and preProc. preProc is cleaned up no matter what.
+    {
+        std::cerr << "Indexing Error: Could not complete indexing phase." << std::endl;
         return false;
     }
 
     this->initiated = true;
     return true;
 }
+
 bool Session::CheckForUnclosedPackages() noexcept
 {
     auto directory = std::filesystem::temp_directory_path() / "jason";
@@ -116,7 +145,6 @@ bool Session::CheckForUnclosedPackages() noexcept
     else
         return true;
 }
-
 void Session::LoadFromPreviousPackages(const std::filesystem::path& hostDir)
 {
     throw std::logic_error("Not Implemented");
@@ -187,62 +215,44 @@ std::optional<PackageHandle> Session::FindUserPackage()
     }
 }
 
-bool Session::PreProcessPackages(PackageHandle& usr, std::vector<PreProcessedPackage*>& result)
+bool Session::GetLinksTree(PackageLinkTree& tree, PackageHandle&& usr)
 {
-    PreProcessedPackage* usr_proc = PreProcessPackage(usr);
-    if (!usr_proc)
-    {
-        std::cerr << "Pre Processing Error: The package at '" << usr.path << "' could not be pre-processed." << std::endl;
+    std::optional<PackageIndex> index = GetPackageIndex(usr);
+    if (!index)
         return false;
-    }
 
-    result.push_back(usr_proc);
-
-    //NOTICE: The memory for this function is handled by the caller function. Therefore, this function can return without deleting usr_proc, and it will not cause a memory leak.
-
-    std::vector<std::pair<PackageHandle, bool>> FoundTargets;
-    if (!ExtractLinks(*usr_proc, FoundTargets))
-    {
-        std::cerr << "Pre Processing Error: The package at '" << usr.path << "' could not be pre-processed because of linker errors." << std::endl;
+    tree.InitiateRoot(std::move(usr), true, *index);
+    return FillLinkTree(tree.GetRoot(), tree);
+}
+bool Session::FillLinkTree(PackageLinkNode& parent, const PackageLinkTree& tree) noexcept
+{
+    std::vector<PackageLink> links;
+    if (!ExtractLinks(parent, links))
         return false;
-    }
 
-    for (auto& target : FoundTargets)
+    for (auto& link : links)
     {
-        auto searchResult = std::find_if(result.begin(), result.end(), [&target](PreProcessedPackage* curr) -> bool
-        {
-            return curr->handle.path == target.first.path;
-        });
-
-        if (searchResult != result.end()) //Already pre-processed, skip
+        if (tree.Contains(link.GetPath()))
             continue;
-        else
-        {
-            //Two cases: 1) To load, so call this function again and load it, or 2) Do not load so just finish pre-processing and move on. We will assume the file is of proper format until it is later loaded.
-            if (target.second) //we load it
-            {
-                if (!PreProcessPackages(target.first, result))
-                {
-                    std::cerr << "Pre Processing Error: The package at '" << usr.path << "' could not be pre-processed because the linked package '" << target.first.path << "' failed pre-processing." << std::endl;
-                    return false;
-                }
-            }
-            else
-            {
-                this->unloadedPackages.push_back(new UnloadedPackage(target.first, GetNextID()));
-            }
-        }
+
+        std::optional<PackageIndex> index = GetPackageIndex(link.GetHost());
+        if (!index)
+            return false;
+
+        PackageLinkNode& created = parent.AddChild(std::move(link), *index);
+        if (!FillLinkTree(created, tree))
+            return false;
     }
 
     return true;
 }
-PreProcessedPackage* Session::PreProcessPackage(PackageHandle& target)
+std::optional<PackageIndex> Session::GetPackageIndex(PackageHandle& target) noexcept
 {
-    std::streampos header, links, entries, functions;
+    PackageIndex index;
 
     std::fstream& file = target.file;
     if (!file)
-        return nullptr;
+        return {};
 
     file.seekg(0, std::ios::beg);
 
@@ -252,9 +262,9 @@ PreProcessedPackage* Session::PreProcessPackage(PackageHandle& target)
     if (curr != "jason")
     {
         std::cerr << "Processing package at '" << target.path << "' error: File is not of jason format.";
-        return nullptr;
+        return {};
     }
-    header = file.tellg();
+    index.header = file.tellg();
 
     auto findLocation = [](PackageHandle& package, std::streampos& target, const std::string& name) -> bool
     {
@@ -273,36 +283,26 @@ PreProcessedPackage* Session::PreProcessPackage(PackageHandle& target)
         return true;
     };
 
-    if (!findLocation(target, links, "links") || !findLocation(target, entries, "entry"), !findLocation(target, functions, "functions"))
-        return nullptr;
+    if (!findLocation(target, index.links, "links") || !findLocation(target, index.entries, "entry"), !findLocation(target, index.functions, "functions"))
+        return {};
     else
-    {
-        auto* result = new PreProcessedPackage(target);
-        result->header = header;
-        result->links = links;
-        result->entries = entries;
-        result->functions = functions;
-
-        return result;
-    }
+        return index;
 }
-
-bool Session::ExtractLinks(PreProcessedPackage& target, std::vector<std::pair<PackageHandle, bool>>& result)
+bool Session::ExtractLinks(PackageLinkNode& target, std::vector<PackageLink>& result)
 {
-    std::fstream& file = target.handle.file;
+    std::fstream& file = target.GetLink().GetHost().file;
+    const PackageIndex& index = target.GetIndex();
     if (!file)
         return false;
 
-    result.clear();
-
-    file.seekg(target.links);
+    file.seekg(index.links);
     std::string curr;
     file >> curr;
     if (curr != "links" || !file)
         return false;
 
     std::getline(file, curr); //Remove whitespace before statement
-    while (file.tellg() < target.entries)
+    while (file.tellg() < index.entries)
     {
         std::getline(file, curr);
         if (!file || file.eof())
@@ -319,11 +319,15 @@ bool Session::ExtractLinks(PreProcessedPackage& target, std::vector<std::pair<Pa
         {
             ss >> part;
             bool enabled = part == "enabled";
-            ss >> part;
-            result.emplace_back(PackageHandle(part), enabled);
+            std::getline(ss, part);
+            trim(part);
+            std::filesystem::path link_target(part);
+
+            result.emplace_back(PackageHandle(link_target), enabled);
         }
-        catch (...)
+        catch (std::logic_error& e)
         {
+            std::cerr << "Pre Processing Error: The package at '" << target.GetLink().GetPath().string() << "' could not be processed because one of its links could not be located." << std::endl;
             return false;
         }
     }
@@ -331,75 +335,32 @@ bool Session::ExtractLinks(PreProcessedPackage& target, std::vector<std::pair<Pa
     return true;
 }
 
-bool Session::IndexPackages(std::vector<PreProcessedPackage*>& toIndex, std::vector<IndexedPackage*>& output)
+bool Session::IndexPackageEntries()
 {
     bool ok = true;
-    for (auto & i : toIndex)
-    {
-        IndexedPackage* result = IndexPackage(i);
-        if (!result)
-        {
-            ok = false;
-            break;
-        }
-        output.push_back(result);
-    }
-
-    for (auto*& item : toIndex)
-        delete item;
-    toIndex.clear();
-
-    if (!ok)
-    {
-        for (auto*& item : output)
-            delete item;
-        output.clear();
-    }
+    for (auto& pack : packages)
+        ok &= pack->IndexEntries();
 
     return ok;
 }
-IndexedPackage* Session::IndexPackage(PreProcessedPackage*& toIndex)
+
+bool Session::InflatePackages(std::vector<PreProcessedPackage*>& indexed)
 {
-    std::vector<IndexedEntry> entries;
-
-    //TODO: Indexing
-
-    auto* result = new IndexedPackage(toIndex->handle, entries);
-    result->headerLoc = toIndex->header;
-    result->linksLoc = toIndex->links;
-    result->entriesLoc = toIndex->entries;
-    result->functionsLoc = toIndex->functions;
-
-    delete toIndex;
-    toIndex = nullptr;
-    return result;
-}
-
-bool Session::InflatePackages(std::vector<IndexedPackage*>& indexed)
-{
-    bool ok = true;
     for (auto& item : indexed)
     {
+        if (!item)
+            continue;
+
         auto inflated = InflatePackage(item);
         if (!inflated)
-        {
-            ok = false;
-            break;
-        }
+            return false;
 
         this->packages.push_back(inflated);
     }
 
-    if (!indexed.empty())
-    {
-        for (auto& item : indexed)
-            delete item;
-        indexed.clear();
-    }
-
-    return ok;
+    return true;
 }
-Package* Session::InflatePackage(IndexedPackage*& target)
+Package* Session::InflatePackage(PreProcessedPackage*& target)
 {
     if (!target)
         return nullptr;
@@ -416,46 +377,31 @@ Package* Session::InflatePackage(IndexedPackage*& target)
 
     try
     {
-        //Create the 'source' file for reconstruction, if needed.
-        {
-            std::ofstream source(directory / "source");
-            if (!source)
-                throw std::string("Package Inflation Error: Could not create the 'source' file.");
-            source << target->handle.path;
-            source.close();
-        }
+        auto linksD = directory / "links";
+        PackageHandle links(linksD, std::ios::out | std::ios::trunc);
 
-        auto headerD = directory / "header", linksD = directory / "links";
-        PackageHandle header(headerD, std::ios::out | std::ios::trunc), links(linksD, std::ios::out | std::ios::trunc);
-
-        std::fstream& host = target->handle.file;
+        std::fstream& host = target->handle.GetHost().file;
         if (!host)
-            throw std::string("Package Inflation Error: Could not read from host package.");
+            throw std::logic_error("Package Inflation Error: Could not read from host package.");
 
-
-        host.seekg(target->headerLoc);
-        readFileBlock(header.file, host, target->linksLoc); //Reads header
-
-        host.seekg(target->linksLoc);
+        host.seekg(target->index.links);
         {
             std::string curr;
             host >> curr; //This skips over the "links" part.
         }
-        readFileBlock(links.file, host, target->entriesLoc); //Reads links.
+        readFileBlock(links.file, host, target->index.entries); //Reads links. Remember that the header is not considered.
 
         Package* result;
         try
         {
             //Since the files were opened in write-only mode, we have to re-open them in read/write mode.
             links.file.close();
-            header.file.close();
 
             links.file.open(links.path);
-            header.file.open(header.path);
-            if (!links.file || !header.file)
-                throw std::string("Package Inflation Error: Could not re-open inflated files.");
+            if (!links.file)
+                throw std::logic_error("Could not re-open inflated files");
 
-            result = new Package(directory, target->handle, links, header, ThisID);
+            result = new Package(directory, std::move(target->handle.GetHost()), std::move(links), ThisID, target->index);
         }
         catch (std::logic_error& e)
         {
@@ -463,31 +409,13 @@ Package* Session::InflatePackage(IndexedPackage*& target)
             result = nullptr;
         }
 
-        delete target;
-        target = nullptr;
         return result;
-    }
-    catch (std::string& s)
-    {
-        std::cerr << s << std::endl;
-        delete target;
-        target = nullptr;
-        return nullptr;
     }
     catch (std::logic_error& e)
     {
         std::cerr << "Package Inflation Error: Inflated files could not be created. Message: " << e.what() << std::endl;
         return nullptr;
     }
-}
-
-bool Session::LoadInflatedEntries()
-{
-    bool result = true;
-    for (Package*& pack : packages)
-        result &= pack->LoadEntries(false);
-
-    return result;
 }
 
 std::optional<unsigned long> Session::GetPackageID(const std::string& name) const noexcept

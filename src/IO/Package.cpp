@@ -3,10 +3,12 @@
 //
 
 #include "Package.h"
+#include "../Common.h"
+#include "PackageHandle.h"
 
-Package::Package(std::string dir_path, PackageHandle& pack, PackageHandle& links, PackageHandle& header, unsigned long ID) : dir_path(std::move(dir_path)), pack(std::move(pack)), links(std::move(links)), header(std::move(header)), PackID(ID), locked(false), CurrID(0)
+Package::Package(std::string dir_path, PackageHandle&& pack, PackageHandle&& links, unsigned long ID, const PackageIndex& index) : dir_path(std::move(dir_path)), pack(std::move(pack)), links(std::move(links)), PackID(ID), locked(false), CurrID(0), index(index)
 {
-
+    this->name = this->pack.path.filename();
 }
 
 Package::~Package()
@@ -17,14 +19,33 @@ Package::~Package()
 bool Package::Save() noexcept
 {
     //TODO: Package Saving
-    return true;
+
+    return WriteSchematic();
+}
+bool Package::WriteSchematic() const noexcept
+{
+    std::ofstream file(this->dir_path / "schema");
+    if (!file)
+        return false;
+
+    file << this->pack.path.string() << '\n';
+
+    bool result = true;
+    for (const auto& ent : entries)
+    {
+        if (ent.GetType() == Temporary)
+            continue;
+        result &= ent.WriteSchematic(file);
+        file << '\n';
+    }
+
+    return result;
 }
 void Package::Close() noexcept
 {
     //ONLY leaves the 'pack' handle and the 'dir_path'.
 
     links.Close();
-    header.Close();
     entries.clear();
 
     CurrID = 0;
@@ -34,27 +55,44 @@ void Package::Close() noexcept
     name.clear();
 }
 
-bool Package::LoadEntries(bool all) noexcept
+bool Package::IndexEntries()
 {
-    bool result = true;
-    for (PackageEntry& ent : entries)
+    std::fstream& file = this->pack.file;
+    if (!file)
+        return false;
+
+    file.seekg(this->index.entries);
+
+    std::string curr;
+    file >> curr; //bypass "entry" section.
+
+    while (file.tellg() <= this->index.functions)
     {
-        if ((ent.LoadImm() || all) && !ent.IsTemporary())
+        std::getline(file, curr);
+
+        trim(curr);
+        if (curr.empty())
+            continue;
+        else if (curr == "functions")
+            break;
+
+        try
         {
-            std::ifstream target(ent.GetPath(this->dir_path));
-            if (!target)
-            {
-                std::cout << "Entry Loading: Could not load entry '" << ent.Name() << "' because it's unpacked file could not be accessed.\n";
-                result &= false;
-            }
+            auto ID = this->GetNextID();
+            auto path = this->dir_path / std::to_string(ID);
+            std::ofstream out(path, std::ios::trunc | std::ios::out);
+            if (!out)
+                return false;
 
-            bool tmp = ent.ReadFromFile(target);
-            if (!tmp)
-                std::cout << "Entry Loading: Could not load entry '" << ent.Name() << "' because the data in the file was not of proper format.\n";
-
-            result &= tmp;
+            this->entries.emplace_back(curr, out, PackageEntryKey(this->PackID, ID));
+            out.close();
+        }
+        catch (std::logic_error& e)
+        {
+            std::cerr << "Package Indexing Error: Could not index a variable in package at '" << this->pack.path << "'." << std::endl;
+            return false;
         }
     }
 
-    return result;
+    return this->WriteSchematic();
 }

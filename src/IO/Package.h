@@ -15,18 +15,20 @@
 #include "PackageEntryKey.h"
 #include "PackageEntry.h"
 #include "PackageUtility.h"
+#include "PackageHandle.h"
 
 class Package
 {
 private:
-    Package(std::string dir_path, PackageHandle& pack, PackageHandle& links, PackageHandle& header, unsigned long ID);
+    Package(std::string dir_path, PackageHandle&& pack, PackageHandle&& links, unsigned long ID, const PackageIndex& index);
 
     std::filesystem::path dir_path;
     std::string name;
     PackageHandle pack;
     PackageHandle links;
-    PackageHandle header;
     unsigned long PackID;
+
+    PackageIndex index;
 
     Version ver;
     std::optional<std::string> author;
@@ -35,12 +37,14 @@ private:
     std::vector<PackageEntry> entries;
     unsigned long CurrID;
 
+    [[nodiscard]] bool IndexEntries();
+
     std::string GetEntryPath(unsigned long ID) noexcept;
 
     [[nodiscard]] const PackageEntry* GetEntry(unsigned long ID) const noexcept;
     [[nodiscard]] PackageEntry* GetEntry(unsigned long ID) noexcept;
 
-    bool LoadEntries(bool all) noexcept; //Loads all entries marked with load_imm.
+    unsigned long GetNextID() noexcept { return CurrID++;}
 
 public:
     Package(const Package& obj) = delete;
@@ -53,6 +57,7 @@ public:
     Package& operator=(Package&& obj) noexcept = delete;
 
     [[nodiscard]] bool Save() noexcept;
+    [[nodiscard]] bool WriteSchematic() const noexcept;
     void Close() noexcept;
 
     std::optional<PackageEntryKey> ResolveEntry(std::string& name) noexcept;

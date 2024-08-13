@@ -7,4 +7,11 @@ add_library(IO SHARED
         PackageEntry.h
         PackageEntryKey.h
         PackageUtility.h
-        PackageHandle.cpp)
+        PackageHandle.cpp
+        PackageLinkTree.cpp
+        PackageLinkTree.h
+        PackageLinkNode.cpp
+        PackageLinkNode.h
+        PackageLink.cpp
+        PackageLink.h
+        PackageHandle.h)

@@ -10,60 +10,36 @@
 #include <vector>
 #include <cstring>
 #include <sstream>
+#include <filesystem>
 
 #include "PackageEntry.h"
+#include "PackageLink.h"
+#include "PackageHandle.h"
 
-struct PackageHandle
+class PackageIndex
 {
 public:
-    explicit PackageHandle(std::string path, std::ios::openmode flags = (std::ios::out | std::ios::in));
-    PackageHandle(const PackageHandle& obj) = delete;
-    PackageHandle(PackageHandle&& obj) noexcept;
-    ~PackageHandle();
+    PackageIndex() : PackageIndex(0, 0, 0, 0) {}
+    PackageIndex(std::streampos header, std::streampos links, std::streampos entries, std::streampos functions) : header(header), links(links), entries(entries), functions(functions) {}
 
-    void Close() noexcept;
-
-    std::string path;
-    std::fstream file;
+    std::streampos header, links, entries, functions;
 };
 
 struct PreProcessedPackage
 {
 public:
-    explicit PreProcessedPackage(PackageHandle& handle) : handle(std::move(handle)) {}
+    PreProcessedPackage(PackageLink&& handle, const PackageIndex& index) : handle(std::move(handle)), index(index) {}
+//    PreProcessedPackage(PackageHandle&& handle, const PackageIndex& index)
     PreProcessedPackage(const PreProcessedPackage& obj) = delete;
 
-    PackageHandle handle;
-
-    std::streampos header, links, entries, functions;
-};
-
-class IndexedEntry
-{
-public:
-    IndexedEntry() : beg(std::streampos()), end(std::streampos()), name(std::string()), type(PackageEntryType::Temporary), load_imm(false) {}
-    IndexedEntry(std::streampos beg, std::streampos end, std::string name, PackageEntryType type, bool load_imm) : beg(beg), end(end), name(std::move(name)), type(type), load_imm(load_imm) {}
-
-    std::streampos beg, end;
-    std::string name;
-    PackageEntryType type;
-    bool load_imm;
-};
-class IndexedPackage
-{
-public:
-    IndexedPackage(PackageHandle& handle, std::vector<IndexedEntry> entries) : handle(std::move(handle)), entries(std::move(entries)) {}
-    IndexedPackage(const IndexedPackage& obj) = delete;
-
-    PackageHandle handle;
-    std::vector<IndexedEntry> entries;
-    std::streampos headerLoc, linksLoc, entriesLoc, functionsLoc;
+    PackageLink handle;
+    PackageIndex index;
 };
 
 class UnloadedPackage
 {
 public:
-    UnloadedPackage(PackageHandle& handle, unsigned long PackageID) : handle(std::move(handle)), ID(PackageID) {}
+    UnloadedPackage(PackageHandle&& handle, unsigned long PackageID) : handle(std::move(handle)), ID(PackageID) {}
     UnloadedPackage(const UnloadedPackage& obj) = delete;
 
     PackageHandle handle;

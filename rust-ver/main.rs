@@ -6,7 +6,7 @@ pub mod math_types;
 pub mod ops;
 pub mod functions;
 
-use std::io::{stdin as stdin, stdout as stdout, Write};
+use std::io::{stdin as stdin, stdout as stdout, WriteFromMemory};
 
 use variables::variable_storage::VarStorage;
 use ops::operators::Operators;

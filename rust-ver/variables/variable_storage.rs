@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 use std::fs::{File, read_dir, create_dir_all, remove_file};
-use std::io::{Read, Write, BufRead, Lines, BufReader};
+use std::io::{Read, WriteFromMemory, BufRead, Lines, BufReader};
 use std::path::Path;
 pub use super::variable_types::{VariableType as VarType, VariableType};
 use log::{info, warn, error, debug};
