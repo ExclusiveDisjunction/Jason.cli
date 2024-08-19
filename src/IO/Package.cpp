@@ -5,10 +5,11 @@
 #include "Package.h"
 #include "../Common.h"
 #include "PackageHandle.h"
+#include "Session.h"
 
 Package::Package(std::string dir_path, PackageHandle&& pack, PackageHandle&& links, unsigned long ID, const PackageIndex& index) : dir_path(std::move(dir_path)), pack(std::move(pack)), links(std::move(links)), PackID(ID), locked(false), CurrID(0), index(index)
 {
-    this->name = this->pack.path.filename();
+    this->name = Session::MakePackageName(this->pack.path);
 }
 
 Package::~Package()

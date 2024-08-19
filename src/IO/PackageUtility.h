@@ -36,16 +36,6 @@ public:
     PackageIndex index;
 };
 
-class UnloadedPackage
-{
-public:
-    UnloadedPackage(PackageHandle&& handle, unsigned long PackageID) : handle(std::move(handle)), ID(PackageID) {}
-    UnloadedPackage(const UnloadedPackage& obj) = delete;
-
-    PackageHandle handle;
-    unsigned long ID;
-};
-
 class Version
 {
 public:

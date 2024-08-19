@@ -6,6 +6,7 @@
 
 #include "../Common.h"
 #include "PackageHandle.h"
+#include "UnloadedPackage.h"
 
 #include <filesystem>
 #include <algorithm>
@@ -335,15 +336,6 @@ bool Session::ExtractLinks(PackageLinkNode& target, std::vector<PackageLink>& re
     return true;
 }
 
-bool Session::IndexPackageEntries()
-{
-    bool ok = true;
-    for (auto& pack : packages)
-        ok &= pack->IndexEntries();
-
-    return ok;
-}
-
 bool Session::InflatePackages(std::vector<PreProcessedPackage*>& indexed)
 {
     for (auto& item : indexed)
@@ -418,29 +410,93 @@ Package* Session::InflatePackage(PreProcessedPackage*& target)
     }
 }
 
+bool Session::IndexPackageEntries()
+{
+    bool ok = true;
+    for (auto& pack : packages)
+        ok &= pack->IndexEntries();
+
+    return ok;
+}
+
 std::optional<unsigned long> Session::GetPackageID(const std::string& name) const noexcept
 {
 
 }
 std::optional<PackageEntryKey> Session::ResolveEntry(const std::string& name) const noexcept
 {
+    auto loc = name.find("::");
+    std::string packName, entryName;
+    if (loc <= name.size())
+    {
+        packName = name.substr(0, loc);
+        entryName = name.substr(loc + 1);
+    }
+    else
+    {
+        packName = "usr";
+        entryName = name;
+    }
 
+    auto packIter = ResolvePackage(packName);
+    if (packIter != packages.end())
+        return (*packIter)->ResolveEntry(entryName);
+    else
+        return {};
 }
 
-bool Session::LoadPackage(unsigned long ID)
+bool Session::IsPackageLoaded(unsigned long ID) const noexcept
+{
+    return ResolvePackage(ID) != this->packages.end();
+}
+bool Session::LoadPackage(unsigned long ID) noexcept
 {
 
 }
-bool Session::UnloadPackage(unsigned long ID)
+bool Session::UnloadPackage(unsigned long ID) noexcept
 {
 
 }
 
-const Package* Session::ResolvePackage(const std::string& name) const noexcept
+std::vector<Package*>::const_iterator Session::ResolvePackage(const std::string& name) const noexcept
 {
-
+    return std::find_if(this->packages.begin(), this->packages.end(), [&name](Package* pack) -> bool
+    {
+        return pack->name == name;
+    });
 }
-Package* Session::ResolvePackage(const std::string& name) noexcept
+std::vector<UnloadedPackage*>::const_iterator Session::ResolveUnloadedPackage(const std::string& name) const noexcept
 {
-
+    return std::find_if(this->unloadedPackages.begin(), this->unloadedPackages.end(), [&name](UnloadedPackage* pack) -> bool
+    {
+        return pack->name == name;
+    });
+}
+std::vector<Package*>::const_iterator Session::ResolvePackage(unsigned long ID) const noexcept
+{
+    return std::find_if(this->packages.begin(), this->packages.end(), [&ID](Package* pack) -> bool
+    {
+        return pack->PackID == ID;
+    });
+}
+std::vector<Package*>::iterator Session::ResolvePackage(unsigned long ID) noexcept
+{
+    return std::find_if(this->packages.begin(), this->packages.end(), [&ID](Package* pack) -> bool
+    {
+        return pack->PackID == ID;
+    });
+}
+std::vector<UnloadedPackage*>::const_iterator Session::ResolveUnloadedPackage(unsigned long ID) const noexcept
+{
+    return std::find_if(this->unloadedPackages.begin(), this->unloadedPackages.end(), [&ID](UnloadedPackage* pack) -> bool
+    {
+        return pack->PackID == ID;
+    });
+}
+std::vector<UnloadedPackage*>::iterator Session::ResolveUnloadedPackage(unsigned long ID) noexcept
+{
+    return std::find_if(this->unloadedPackages.begin(), this->unloadedPackages.end(), [&ID](UnloadedPackage* pack) -> bool
+    {
+        return pack->PackID == ID;
+    });
 }
