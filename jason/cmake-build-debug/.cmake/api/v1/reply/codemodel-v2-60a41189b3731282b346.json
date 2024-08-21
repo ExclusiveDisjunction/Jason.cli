@@ -1,0 +1,155 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.27"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "src",
+					"childIndexes" : 
+					[
+						2,
+						3,
+						4,
+						5
+					],
+					"jsonFile" : "directory-src-Debug-b6cf2213fc5053b67c22.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.27"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src",
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"build" : "src/Calc",
+					"jsonFile" : "directory-src.Calc-Debug-d63d433c2fb1907ed9c7.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.27"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "src/Calc",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "src/Function",
+					"jsonFile" : "directory-src.Function-Debug-d903f27f56af8bc5693e.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.27"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "src/Function",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "src/Operators",
+					"jsonFile" : "directory-src.Operators-Debug-621630a95167c5cae7c5.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.27"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "src/Operators"
+				},
+				{
+					"build" : "src/IO",
+					"jsonFile" : "directory-src.IO-Debug-a4628a3d89ca5292ebe2.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.27"
+					},
+					"parentIndex" : 1,
+					"projectIndex" : 0,
+					"source" : "src/IO"
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5
+					],
+					"name" : "Jason",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 2,
+					"id" : "Calc::@a7ef603012736eebb983",
+					"jsonFile" : "target-Calc-Debug-e14dfea9ed957b691ccf.json",
+					"name" : "Calc",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "Function::@41088efbbcc0fc45cbbb",
+					"jsonFile" : "target-Function-Debug-a8ea493e6229a465e349.json",
+					"name" : "Function",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "Jason::@145eef247bfb46b6828c",
+					"jsonFile" : "target-Jason-Debug-4ed99d4aa52fe69331e0.json",
+					"name" : "Jason",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/Volumes/Programming/Repos/Jason/cmake-build-debug",
+		"source" : "/Volumes/Programming/Repos/Jason"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 6
+	}
+}

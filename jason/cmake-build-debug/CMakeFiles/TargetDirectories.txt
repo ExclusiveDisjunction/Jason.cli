@@ -1,0 +1,15 @@
+/Volumes/Programming/Repos/Jason/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Volumes/Programming/Repos/Jason/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Volumes/Programming/Repos/Jason/cmake-build-debug/src/CMakeFiles/Jason.dir
+/Volumes/Programming/Repos/Jason/cmake-build-debug/src/CMakeFiles/edit_cache.dir
+/Volumes/Programming/Repos/Jason/cmake-build-debug/src/CMakeFiles/rebuild_cache.dir
+/Volumes/Programming/Repos/Jason/cmake-build-debug/src/Calc/CMakeFiles/Calc.dir
+/Volumes/Programming/Repos/Jason/cmake-build-debug/src/Calc/CMakeFiles/edit_cache.dir
+/Volumes/Programming/Repos/Jason/cmake-build-debug/src/Calc/CMakeFiles/rebuild_cache.dir
+/Volumes/Programming/Repos/Jason/cmake-build-debug/src/Function/CMakeFiles/Function.dir
+/Volumes/Programming/Repos/Jason/cmake-build-debug/src/Function/CMakeFiles/edit_cache.dir
+/Volumes/Programming/Repos/Jason/cmake-build-debug/src/Function/CMakeFiles/rebuild_cache.dir
+/Volumes/Programming/Repos/Jason/cmake-build-debug/src/Operators/CMakeFiles/edit_cache.dir
+/Volumes/Programming/Repos/Jason/cmake-build-debug/src/Operators/CMakeFiles/rebuild_cache.dir
+/Volumes/Programming/Repos/Jason/cmake-build-debug/src/IO/CMakeFiles/edit_cache.dir
+/Volumes/Programming/Repos/Jason/cmake-build-debug/src/IO/CMakeFiles/rebuild_cache.dir

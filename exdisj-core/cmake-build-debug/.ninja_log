@@ -1,0 +1,5 @@
+# ninja log v5
+0	46	1724268493581424674	build.ninja	7b90f96bdb4f261b
+0	623	1724267663214768329	CMakeFiles/exdisj_core.dir/DateTime.cpp.o	dec07d4394d0a6e4
+1	119	1724267662712169142	CMakeFiles/exdisj_core.dir/Log.cpp.o	b96c452e0360e7da
+625	726	1724267663319228693	libexdisj_core.dylib	f0739ebe2f3a9652
