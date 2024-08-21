@@ -1,3 +1,0 @@
-/Volumes/Programming/Repos/Jason/jason-io/cmake-build-debug/CMakeFiles/jason_io.dir
-/Volumes/Programming/Repos/Jason/jason-io/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Volumes/Programming/Repos/Jason/jason-io/cmake-build-debug/CMakeFiles/rebuild_cache.dir

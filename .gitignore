@@ -1,6 +1,14 @@
 /target
+.idea
 rust-ver
 .DS_Store
+run_variables
 
 *.log
-/build
+cmake-build-debug
+cmake-build-release
+CMakeFiles
+*.out
+.vscode
+
+Command To Run.txt

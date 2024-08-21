@@ -1,3 +1,0 @@
-/Volumes/Programming/Repos/Jason/exdisj-core/cmake-build-debug/CMakeFiles/exdisj_core.dir
-/Volumes/Programming/Repos/Jason/exdisj-core/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Volumes/Programming/Repos/Jason/exdisj-core/cmake-build-debug/CMakeFiles/rebuild_cache.dir
