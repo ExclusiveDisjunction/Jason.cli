@@ -16,4 +16,6 @@ add_library(IO SHARED
         PackageLink.h
         PackageHandle.h
         UnloadedPackage.h
-        UnloadedPackage.cpp)
+        UnloadedPackage.cpp
+        PackageHeader.cpp
+        PackageHeader.h)

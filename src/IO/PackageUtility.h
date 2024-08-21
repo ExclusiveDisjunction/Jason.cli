@@ -36,17 +36,4 @@ public:
     PackageIndex index;
 };
 
-class Version
-{
-public:
-    Version() : Version(0, 0, 0) {}
-    Version(unsigned Major, unsigned Minor, unsigned Release) : Major(Major), Minor(Minor), Release(Release) {}
-
-    unsigned Major;
-    unsigned Minor;
-    unsigned Release;
-};
-std::ostream& operator<<(std::ostream& out, const Version& obj) noexcept;
-std::istream& operator>>(std::istream& in, Version& obj);
-
 #endif //JASON_PACKAGEUTILITY_H

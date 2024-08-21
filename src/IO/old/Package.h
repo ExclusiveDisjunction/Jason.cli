@@ -16,7 +16,6 @@
 #include "PackageEntry.h"
 #include "PackageUtility.h"
 #include "PackageHandle.h"
-#include "PackageHeader.h"
 
 class Package
 {
@@ -25,12 +24,18 @@ private:
 
     std::filesystem::path dir_path;
     std::string name;
+    PackageHandle pack;
+    PackageHandle links;
     unsigned long PackID;
+
+    PackageIndex index;
+
+    Version ver;
+    std::optional<std::string> author;
+    bool locked;
 
     std::vector<PackageEntry> entries;
     unsigned long CurrID;
-
-    PackageHeader header;
 
     [[nodiscard]] bool IndexEntries();
 
@@ -50,10 +55,6 @@ public:
 
     Package& operator=(const Package& obj) = delete;
     Package& operator=(Package&& obj) noexcept = delete;
-
-    [[nodiscard]] static Package* OpenFromDirectory(std::filesystem::path& dir);
-    [[nodiscard]] static Package* OpenFromCompressed(std::filesystem::path& pack, std::filesystem::path& targetDir);
-    [[nodiscard]] static Package* OpenFromCompressedRO(std::filesystem::path& pack);
 
     [[nodiscard]] bool Save() noexcept;
     [[nodiscard]] bool WriteSchematic() const noexcept;
