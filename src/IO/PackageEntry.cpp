@@ -7,18 +7,7 @@
 
 #include <utility>
 
-PackageEntry::PackageEntry(const std::string& line, std::ostream& output, PackageEntryKey key) : key(key), type(Variable), data(nullptr), load_imm(false)
-{
-    std::stringstream in(line);
-    if (!ReadFromFile(in, output))
-        throw std::logic_error("Could not index entry.");
-}
-PackageEntry::PackageEntry(std::istream& in, std::ostream& output, PackageEntryKey key) : key(key), type(Variable), data(nullptr), load_imm(false)
-{
-    if (!ReadFromFile(in, output))
-        throw std::logic_error("Could not index entry.");
-}
-PackageEntry::PackageEntry(PackageEntryKey key, std::string name, VariableType* data, PackageEntryType type, bool load_imm) : key(key), name(std::move(name)), data(data), type(type), load_imm(load_imm)
+PackageEntry::PackageEntry(PackageEntryKey key, std::string name, VariableType* data, PackageEntryType type, unsigned char state) : key(key), name(std::move(name)), data(data), type(type), state(state)
 {
     if (this->type != PackageEntryType::Temporary && name.empty())
         throw std::logic_error("Cannot construct a variable entry with no name, unless type is temporary.");
@@ -26,7 +15,7 @@ PackageEntry::PackageEntry(PackageEntryKey key, std::string name, VariableType* 
     if (this->type == PackageEntryType::Temporary)
         this->name.clear();
 }
-PackageEntry::PackageEntry(PackageEntry&& obj) noexcept : key(obj.key), type(obj.type), name(std::move(obj.name)), data(std::exchange(obj.data, nullptr)), load_imm(obj.load_imm)
+PackageEntry::PackageEntry(PackageEntry&& obj) noexcept : key(obj.key), type(obj.type), name(std::move(obj.name)), data(std::exchange(obj.data, nullptr)), state(obj.state)
 {
 
 }
@@ -36,48 +25,20 @@ PackageEntry::~PackageEntry()
     data = nullptr;
 }
 
-[[nodiscard]] bool PackageEntry::WriteCore(std::ostream& out) const noexcept
+[[nodiscard]] bool PackageEntry::WriteCompressedLine(std::ostream& out) const noexcept
+{
+    return WriteSchematic(out) && (out << ' ') && WriteData(out);
+}
+[[nodiscard]] bool PackageEntry::WriteData(std::ostream& out) const noexcept
 {
     if (!out)
         return false;
 
-    switch (this->type)
-    {
-        case PackageEntryType::Variable:
-            out << "var";
-            break;
-        case PackageEntryType::Environment:
-            out << "env";
-            break;
-        case PackageEntryType::Temporary:
-        default:
-            return false;
-    }
+    if (this->data)
+        this->data->Sterilize(out);
+    else
+        out << "NULL";
 
-    out << " " << this->name << (this->load_imm ? '!' : '\0') << " ";
-    return true;
-}
-[[nodiscard]] bool PackageEntry::WriteFromMemory(std::ostream& out) const noexcept
-{
-    if (!out || !this->data || !WriteCore(out))
-        return false;
-
-    return WriteData(out);
-}
-[[nodiscard]] bool PackageEntry::WriteFromInflated(std::ostream& out, std::istream& sterilized) const noexcept
-{
-    if (!out || !sterilized || !WriteCore(out))
-        return false;
-
-    out << sterilized.rdbuf();
-    return true;
-}
-[[nodiscard]] bool PackageEntry::WriteData(std::ostream& out) const noexcept
-{
-    if (!out || !this->data)
-        return false;
-
-    this->data->Sterilize(out);
     return out.good();
 }
 [[nodiscard]] bool PackageEntry::WriteSchematic(std::ostream& out) const noexcept
@@ -85,51 +46,7 @@ PackageEntry::~PackageEntry()
     if (!out)
         return false;
 
-    out << this->key.EntryID << ' ' << (this->type == Variable ? "var" : this->type == Environment ? "env" : "tmp") << ' ' << this->name << ' ' << (this->load_imm ? "i" : "n");
-    return true;
-}
-[[nodiscard]] bool PackageEntry::ReadFromFile(std::istream& in, std::ostream& sterilizedOut) noexcept
-{
-    if (!in)
-        return false;
-
-    this->type = Variable;
-    this->load_imm = false;
-    this->name.clear();
-    this->Data(nullptr);
-
-    std::string type_r, load;
-    in >> type_r;
-    if (type_r == "var")
-        this->type = Variable;
-    else if (type_r == "env")
-        this->type = Environment;
-    else
-        return false;
-
-    in >> this->name;
-
-    std::streamoff pos = in.tellg();
-    in >> load;
-    if (load == "!")
-        this->load_imm = true;
-    else
-        in.seekg(pos); //We shouldn't read the value at "load", so we backtrack.
-
-    if (this->load_imm) //We treat the rest of the data as a loaded value.
-    {
-        VariableType* result = VariableType::FromSterilized(in);
-        if (!result)
-            return false;
-        else
-            this->Data(result);
-    }
-
-    std::string sterilized;
-    std::getline(in, sterilized);
-    trim(sterilized);
-    sterilizedOut << sterilized;
-
+    out << this->key.EntryID << ' ' << (this->type == Variable ? "var" : this->type == Environment ? "env" : "tmp") << " f:" << (this->state & load_imm ? '!' : 0) << (this->state & readonly && !(this->state & readonly_package) ? '~' : 0) << ' ' << this->name;
     return true;
 }
 

@@ -11,10 +11,9 @@
 class UnloadedPackage
 {
 public:
-    UnloadedPackage(PackageHandle&& handle, unsigned long PackageID);
-    UnloadedPackage(const UnloadedPackage& obj) = delete;
+    UnloadedPackage(std::filesystem::path target, unsigned long PackageID, std::string name);
 
-    PackageHandle handle;
+    std::filesystem::path target;
     unsigned long PackID;
     std::string name;
 };

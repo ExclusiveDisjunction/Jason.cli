@@ -34,8 +34,6 @@ private:
 
     [[nodiscard]] bool IndexEntries();
 
-    std::string GetEntryPath(unsigned long ID) noexcept;
-
     [[nodiscard]] const PackageEntry* GetEntry(unsigned long ID) const noexcept;
     [[nodiscard]] PackageEntry* GetEntry(unsigned long ID) noexcept;
 

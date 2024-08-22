@@ -5,7 +5,7 @@
 #include "UnloadedPackage.h"
 #include "Session.h"
 
-UnloadedPackage::UnloadedPackage(PackageHandle&& handle, unsigned long PackageID) : handle(std::move(handle)), PackID(PackageID)
+UnloadedPackage::UnloadedPackage(std::filesystem::path target, unsigned long PackageID, std::string name) : target(std::move(target)), PackID(PackageID), name(std::move(name))
 {
-    this->name = Session::MakePackageName(handle.path);
+
 }

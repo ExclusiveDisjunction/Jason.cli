@@ -7,6 +7,7 @@
 
 #include <string>
 #include <filesystem>
+#include <optional>
 
 #include "PackageEntryKey.h"
 #include "../Calc/VariableType.h"
@@ -21,29 +22,39 @@ enum PackageEntryType
 class PackageEntry
 {
 private:
+    enum State
+    {
+        none = 0,
+        load_imm = 1,
+        readonly = 2,
+        readonly_package = 4 //When true, the top package that this comes from is read-only opened.
+    };
+
     PackageEntryKey key;
     PackageEntryType type;
     std::string name;
     VariableType* data;
-    bool load_imm;
+    unsigned char state;
+    std::optional<std::pair<std::streampos, std::streampos>> loc;
+
+    PackageEntry(PackageEntryKey key, std::string name, VariableType* data, PackageEntryType type, unsigned char state);
 
 public:
-    PackageEntry(const std::string& line, std::ostream& output, PackageEntryKey key);
-    PackageEntry(std::istream& in, std::ostream& output, PackageEntryKey key);
-    PackageEntry(PackageEntryKey key, std::string name, VariableType* data, PackageEntryType type, bool load_imm = false);
     PackageEntry(const PackageEntry& obj) = delete;
     PackageEntry(PackageEntry&& obj) noexcept;
     ~PackageEntry();
 
+    [[nodiscard]] PackageEntry* FromIndexTableLine(std::istream& in, unsigned long PackageID);
+    [[nodiscard]] PackageEntry* FromIndexTableLine(const std::string& line, unsigned long PackageID);
+    [[nodiscard]] PackageEntry* FromCompressedLineRO(std::istream& in, PackageEntryKey key);
+    [[nodiscard]] PackageEntry* FromCompressedLine(std::istream& in, std::ostream& out, PackageEntryKey key);
+
     PackageEntry& operator=(const PackageEntry& obj) = delete;
     PackageEntry& operator=(PackageEntry&& obj) noexcept = delete;
 
-    [[nodiscard]] bool WriteCore(std::ostream& out) const noexcept;
-    [[nodiscard]] bool WriteFromMemory(std::ostream& out) const noexcept;
-    [[nodiscard]] bool WriteFromInflated(std::ostream& out, std::istream& sterilized) const noexcept;
+    [[nodiscard]] bool WriteCompressedLine(std::ostream& out) const noexcept;
     [[nodiscard]] bool WriteSchematic(std::ostream& out) const noexcept;
     [[nodiscard]] bool WriteData(std::ostream& out) const noexcept;
-    [[nodiscard]] bool ReadFromFile(std::istream& in, std::ostream& sterilizedOut) noexcept;
 
     [[nodiscard]] const VariableType& Data() const;
     void Data(VariableType* New) noexcept;
