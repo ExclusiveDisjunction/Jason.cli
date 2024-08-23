@@ -3,25 +3,27 @@
 //
 
 #include "PackageEntry.h"
+#include "Package.h"
 #include "../Common.h"
 
 #include <utility>
 #include <string>
 
-PackageEntry::PackageEntry(PackageEntryKey key, std::string name, VariableType* data, PackageEntryType type, unsigned char state) : key(key), name(std::move(name)), data(data), type(type), state(state)
+PackageEntry::PackageEntry(PackageEntryKey key, std::string name, VariableType* data, PackageEntryType type, Package* parent, unsigned char state) : key(key), name(std::move(name)), data(nullptr), type(type), parent(parent), state(state)
 {
     if (this->type != PackageEntryType::Temporary && name.empty())
         throw std::logic_error("Cannot construct a variable entry with no name, unless type is temporary.");
 
     if (this->type == PackageEntryType::Temporary)
         this->name.clear();
-}
-PackageEntry::PackageEntry(PackageEntry&& obj) noexcept : key(obj.key), type(obj.type), name(std::move(obj.name)), data(std::exchange(obj.data, nullptr)), state(obj.state)
-{
 
+    this->Data(data);
 }
 PackageEntry::~PackageEntry()
 {
+    if (this->parent)
+        this->parent->ReleaseEntry(this->key.EntryID);
+
     delete data;
     data = nullptr;
 }
@@ -47,7 +49,7 @@ bool PackageEntry::WriteSchematic(std::ostream& out) const noexcept
     if (!out)
         return false;
 
-    out << this->key.EntryID << ' ' << (this->type == Variable ? "var" : this->type == Environment ? "env" : "tmp") << " f:" << (this->state & load_imm ? '!' : 0) << (this->state & readonly && !(this->state & readonly_package) ? '~' : 0) << ' ' << this->name;
+    out << this->key.EntryID << ' ' << (this->type == Variable ? "var" : this->type == Environment ? "env" : "tmp") << " f:" << (this->state & load_imm ? '!' : 0) << (this->state & readonly ? '~' : 0) << ' ' << this->name;
     return true;
 }
 bool PackageEntry::ReadFromFile(std::istream& target) noexcept
@@ -99,19 +101,19 @@ void PackageEntry::Data(VariableType* New) noexcept
 
 bool PackageEntry::HasData() const noexcept
 {
-    return this->data != nullptr;
+    return data != nullptr;
 }
 PackageEntryKey PackageEntry::Key() const noexcept
 {
-    return this->key;
+    return state & load_imm;
 }
 const std::string& PackageEntry::Name() const noexcept
 {
-    return this->name;
+    return state & readonly;
 }
 bool PackageEntry::LoadImm() const noexcept
 {
-    return this->load_imm;
+    return type == Temporary;
 }
 PackageEntryType PackageEntry::GetType() const noexcept
 {
@@ -119,7 +121,7 @@ PackageEntryType PackageEntry::GetType() const noexcept
 }
 bool PackageEntry::IsTemporary() const noexcept
 {
-    return this->type == Temporary;
+    return type;
 }
 std::filesystem::path PackageEntry::GetPath(const std::filesystem::path& source) const noexcept
 {

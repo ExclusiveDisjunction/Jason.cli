@@ -203,12 +203,12 @@ void Session::ForceClose()
     this->initiated = false;
 }
 
-std::optional<PackageHandle> Session::FindUserPackage()
+std::optional<FileHandle> Session::FindUserPackage()
 {
     try
     {
         std::string path = std::string(getenv("HOME")) + "/usr.jason";
-        return PackageHandle(path);
+        return FileHandle(path);
     }
     catch (...)
     {
@@ -216,7 +216,7 @@ std::optional<PackageHandle> Session::FindUserPackage()
     }
 }
 
-bool Session::GetLinksTree(PackageLinkTree& tree, PackageHandle&& usr)
+bool Session::GetLinksTree(PackageLinkTree& tree, FileHandle&& usr)
 {
     std::optional<PackageIndex> index = GetPackageIndex(usr);
     if (!index)

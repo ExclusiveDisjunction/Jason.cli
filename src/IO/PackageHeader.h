@@ -28,9 +28,9 @@ class PackageHeader
 {
 public:
     [[nodiscard]] static std::optional<PackageHeader> FromFile(std::istream& in, std::optional<std::streamoff> endLoc = {});
-    PackageHeader(std::optional<PackageHandle>&& handle, Version ver, std::optional<std::string> author = {}, bool locked = false);
+    PackageHeader(std::optional<FileHandle>&& handle, Version ver, std::optional<std::string> author = {}, bool locked = false);
 
-    std::optional<PackageHandle> handle;
+    std::optional<FileHandle> handle;
     Version ver;
     std::optional<std::string> author;
     bool locked;

@@ -24,11 +24,11 @@ private:
 
     [[nodiscard]] unsigned long GetNextID() noexcept { return currID++; }
 
-    [[nodiscard]] static std::optional<PackageHandle> FindUserPackage();
+    [[nodiscard]] static std::optional<FileHandle> FindUserPackage();
 
-    [[nodiscard]] static bool GetLinksTree(PackageLinkTree& tree, PackageHandle&& usr);
+    [[nodiscard]] static bool GetLinksTree(PackageLinkTree& tree, FileHandle&& usr);
     [[nodiscard]] static bool FillLinkTree(PackageLinkNode& parent, const PackageLinkTree& tree) noexcept;
-    [[nodiscard]] static std::optional<PackageIndex> GetPackageIndex(PackageHandle& target) noexcept;
+    [[nodiscard]] static std::optional<PackageIndex> GetPackageIndex(FileHandle& target) noexcept;
     [[nodiscard]] static bool ExtractLinks(PackageLinkNode& target, std::vector<PackageLink>& result);
 
     [[nodiscard]] bool InflatePackages(std::vector<PreProcessedPackage*>& indexed);

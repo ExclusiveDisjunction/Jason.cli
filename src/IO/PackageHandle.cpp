@@ -4,7 +4,7 @@
 
 #include "PackageUtility.h"
 
-PackageHandle::PackageHandle(std::filesystem::path path, std::ios::openmode flags) : path(std::move(path)), file()
+FileHandle::FileHandle(std::filesystem::path path, std::ios::openmode flags) : path(std::move(path)), file()
 {
     file.open(this->path.string(), flags);
 
@@ -25,17 +25,17 @@ PackageHandle::PackageHandle(std::filesystem::path path, std::ios::openmode flag
     this->file.seekg(0, std::ios::beg);
 }
 
-PackageHandle::PackageHandle(PackageHandle&& obj) noexcept : path(std::move(obj.path)), file(std::move(obj.file))
+FileHandle::FileHandle(FileHandle&& obj) noexcept : path(std::move(obj.path)), file(std::move(obj.file))
 {
 
 }
 
-PackageHandle::~PackageHandle()
+FileHandle::~FileHandle()
 {
     Close();
 }
 
-void PackageHandle::Close() noexcept
+void FileHandle::Close() noexcept
 {
     this->file.close();
 }

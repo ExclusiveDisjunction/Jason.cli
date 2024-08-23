@@ -203,12 +203,12 @@ void Session::ForceClose()
     this->initiated = false;
 }
 
-std::optional<PackageHandle> Session::FindUserPackage()
+std::optional<FileHandle> Session::FindUserPackage()
 {
     try
     {
         std::string path = std::string(getenv("HOME")) + "/usr.jason";
-        return PackageHandle(path);
+        return FileHandle(path);
     }
     catch (...)
     {
@@ -216,7 +216,7 @@ std::optional<PackageHandle> Session::FindUserPackage()
     }
 }
 
-bool Session::GetLinksTree(PackageLinkTree& tree, PackageHandle&& usr)
+bool Session::GetLinksTree(PackageLinkTree& tree, FileHandle&& usr)
 {
     std::optional<PackageIndex> index = GetPackageIndex(usr);
     if (!index)
@@ -247,7 +247,7 @@ bool Session::FillLinkTree(PackageLinkNode& parent, const PackageLinkTree& tree)
 
     return true;
 }
-std::optional<PackageIndex> Session::GetPackageIndex(PackageHandle& target) noexcept
+std::optional<PackageIndex> Session::GetPackageIndex(FileHandle& target) noexcept
 {
     PackageIndex index;
 
@@ -267,7 +267,7 @@ std::optional<PackageIndex> Session::GetPackageIndex(PackageHandle& target) noex
     }
     index.header = file.tellg();
 
-    auto findLocation = [](PackageHandle& package, std::streampos& target, const std::string& name) -> bool
+    auto findLocation = [](FileHandle& package, std::streampos& target, const std::string& name) -> bool
     {
         std::string curr;
         while (curr != name && !package.file.eof())
@@ -324,7 +324,7 @@ bool Session::ExtractLinks(PackageLinkNode& target, std::vector<PackageLink>& re
             trim(part);
             std::filesystem::path link_target(part);
 
-            result.emplace_back(PackageHandle(link_target), enabled);
+            result.emplace_back(FileHandle(link_target), enabled);
         }
         catch (std::logic_error& e)
         {
@@ -370,7 +370,7 @@ Package* Session::InflatePackage(PreProcessedPackage*& target)
     try
     {
         auto linksD = directory / "links";
-        PackageHandle links(linksD, std::ios::out | std::ios::trunc);
+        FileHandle links(linksD, std::ios::out | std::ios::trunc);
 
         std::fstream& host = target->handle.GetHost().file;
         if (!host)

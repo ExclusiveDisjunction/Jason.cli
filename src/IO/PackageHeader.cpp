@@ -8,7 +8,7 @@ std::optional<PackageHeader> PackageHeader::FromFile(std::istream& in, std::opti
 {
 
 }
-PackageHeader::PackageHeader(std::optional<PackageHandle>&& handle, Version ver, std::optional<std::string> author, bool locked) : handle(std::move(handle)), ver(ver), author(std::move(author)), locked(locked)
+PackageHeader::PackageHeader(std::optional<FileHandle>&& handle, Version ver, std::optional<std::string> author, bool locked) : handle(std::move(handle)), ver(ver), author(std::move(author)), locked(locked)
 {
 
 }

@@ -20,12 +20,12 @@
 class Package
 {
 private:
-    Package(std::string dir_path, PackageHandle&& pack, PackageHandle&& links, unsigned long ID, const PackageIndex& index);
+    Package(std::string dir_path, FileHandle&& pack, FileHandle&& links, unsigned long ID, const PackageIndex& index);
 
     std::filesystem::path dir_path;
     std::string name;
-    PackageHandle pack;
-    PackageHandle links;
+    FileHandle pack;
+    FileHandle links;
     unsigned long PackID;
 
     PackageIndex index;

@@ -21,23 +21,33 @@
 class Package
 {
 private:
-    Package(std::string dir_path, PackageHandle&& pack, PackageHandle&& links, unsigned long ID, const PackageIndex& index);
+    enum State
+    {
+        None = 0,
+        ReadOnly = 1
+    };
 
-    std::filesystem::path dir_path;
+    Package(std::filesystem::path location, FileHandle&& index, FileHandle&& header_l, unsigned long ID, std::string name, PackageHeader&& header);
+
+    std::filesystem::path location;
+    FileHandle index_l;
+    FileHandle header_l;
+    
+    unsigned long packID;
+    unsigned long currID = 0;
+    unsigned char state = 0;
+
     std::string name;
-    unsigned long PackID;
-
-    std::vector<PackageEntry> entries;
-    unsigned long CurrID;
-
     PackageHeader header;
+
+    std::vector<PackageEntry*> entries;
 
     [[nodiscard]] bool IndexEntries();
 
     [[nodiscard]] const PackageEntry* GetEntry(unsigned long ID) const noexcept;
     [[nodiscard]] PackageEntry* GetEntry(unsigned long ID) noexcept;
 
-    unsigned long GetNextID() noexcept { return CurrID++;}
+    unsigned long GetNextID() noexcept { return currID++;}
 
 public:
     Package(const Package& obj) = delete;
@@ -49,20 +59,20 @@ public:
     Package& operator=(const Package& obj) = delete;
     Package& operator=(Package&& obj) noexcept = delete;
 
-    [[nodiscard]] static Package* OpenFromDirectory(std::filesystem::path& dir);
-    [[nodiscard]] static Package* OpenFromCompressed(std::filesystem::path& pack, std::filesystem::path& targetDir);
-    [[nodiscard]] static Package* OpenFromCompressedRO(std::filesystem::path& pack);
+    [[nodiscard]] static Package* OpenFromDirectory(std::filesystem::path& dir, unsigned long ID);
+    [[nodiscard]] static Package* OpenFromCompressed(std::filesystem::path& pack, std::filesystem::path& targetDir, unsigned long ID);
 
-    [[nodiscard]] bool Save() noexcept;
-    [[nodiscard]] bool WriteSchematic() const noexcept;
+    [[nodiscard]] bool Compress(std::ostream& out) noexcept;
+    [[nodiscard]] bool WriteIndex(std::ostream& out) const noexcept;
+    [[nodiscard]] bool WriteHeader(std::ostream& out) const noexcept;
     void Close() noexcept;
 
     std::optional<PackageEntryKey> ResolveEntry(std::string& name) noexcept;
+    const PackageEntry& ResolveEntry(PackageEntryKey key) const;
+    PackageEntry& ResolveEntry(PackageEntryKey key);
 
-    bool LoadEntry(unsigned long ID) noexcept;
-    bool UnloadEntry(unsigned long ID) noexcept;
-    bool ResetEntry(unsigned long ID) noexcept;
-    bool DropEntry(unsigned long ID) noexcept;
+    bool RemoveEntry(unsigned long ID) noexcept; //Removes from the internal list & deletes it.
+    bool ReleaseEntry(unsigned long ID) noexcept; //Removes from the internal list, but does not delete it.
     std::optional<PackageEntryKey> AddEntry(std::string name, PackageEntryType type, VariableType* data) noexcept;
 
     bool DoesEntryExist(unsigned long ID) noexcept;
@@ -70,8 +80,5 @@ public:
     bool SetEntryValue(unsigned long ID, VariableType* Data) noexcept;
 
 };
-
-
-
 
 #endif //JASON_PACKAGE_H

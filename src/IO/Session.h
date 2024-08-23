@@ -10,7 +10,6 @@
 
 #include "PackageUtility.h"
 #include "Package.h"
-#include "PackageLinkTree.h"
 #include "PackageHandle.h"
 #include "UnloadedPackage.h"
 
@@ -24,15 +23,7 @@ private:
 
     [[nodiscard]] unsigned long GetNextID() noexcept { return currID++; }
 
-    [[nodiscard]] static std::optional<PackageHandle> FindUserPackage();
-
-    [[nodiscard]] static bool GetLinksTree(PackageLinkTree& tree, PackageHandle&& usr);
-    [[nodiscard]] static bool FillLinkTree(PackageLinkNode& parent, const PackageLinkTree& tree) noexcept;
-    [[nodiscard]] static std::optional<PackageIndex> GetPackageIndex(PackageHandle& target) noexcept;
-    [[nodiscard]] static bool ExtractLinks(PackageLinkNode& target, std::vector<PackageLink>& result);
-
-    [[nodiscard]] bool InflatePackages(std::vector<PreProcessedPackage*>& indexed);
-    [[nodiscard]] Package* InflatePackage(PreProcessedPackage*& target);
+    [[nodiscard]] static std::optional<PackageIndex> GetPackageIndex(FileHandle& target) noexcept;
 
     [[nodiscard]] bool IndexPackageEntries(); //Note that the ProjectHandles that were in toIndex are now in the IndexedPackage, and all entries have been deleted.
 

@@ -12,6 +12,8 @@
 #include "PackageEntryKey.h"
 #include "../Calc/VariableType.h"
 
+class Package;
+
 enum PackageEntryType
 {
     Variable,
@@ -26,28 +28,27 @@ private:
     {
         none = 0,
         load_imm = 1,
-        readonly = 2,
-        readonly_package = 4 //When true, the top package that this comes from is read-only opened.
+        readonly = 2
     };
 
     PackageEntryKey key;
     PackageEntryType type;
     std::string name;
     VariableType* data;
+    Package* parent;
     unsigned char state;
-    std::optional<std::pair<std::streampos, std::streampos>> loc;
 
-    PackageEntry(PackageEntryKey key, std::string name, VariableType* data, PackageEntryType type, unsigned char state);
+    PackageEntry(PackageEntryKey key, std::string name, VariableType* data, PackageEntryType type, Package* parent, unsigned char state = 0);
 
 public:
     PackageEntry(const PackageEntry& obj) = delete;
-    PackageEntry(PackageEntry&& obj) noexcept;
+    PackageEntry(PackageEntry&& obj) noexcept = delete;
     ~PackageEntry();
 
-    [[nodiscard]] PackageEntry* FromIndexTableLine(std::istream& in, unsigned long PackageID);
-    [[nodiscard]] PackageEntry* FromIndexTableLine(const std::string& line, unsigned long PackageID);
-    [[nodiscard]] PackageEntry* FromCompressedLineRO(std::istream& in, PackageEntryKey key);
-    [[nodiscard]] PackageEntry* FromCompressedLine(std::istream& in, std::ostream& out, PackageEntryKey key);
+    friend class Package;
+
+    [[nodiscard]] PackageEntry* FromIndexTableLine(std::istream& in, Package* parent);
+    [[nodiscard]] PackageEntry* FromIndexTableLine(const std::string& line, Package* parent);
 
     PackageEntry& operator=(const PackageEntry& obj) = delete;
     PackageEntry& operator=(PackageEntry&& obj) noexcept = delete;
@@ -57,16 +58,24 @@ public:
     [[nodiscard]] bool WriteData(std::ostream& out) const noexcept;
     [[nodiscard]] bool ReadFromFile(std::istream& in) noexcept;
 
+    [[nodiscard]] bool Load() noexcept;
+    [[nodiscard]] bool Unload() noexcept;
+    void Reset() noexcept;
+
     [[nodiscard]] const VariableType& Data() const;
     void Data(VariableType* New) noexcept;
 
     [[nodiscard]] bool HasData() const noexcept;
-    [[nodiscard]] PackageEntryKey Key() const noexcept;
-    [[nodiscard]] const std::string& Name() const noexcept;
-    [[nodiscard]] bool LoadImm() const noexcept;
-    [[nodiscard]] PackageEntryType GetType() const noexcept;
+    [[nodiscard]] bool LoadIdmediatley() const noexcept;
+    [[nodiscard]] bool IsReadOnly() const noexcept;
     [[nodiscard]] bool IsTemporary() const noexcept;
-    [[nodiscard]] std::filesystem::path GetPath(const std::filesystem::path& source) const noexcept;
+
+    [[nodiscard]] PackageEntryKey Key() const noexcept;
+    [[nodiscard]] PackageEntryType Type() const noexcept;
+    [[nodiscard]] std::filesystem::path GetPath(const std::filesystem::path& hostDir) const noexcept;
+    [[nodiscard]] const std::string& Name() const noexcept;
+
+
 };
 
 

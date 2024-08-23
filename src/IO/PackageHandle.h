@@ -8,13 +8,13 @@
 #include <filesystem>
 #include <fstream>
 
-struct PackageHandle
+struct FileHandle
 {
 public:
-    explicit PackageHandle(std::filesystem::path path, std::ios::openmode flags = (std::ios::out | std::ios::in));
-    PackageHandle(const PackageHandle& obj) = delete;
-    PackageHandle(PackageHandle&& obj) noexcept;
-    ~PackageHandle();
+    explicit FileHandle(std::filesystem::path path, std::ios::openmode flags = (std::ios::out | std::ios::in));
+    FileHandle(const FileHandle& obj) = delete;
+    FileHandle(FileHandle&& obj) noexcept;
+    ~FileHandle();
 
     void Close() noexcept;
 
