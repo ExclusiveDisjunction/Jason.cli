@@ -55,6 +55,7 @@ public:
     [[nodiscard]] bool WriteCompressedLine(std::ostream& out) const noexcept;
     [[nodiscard]] bool WriteSchematic(std::ostream& out) const noexcept;
     [[nodiscard]] bool WriteData(std::ostream& out) const noexcept;
+    [[nodiscard]] bool ReadFromFile(std::istream& in) noexcept;
 
     [[nodiscard]] const VariableType& Data() const;
     void Data(VariableType* New) noexcept;

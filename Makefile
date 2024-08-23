@@ -1,26 +1,32 @@
+build_dbg = ./build/debug
+build_rls = ./build/release
+pub_dir = ./bin
+
 clean:
-	@rm -rf ./cmake-build-debug ./cmake-build-release
+	@rm -rf $(build_dbg) $(build_rls)
 
 init:
 	@echo "Debug:"
-	@cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -S ./ -B ./cmake-build-debug
+	@cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -S ./ -B $(build_dbg)
 	@echo ""
 	@echo "Release:"
-	@cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -S ./ -B ./cmake-build-release
+	@cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -S ./ -B $(build_rls)
 
 build:
-	@cmake --build cmake-build-debug --target Jason -j 4
+	@cmake --build $(build_dbg) --target Jason -j 4
 
 build-r:
-	@cmake --build cmake-build-release --target Jason -j 4
+	@cmake --build $(build_rls)  --target Jason -j 4
 
 
 run:
 	@$(MAKE) build
-	@./cmake-build-debug/Jason
+	@$(build_dbg)/Jason
 
 run-r:
-	make build-r
-	./cmake-build-release/Jason
-
+	@$(MAKE) build-r
+	@$(build_rls)/Jason
+publish:
+	@$(MAKE) build-r
+	@cp $(build_rls)/Jason $(pub_dir)/Jason
 

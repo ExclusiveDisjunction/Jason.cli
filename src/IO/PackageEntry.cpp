@@ -6,6 +6,7 @@
 #include "../Common.h"
 
 #include <utility>
+#include <string>
 
 PackageEntry::PackageEntry(PackageEntryKey key, std::string name, VariableType* data, PackageEntryType type, unsigned char state) : key(key), name(std::move(name)), data(data), type(type), state(state)
 {
@@ -25,11 +26,11 @@ PackageEntry::~PackageEntry()
     data = nullptr;
 }
 
-[[nodiscard]] bool PackageEntry::WriteCompressedLine(std::ostream& out) const noexcept
+bool PackageEntry::WriteCompressedLine(std::ostream& out) const noexcept
 {
     return WriteSchematic(out) && (out << ' ') && WriteData(out);
 }
-[[nodiscard]] bool PackageEntry::WriteData(std::ostream& out) const noexcept
+bool PackageEntry::WriteData(std::ostream& out) const noexcept
 {
     if (!out)
         return false;
@@ -41,7 +42,7 @@ PackageEntry::~PackageEntry()
 
     return out.good();
 }
-[[nodiscard]] bool PackageEntry::WriteSchematic(std::ostream& out) const noexcept
+bool PackageEntry::WriteSchematic(std::ostream& out) const noexcept
 {
     if (!out)
         return false;
@@ -49,8 +50,41 @@ PackageEntry::~PackageEntry()
     out << this->key.EntryID << ' ' << (this->type == Variable ? "var" : this->type == Environment ? "env" : "tmp") << " f:" << (this->state & load_imm ? '!' : 0) << (this->state & readonly && !(this->state & readonly_package) ? '~' : 0) << ' ' << this->name;
     return true;
 }
+bool PackageEntry::ReadFromFile(std::istream& target) noexcept
+{
 
-[[nodiscard]] const VariableType& PackageEntry::Data() const
+    if (this->loc.has_value())
+        target.seekg((*this->loc).first);
+    else
+        target.seekg(0, std::ios::beg);
+
+    if (!target)
+        return false;
+
+    std::string type;
+    auto loc = target.tellg();
+    target >> type;
+
+    this->Data(nullptr);
+
+    if (type.empty())
+        return false;
+    else if (type == "NULL") //empty, we just return true since data == nullptr.
+        return true;
+    else //We try to construct it.
+    {
+        target.seekg(loc);
+        VariableType* temp = VariableType::FromSterilized(target);   
+        if (!temp)
+            return false;
+        
+        this->Data(temp);
+        temp = nullptr;
+        return true;
+    }
+}
+
+const VariableType& PackageEntry::Data() const
 {
     if (!this->data)
         throw std::logic_error("Entry is empty, cannot dereference.");
@@ -63,35 +97,31 @@ void PackageEntry::Data(VariableType* New) noexcept
     this->data = New;
 }
 
-[[nodiscard]] bool PackageEntry::HasData() const noexcept
+bool PackageEntry::HasData() const noexcept
 {
     return this->data != nullptr;
 }
-[[nodiscard]] PackageEntryKey PackageEntry::Key() const noexcept
+PackageEntryKey PackageEntry::Key() const noexcept
 {
     return this->key;
 }
-[[nodiscard]] const std::string& PackageEntry::Name() const noexcept
+const std::string& PackageEntry::Name() const noexcept
 {
     return this->name;
 }
-[[nodiscard]] bool PackageEntry::LoadImm() const noexcept
+bool PackageEntry::LoadImm() const noexcept
 {
     return this->load_imm;
 }
-[[nodiscard]] PackageEntryType PackageEntry::GetType() const noexcept
+PackageEntryType PackageEntry::GetType() const noexcept
 {
     return this->type;
 }
-[[nodiscard]] bool PackageEntry::IsTemporary() const noexcept
+bool PackageEntry::IsTemporary() const noexcept
 {
     return this->type == Temporary;
 }
-[[nodiscard]] std::filesystem::path PackageEntry::GetPath(const std::filesystem::path& source) const noexcept
+std::filesystem::path PackageEntry::GetPath(const std::filesystem::path& source) const noexcept
 {
     return source / std::to_string(this->key.EntryID);
 }
-
-
-
-
