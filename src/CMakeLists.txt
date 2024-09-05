@@ -5,11 +5,12 @@ add_subdirectory(IO)
 
 add_library(src DateTime.cpp
         Log.cpp
-        Testing.cpp)
+        Testing.cpp
+        Common.cpp)
 
 # PackageEntry.cpp is handled by topmost CMakeFile.
 
 target_link_libraries(src Calc)
 target_link_libraries(src Function)
-#target_link_libraries(src IO)
+target_link_libraries(src IO)
 target_link_libraries(src Operators)
