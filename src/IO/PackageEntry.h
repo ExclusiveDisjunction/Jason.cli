@@ -34,45 +34,50 @@ private:
     PackageEntryKey key;
     PackageEntryType type;
     std::string name;
-    VariableType* data;
-    Package* parent;
-    unsigned char state;
+    std::optional<VariableType*> data = {};
+    Package* parent = nullptr;
+    unsigned char state = 0;
 
     PackageEntry(PackageEntryKey key, std::string name, VariableType* data, PackageEntryType type, Package* parent, unsigned char state = 0);
 
 public:
     PackageEntry(const PackageEntry& obj) = delete;
-    PackageEntry(PackageEntry&& obj) noexcept = delete;
+    PackageEntry(PackageEntry&& obj) noexcept;
     ~PackageEntry();
 
     friend class Package;
 
-    [[nodiscard]] PackageEntry* FromIndexTableLine(std::istream& in, Package* parent);
-    [[nodiscard]] PackageEntry* FromIndexTableLine(const std::string& line, Package* parent);
+    [[nodiscard]] static PackageEntry* FromIndexTableLine(std::istream& in, Package* parent);
+    [[nodiscard]] static PackageEntry* FromIndexTableLine(const std::string& line, Package* parent);
+    [[nodiscard]] static PackageEntry* ExpandFromCompressed(std::istream& in, Package* parent, std::ostream& out);
+    [[nodiscard]] static PackageEntry* ExpandFromCompressed(const std::string& line, Package* parent, std::ostream& out);
 
     PackageEntry& operator=(const PackageEntry& obj) = delete;
     PackageEntry& operator=(PackageEntry&& obj) noexcept = delete;
 
+    /// @breif Writes the information of the Entry into one line for the compressed Jason format.
     [[nodiscard]] bool WriteCompressedLine(std::ostream& out) const noexcept;
+    /// @breif Writes the header schematic of the Entry
     [[nodiscard]] bool WriteSchematic(std::ostream& out) const noexcept;
+    /// @breif Writes the data of the Entry if it is loaded, fails if otherwise.
     [[nodiscard]] bool WriteData(std::ostream& out) const noexcept;
-    [[nodiscard]] bool ReadFromFile(std::istream& in) noexcept;
 
     [[nodiscard]] bool Load() noexcept;
     [[nodiscard]] bool Unload() noexcept;
-    void Reset() noexcept;
+    bool Reset() noexcept;
 
     [[nodiscard]] const VariableType& Data() const;
     void Data(VariableType* New) noexcept;
 
-    [[nodiscard]] bool HasData() const noexcept;
-    [[nodiscard]] bool LoadIdmediatley() const noexcept;
+    [[nodiscard]] std::optional<bool> HasData() const noexcept;
+
+    [[nodiscard]] bool LoadImmediate() const noexcept;
     [[nodiscard]] bool IsReadOnly() const noexcept;
     [[nodiscard]] bool IsTemporary() const noexcept;
 
     [[nodiscard]] PackageEntryKey Key() const noexcept;
     [[nodiscard]] PackageEntryType Type() const noexcept;
-    [[nodiscard]] std::filesystem::path GetPath(const std::filesystem::path& hostDir) const noexcept;
+    [[nodiscard]] std::filesystem::path GetPath() const;
     [[nodiscard]] const std::string& Name() const noexcept;
 
 

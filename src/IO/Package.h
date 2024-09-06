@@ -62,6 +62,9 @@ public:
     [[nodiscard]] static Package* OpenFromDirectory(std::filesystem::path& dir, unsigned long ID);
     [[nodiscard]] static Package* OpenFromCompressed(std::filesystem::path& pack, std::filesystem::path& targetDir, unsigned long ID);
 
+    [[nodiscard]] const std::filesystem::path& Location() const noexcept;
+    [[nodiscard]] std::filesystem::path VarLocation() const noexcept;
+
     [[nodiscard]] bool Compress(std::ostream& out) noexcept;
     [[nodiscard]] bool WriteIndex(std::ostream& out) const noexcept;
     [[nodiscard]] bool WriteHeader(std::ostream& out) const noexcept;
@@ -73,6 +76,7 @@ public:
 
     bool RemoveEntry(unsigned long ID) noexcept; //Removes from the internal list & deletes it.
     bool ReleaseEntry(unsigned long ID) noexcept; //Removes from the internal list, but does not delete it.
+    bool SwapEntry(unsigned long ID, PackageEntry* newItem) noexcept;
     std::optional<PackageEntryKey> AddEntry(std::string name, PackageEntryType type, VariableType* data) noexcept;
 
     bool DoesEntryExist(unsigned long ID) noexcept;

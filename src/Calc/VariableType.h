@@ -8,6 +8,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <optional>
 
 #include "StdCalc.h"
 
@@ -40,8 +41,8 @@ public:
     virtual bool operator==(const VariableType& obj) const noexcept = 0;
     virtual bool operator!=(const VariableType& obj) const noexcept = 0;
 
-    [[nodiscard]] static VariableType* FromSterilized(const std::string& val) noexcept;
-    [[nodiscard]] static VariableType* FromSterilized(std::istream& in) noexcept;
+    [[nodiscard]] static std::optional<VariableType*> FromSterilized(const std::string& val) noexcept;
+    [[nodiscard]] static std::optional<VariableType*> FromSterilized(std::istream& in) noexcept;
 };
 
 std::ostream& operator<<(std::ostream& out, const VariableType& Obj);

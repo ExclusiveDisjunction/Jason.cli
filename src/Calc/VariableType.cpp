@@ -2,6 +2,7 @@
 // Created by exdisj on 5/26/24.
 //
 
+#include <optional>
 #include "VariableType.h"
 
 #include "Numerics/Scalar.h"
@@ -17,25 +18,32 @@ std::string VariableType::Sterilize() const noexcept
     return ss.str();
 }
 
-[[nodiscard]]VariableType* VariableType::FromSterilized(const std::string& val) noexcept
+[[nodiscard]]std::optional<VariableType*> VariableType::FromSterilized(const std::string& val) noexcept
 {
     std::stringstream ss(val);
     return FromSterilized(ss);
 }
-[[nodiscard]] VariableType* VariableType::FromSterilized(std::istream& in) noexcept
+[[nodiscard]] std::optional<VariableType*> VariableType::FromSterilized(std::istream& in) noexcept
 {
     std::string header;
     in >> header;
     in.seekg(std::ios::beg);
 
-    if (header == "SCA")
-        return new Scalar(in);
-    else if (header == "VEC")
-        return new MathVector(in);
-    else if (header == "MAT")
-        return new Matrix(in);
-    else
-        return nullptr;
+    try
+    {
+        if (header == "SCA")
+            return new Scalar(in);
+        else if (header == "VEC")
+            return new MathVector(in);
+        else if (header == "MAT")
+            return new Matrix(in);
+        else
+            return nullptr;
+    }
+    catch (...)
+    {
+        return {};
+    }
 }
 
 [[nodiscard]] VariableType *VariableType::ApplyOperation(const VariableType* One, const VariableType* Two, char oper)
