@@ -38,6 +38,7 @@ private:
     Package* parent = nullptr;
     unsigned char state = 0;
 
+    PackageEntry() : key(), name(), data(std::optional<VariableType*>()), type(PackageEntryType::Variable), parent(nullptr), state(0) {}
     PackageEntry(PackageEntryKey key, std::string name, VariableType* data, PackageEntryType type, Package* parent, unsigned char state = 0);
 
 public:

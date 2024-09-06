@@ -9,6 +9,7 @@
 #include <utility>
 #include <string>
 #include <fstream>
+#include <sstream>
 
 PackageEntry::PackageEntry(PackageEntryKey key, std::string name, VariableType* data, PackageEntryType type, Package* parent, unsigned char state) : key(key), name(std::move(name)), data(nullptr), type(type), parent(parent), state(state)
 {
@@ -23,12 +24,16 @@ PackageEntry::PackageEntry(PackageEntryKey key, std::string name, VariableType* 
 PackageEntry::PackageEntry(PackageEntry&& obj) noexcept : key(std::exchange(obj.key, PackageEntryKey())), 
     type(obj.type), 
     name(std::move(obj.name)), 
-    data(std::exchange(data, std::optional<VariableType*>()), 
-    parent(std::exchange(parent, nullptr)), 
-    state(std::exchange(obj.state, static_cast<unsigned char>(0)))
+    data(std::move(obj.data)), 
+    parent(std::move(obj.parent)), 
+    state(std::move(obj.state))
 {
     if (this->parent)
         this->parent->SwapEntry(this->key.EntryID, this);
+
+    obj.data = {};
+    obj.parent = nullptr;
+    obj.state = 0;
 }
 PackageEntry::~PackageEntry()
 {
@@ -40,11 +45,30 @@ PackageEntry::~PackageEntry()
 
 PackageEntry* PackageEntry::FromIndexTableLine(std::istream& in, Package* parent)
 {
+    PackageEntry result;
 
+    if (!in)
+        return nullptr;
+    
+    result.parent = parent;
+    result.key.PackageID = !parent ? 0 : parent->GetID();
+    std::string type, flags;
+    in >> result.key.EntryID >> type >> flags >> result.name;
+    if (type == "var")
+        result.type = Variable;
+    else if (type == "env")
+        result.type = Environment;
+    else
+        result.type = Temporary;
+
+    //Copy state & load data if needed.
+
+    return new PackageEntry(std::move(result));
 }
 PackageEntry* PackageEntry::FromIndexTableLine(const std::string& line, Package* parent)
 {
-
+    std::stringstream ss(line);
+    return FromIndexTableLine(ss, parent);
 }
 PackageEntry* PackageEntry::ExpandFromCompressed(std::istream& in, Package* parent, std::ostream& out)
 {
@@ -52,7 +76,8 @@ PackageEntry* PackageEntry::ExpandFromCompressed(std::istream& in, Package* pare
 }
 PackageEntry* PackageEntry::ExpandFromCompressed(const std::string& line, Package* parent, std::ostream& out)
 {
-
+    std::stringstream ss(line);
+    return ExpandFromCompressed(ss, parent, out);
 }
 
 bool PackageEntry::WriteCompressedLine(std::ostream& out) const noexcept

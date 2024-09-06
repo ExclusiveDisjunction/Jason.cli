@@ -64,6 +64,7 @@ public:
 
     [[nodiscard]] const std::filesystem::path& Location() const noexcept;
     [[nodiscard]] std::filesystem::path VarLocation() const noexcept;
+    [[nodiscard]] unsigned long GetID() const noexcept;
 
     [[nodiscard]] bool Compress(std::ostream& out) noexcept;
     [[nodiscard]] bool WriteIndex(std::ostream& out) const noexcept;
