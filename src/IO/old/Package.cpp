@@ -36,7 +36,7 @@ bool Package::WriteSchematic() const noexcept
     {
         if (ent.GetType() == Temporary)
             continue;
-        result &= ent.WriteSchematic(file);
+        result &= ent.WriteIndex(file);
         file << '\n';
     }
 

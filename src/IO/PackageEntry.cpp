@@ -52,16 +52,13 @@ PackageEntry* PackageEntry::FromIndexTableLine(std::istream& in, Package* parent
     
     result.parent = parent;
     result.key.PackageID = !parent ? 0 : parent->GetID();
-    std::string type, flags;
-    in >> result.key.EntryID >> type >> flags >> result.name;
-    if (type == "var")
-        result.type = Variable;
-    else if (type == "env")
-        result.type = Environment;
-    else
-        result.type = Temporary;
-
-    //Copy state & load data if needed.
+    ReadIndex(in, result);
+    
+    if (result.state & load_imm)
+    {
+        if (!result.Load())
+            throw std::logic_error("The load idmediatley flag was set, but the file could not be resolved, or it does not contain proper formatted data");
+    }
 
     return new PackageEntry(std::move(result));
 }
@@ -72,7 +69,31 @@ PackageEntry* PackageEntry::FromIndexTableLine(const std::string& line, Package*
 }
 PackageEntry* PackageEntry::ExpandFromCompressed(std::istream& in, Package* parent, std::ostream& out)
 {
+    PackageEntry result;
+    if (!in)
+        return nullptr;
 
+    //Process header & fill structure
+    result.parent = parent;
+    result.key.PackageID = !parent ? 0 : parent->GetID();
+    ReadIndex(in, result);
+
+    //Output to the specified output location.
+    std::string sterilized;
+    std::getline(in, sterilized);
+    
+    std::stringstream ss_steril(sterilized);
+    sterilized.clear();
+
+    out << ss_steril.rdbuf();
+    ss_steril.seekp(0, std::ios::beg);
+
+    //Load from sterilized string, prevents opening & closing of file streams.
+    if (result.state & load_imm)
+    {
+        if (!result.Load(ss_steril))
+            throw std::logic_error("The load idmediatley flag was set, but the file could not be resolved, or it does not contain proper formatted data");
+    }
 }
 PackageEntry* PackageEntry::ExpandFromCompressed(const std::string& line, Package* parent, std::ostream& out)
 {
@@ -80,9 +101,9 @@ PackageEntry* PackageEntry::ExpandFromCompressed(const std::string& line, Packag
     return ExpandFromCompressed(ss, parent, out);
 }
 
-bool PackageEntry::WriteCompressedLine(std::ostream& out) const noexcept
+bool PackageEntry::Compress(std::ostream& out) const noexcept
 {
-    return WriteSchematic(out) && (out << ' ') && WriteData(out);
+    return WriteIndex(out) && (out << ' ') && WriteData(out);
 }
 bool PackageEntry::WriteData(std::ostream& out) const noexcept
 {
@@ -96,7 +117,14 @@ bool PackageEntry::WriteData(std::ostream& out) const noexcept
 
     return out.good();
 }
-bool PackageEntry::WriteSchematic(std::ostream& out) const noexcept
+bool PackageEntry::WriteData() const noexcept
+{
+    std::filesystem::path thisPath = this->GetPath();
+    std::ofstream out(thisPath, std::ios::trunc);
+
+    return WriteData(out);
+}
+bool PackageEntry::WriteIndex(std::ostream& out) const noexcept
 {
     if (!out)
         return false;
@@ -104,41 +132,41 @@ bool PackageEntry::WriteSchematic(std::ostream& out) const noexcept
     out << this->key.EntryID << ' ' << (this->type == Variable ? "var" : this->type == Environment ? "env" : "tmp") << " f:" << (this->state & load_imm ? '!' : 0) << (this->state & readonly ? '~' : 0) << ' ' << this->name;
     return true;
 }
-/*
-bool PackageEntry::ReadFromFile(std::istream& target) noexcept
+void PackageEntry::ReadIndex(std::istream& in, PackageEntry& result) 
 {
+    if (!in)
+        throw std::logic_error("Bad stream");
 
-    if (this->loc.has_value())
-        target.seekg((*this->loc).first);
-    else
-        target.seekg(0, std::ios::beg);
+    std::string type, flags;
+    in >> result.key.EntryID >> type >> flags >> result.name;
 
-    if (!target)
-        return false;
+    //Parse type
+    if (type == "var")
+        result.type = Variable;
+    else if (type == "env")
+        result.type = Environment;
+    else if (type == "tmp")
+        result.type = Temporary;
+    else 
+        throw std::logic_error("Could not resolve variable entry type '" + type + '\'');
 
-    std::string type;
-    auto loc = target.tellg();
-    target >> type;
-
-    this->Data(nullptr);
-
-    if (type.empty())
-        return false;
-    else if (type == "NULL") //empty, we just return true since data == nullptr.
-        return true;
-    else //We try to construct it.
+    //Parse state
+    result.state = 0;
+    for (const char& item : flags) 
     {
-        target.seekg(loc);
-        VariableType* temp = VariableType::FromSterilized(target);
-        if (!temp)
-            return false;
-
-        this->Data(temp);
-        temp = nullptr;
-        return true;
+        switch (item) 
+        {
+            case '!': //Load imm 
+                result.state |= load_imm;
+                break;
+            case '~': //Readonly
+                result.state |= readonly;
+                break;
+            default:
+                throw std::logic_error("Could not resolve flag '" + item + '\'');
+        }
     }
 }
-*/
 
 bool PackageEntry::Load() noexcept
 {
@@ -147,11 +175,32 @@ bool PackageEntry::Load() noexcept
 
     std::filesystem::path thisPath = this->GetPath();
     std::ifstream in(thisPath);
+    if (!in) //Could not load at path
+    {
+        in.close();
+        std::ofstream out(thisPath, std::ios::trunc);
+        if (!out) //Failed to construct the path
+        {
+            std::cerr << "When loading package entry '" << (this->parent ? this->parent->GetName() : "") << "::" << this->name << "', the located path could not be found." << std::endl;
+            return false;
+        }  
+        
+        out << "NULL";
+        out.close();
+        this->data = nullptr;
+        return true;
+    }
+    else
+        return Load(in);
+}
+bool PackageEntry::Load(std::istream& in) noexcept 
+{
     if (!in)
         return false;
 
     in.seekg(0, std::ios::beg);
     this->data = VariableType::FromSterilized(in);
+    return this->data != nullptr;
 }
 bool PackageEntry::Unload() noexcept
 {
@@ -185,6 +234,7 @@ void PackageEntry::Data(VariableType* New) noexcept
 {
     Reset();
     this->data = New;
+    (void)WriteData();
 }
 
 std::optional<bool> PackageEntry::HasData() const noexcept
