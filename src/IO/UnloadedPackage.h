@@ -5,7 +5,7 @@
 #ifndef JASON_UNLOADEDPACKAGE_H
 #define JASON_UNLOADEDPACKAGE_H
 
-#include "PackageHandle.h"
+#include "FileHandle.h"
 #include <string>
 
 class UnloadedPackage

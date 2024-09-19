@@ -4,18 +4,82 @@
 
 #include "PackageHeader.h"
 
-std::optional<PackageHeader> PackageHeader::FromFile(std::istream& in, std::optional<std::streamoff> endLoc)
-{
+#include <sstream>
 
+PackageHeader::PackageHeader(FileHandle&& handle, Version ver, std::optional<std::string>&& author, bool readonly) : handle(std::move(handle)), version(ver), author(std::move(author)), readonly(readonly)
+{
+    if (!this->handle.file)
+        throw std::logic_error("File provided is invalid");
 }
-PackageHeader::PackageHeader(std::optional<FileHandle>&& handle, Version ver, std::optional<std::string> author, bool locked) : handle(std::move(handle)), ver(ver), author(std::move(author)), locked(locked)
-{
 
+const std::filesystem::path& PackageHeader::GetLocation() const noexcept
+{
+    return handle.path;
 }
 
-void PackageHeader::Output(std::ostream& out) const noexcept
+const Version& PackageHeader::GetVersion() const noexcept
 {
-    out << "version=" << this->ver << ' ' << (author.has_value() ? "author=" + *author + " " : std::string()) << "locked=" << (locked ? 't' : 'f');
+    return this->version;
+}
+bool PackageHeader::SetVersion(Version New) noexcept
+{   
+    return SetValue(version, New);
+}
+
+const std::optional<std::string>& PackageHeader::GetAuthor() const noexcept
+{
+    return this->author;
+}
+bool PackageHeader::SetAuthor(std::optional<std::string> New) noexcept
+{
+    return SetValue(author, New);
+}
+
+bool PackageHeader::IsReadOnly() const noexcept
+{
+    return this->readonly;
+}
+bool PackageHeader::SetReadOnly(bool New) noexcept
+{
+    return SetValue(readonly, New);
+}
+
+std::ostream& operator<<(std::ostream& out, const PackageHeader& obj)
+{
+    out << "version=" << obj.version << '\n' <<
+           (obj.author.has_value() ? "author=" + *obj.author + '\n' : std::string()) << 
+           "readonly=" << (obj.readonly ? 't' : 'f');
+}
+std::istream& operator>>(std::istream& in, PackageHeader& obj)
+{
+    obj.version = Version();
+    obj.author = {};
+    obj.readonly = false;
+
+    std::string line;
+    while (!in.eof())
+    {
+        std::getline(in, line);
+        if (line.empty())
+            continue;
+        
+        auto iter = std::find(line.begin(), line.end(), '=');
+        if (iter == line.end())
+            continue;
+        
+        std::string name = line.substr(0, iter - line.begin());
+        std::string value = line.substr(iter - line.begin() + 1);
+        if (name == "version")
+        {
+            std::stringstream ss(value);
+            ss >> obj.version;
+        }
+        else if (name == "author")
+            obj.author = value;
+        else if (name == "readonly")
+            obj.readonly = (value == "t" ? true : false);
+    }
+    return in;
 }
 
 std::ostream& operator<<(std::ostream& out, const Version& obj) noexcept
@@ -28,4 +92,13 @@ std::istream& operator>>(std::istream& in, Version& obj)
     char p; //Placeholder for the '.'. This way, the istream will split up the reading between the three parts. 
     in >> obj.Major >> p >> obj.Minor >> p >> obj.Release;
     return in;
+}
+
+bool Version::operator==(const Version& obj) const noexcept
+{
+    return this->Major == obj.Major && this->Minor == obj.Minor && this->Release == obj.Release;
+}
+bool Version::operator!=(const Version& obj) const noexcept
+{  
+    return this->Major != obj.Major || this->Minor != obj.Minor || this->Release != obj.Release;
 }

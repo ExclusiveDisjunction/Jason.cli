@@ -9,7 +9,7 @@
 #include <iostream>
 #include <optional>
 
-#include "PackageHandle.h"
+#include "FileHandle.h"
 
 class Version
 {
@@ -20,23 +20,56 @@ public:
     unsigned Major;
     unsigned Minor;
     unsigned Release;
+
+    bool operator==(const Version& obj) const noexcept;
+    bool operator!=(const Version& obj) const noexcept;
 };
 std::ostream& operator<<(std::ostream& out, const Version& obj) noexcept;
 std::istream& operator>>(std::istream& in, Version& obj);
 
 class PackageHeader
 {
-public:
-    [[nodiscard]] static std::optional<PackageHeader> FromFile(std::istream& in, std::optional<std::streamoff> endLoc = {});
-    PackageHeader(std::optional<FileHandle>&& handle, Version ver, std::optional<std::string> author = {}, bool locked = false);
-
-    std::optional<FileHandle> handle;
-    Version ver;
+private:
+    FileHandle handle;
+    Version version;
     std::optional<std::string> author;
-    bool locked;
+    bool readonly;
 
-    void Output(std::ostream& out) const noexcept;
+    [[nodiscard]] bool Write();
+    template<typename T>
+    [[nodiscard]] bool SetValue(T& target, const T& New)
+    {
+        if (target != New)
+        {
+            target = New;
+            return Write();
+        }
+        else
+            return true;
+    }
+
+public:
+    PackageHeader(FileHandle&& handle, Version ver, std::optional<std::string>&& author = {}, bool readonly = false);
+
+    void Close();
+
+    friend std::ostream& operator<<(std::ostream&, const PackageHeader&);
+    friend std::istream& operator>>(std::istream&, PackageHeader&);
+
+    [[nodiscard]] const std::filesystem::path& GetLocation() const noexcept;
+
+    [[nodiscard]] const Version& GetVersion() const noexcept;
+    [[nodiscard]] bool SetVersion(Version New) noexcept;
+
+    [[nodiscard]] const std::optional<std::string>& GetAuthor() const noexcept;
+    [[nodiscard]] bool SetAuthor(std::optional<std::string> New) noexcept;
+
+    [[nodiscard]] bool IsReadOnly() const noexcept;
+    [[nodiscard]] bool SetReadOnly(bool New) noexcept;
 };
+
+std::ostream& operator<<(std::ostream& out, const PackageHeader& obj);
+std::istream& operator>>(std::istream& in, PackageHeader& obj);
 
 
 #endif //JASON_PACKAGEHEADER_H

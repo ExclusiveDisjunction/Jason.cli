@@ -4,24 +4,72 @@
 
 #include "Package.h"
 #include "../Common.h"
-#include "PackageHandle.h"
-#include "Session.h"
 
-Package::Package(std::filesystem::path location, FileHandle&& index, FileHandle&& header_l, unsigned long ID, std::string name, PackageHeader&& header) : location(std::move(location)), index_l(std::move(index)), header_l(std::move(header_l)), packID(ID), name(std::move(name)), header(std::move(header))
+Package::Package(std::filesystem::path location, unsigned long ID, PackageHeader&& header, PackageIndex&& index, bool isCompressed) : location(location), packID(ID), header(std::move(header)), index(std::move(index))
 {
-    
+    state |= (isCompressed ? Compressed : None);
 }
 Package::~Package()
 {
     Close();
 }
 
+bool Package::IndexEntries() 
+{
+
+}
+
+const PackageEntry* Package::GetEntry(unsigned long ID) const noexcept 
+{
+
+}
+PackageEntry* Package::GetEntry(unsigned long ID) noexcept 
+{
+
+}
+
+Package* Package::OpenFromDirectory(std::filesystem::path& dir, unsigned long ID)
+{
+
+}
+Package* Package::OpenFromCompressed(std::filesystem::path& pack, std::filesystem::path& targetDir, unsigned long ID)
+{
+
+}
+
+const std::filesystem::path& Package::Location() const noexcept
+{
+
+}
+std::filesystem::path Package::VarLocation() const noexcept 
+{
+
+}
+unsigned long Package::GetID() const noexcept 
+{
+    return this->packID;
+}
+const std::string& Package::GetName() const noexcept 
+{
+    return this->name;
+}
+bool Package::IsCompressed() const noexcept 
+{
+    return this->state & Compressed;
+}
+const PackageHeader& Package::Header() const noexcept 
+{
+    return this->header;
+}
+PackageHeader& Package::Header() noexcept 
+{
+    return const_cast<PackageHeader&>(const_cast<const Package*>(this)->Header());
+}
+
 void Package::Close() noexcept
 {
-    //ONLY leaves the 'pack' handle and the 'dir_path'.
-
-    index_l.file.close();
-    header_l.file.close();
+    index.Close();
+    header.Close();
 
     for (auto& item : entries)
     {

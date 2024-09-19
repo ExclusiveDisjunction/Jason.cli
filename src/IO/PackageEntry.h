@@ -89,8 +89,6 @@ public:
     [[nodiscard]] PackageEntryType Type() const noexcept;
     [[nodiscard]] std::filesystem::path GetPath() const;
     [[nodiscard]] const std::string& Name() const noexcept;
-
-
 };
 
 

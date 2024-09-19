@@ -12,11 +12,11 @@
 #include <optional>
 #include <filesystem>
 
-#include "PackageEntryKey.h"
 #include "PackageEntry.h"
 #include "PackageUtility.h"
-#include "PackageHandle.h"
+#include "FileHandle.h"
 #include "PackageHeader.h"
+#include "PackageIndex.h"
 
 class Package
 {
@@ -24,21 +24,20 @@ private:
     enum State
     {
         None = 0,
-        ReadOnly = 1
+        Compressed = 1
     };
 
-    Package(std::filesystem::path location, FileHandle&& index, FileHandle&& header_l, unsigned long ID, std::string name, PackageHeader&& header);
+    Package(std::filesystem::path location, unsigned long ID, PackageHeader&& header, PackageIndex&& index, bool isCompressed = false);
 
     std::filesystem::path location;
-    FileHandle index_l;
-    FileHandle header_l;
-    
+
     unsigned long packID;
     unsigned long currID = 0;
-    unsigned char state = 0;
+    unsigned char state;
 
     std::string name;
     PackageHeader header;
+    PackageIndex index;
 
     std::vector<PackageEntry*> entries;
 
@@ -66,6 +65,9 @@ public:
     [[nodiscard]] std::filesystem::path VarLocation() const noexcept;
     [[nodiscard]] unsigned long GetID() const noexcept;
     [[nodiscard]] const std::string& GetName() const noexcept;
+    [[nodiscard]] bool IsCompressed() const noexcept;
+    [[nodiscard]] const PackageHeader& Header() const noexcept;
+    [[nodiscard]] PackageHeader& Header() noexcept;
 
     [[nodiscard]] bool Compress(std::ostream& out) const noexcept;
     [[nodiscard]] bool WriteIndex(std::ostream& out) const noexcept;
@@ -77,14 +79,13 @@ public:
     PackageEntry& ResolveEntry(PackageEntryKey key);
 
     bool RemoveEntry(unsigned long ID) noexcept; //Removes from the internal list & deletes it.
-    bool ReleaseEntry(unsigned long ID) noexcept; //Removes from the internal list, but does not delete it.
+    PackageEntry* ReleaseEntry(unsigned long ID) noexcept; //Removes from the internal list, but does not delete it.
     bool SwapEntry(unsigned long ID, PackageEntry* newItem) noexcept;
     std::optional<PackageEntryKey> AddEntry(std::string name, PackageEntryType type, VariableType* data) noexcept;
 
     bool DoesEntryExist(unsigned long ID) noexcept;
     const VariableType& GetEntryValue(unsigned long ID);
     bool SetEntryValue(unsigned long ID, VariableType* Data) noexcept;
-
 };
 
 #endif //JASON_PACKAGE_H

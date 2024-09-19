@@ -6,7 +6,7 @@ FnMonomial::FnMonomial(FunctionBase* InnerFunction, double Power, double A) : Fu
         throw std::logic_error("The inner function must be valid, and the output dimension must be one.");
 
     this->A = A;
-    this->N = N;
+    this->N = Power;
 
     Base(InnerFunction);
 }
