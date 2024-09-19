@@ -2,6 +2,8 @@
 // Created by exdisj on 8/7/24.
 //
 
+#include <algorithm>
+
 #include "Package.h"
 #include "../Common.h"
 
@@ -21,11 +23,19 @@ bool Package::IndexEntries()
 
 const PackageEntry* Package::GetEntry(unsigned long ID) const noexcept 
 {
+    auto iter = std::find_if(this->entries.begin(), this->entries.end(), [ID](PackageEntry* item) -> bool
+    {
+        return item->Key().EntryID == ID;
+    });
 
+    if (iter == this->entries.end())
+        return nullptr;
+    else
+        return *iter;
 }
 PackageEntry* Package::GetEntry(unsigned long ID) noexcept 
 {
-
+    return const_cast<PackageEntry*>(const_cast<const Package*>(this)->GetEntry(ID));
 }
 
 Package* Package::OpenFromDirectory(std::filesystem::path& dir, unsigned long ID)
@@ -39,11 +49,11 @@ Package* Package::OpenFromCompressed(std::filesystem::path& pack, std::filesyste
 
 const std::filesystem::path& Package::Location() const noexcept
 {
-
+    return this->location;
 }
 std::filesystem::path Package::VarLocation() const noexcept 
 {
-
+    return this->location / "var";
 }
 unsigned long Package::GetID() const noexcept 
 {
