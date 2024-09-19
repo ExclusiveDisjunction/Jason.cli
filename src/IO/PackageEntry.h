@@ -41,11 +41,10 @@ private:
     static void ReadIndex(std::istream& in, PackageEntry& result);
 
     PackageEntry() : key(), name(), data(std::optional<VariableType*>()), type(PackageEntryType::Variable), parent(nullptr), state(0) {}
-    PackageEntry(PackageEntryKey key, std::string name, VariableType* data, PackageEntryType type, Package* parent, unsigned char state = 0);
 
 public:
+    PackageEntry(PackageEntryKey key, std::string name, VariableType* data, PackageEntryType type, Package* parent, unsigned char state = 0);
     PackageEntry(const PackageEntry& obj) = delete;
-    PackageEntry(PackageEntry&& obj) noexcept;
     ~PackageEntry();
 
     friend class Package;
@@ -58,8 +57,6 @@ public:
     PackageEntry& operator=(const PackageEntry& obj) = delete;
     PackageEntry& operator=(PackageEntry&& obj) noexcept = delete;
 
-    /// @breif Writes the information of the Entry into one line for the compressed Jason format.
-    [[nodiscard]] bool Compress(std::ostream& out) const noexcept;
     /// @breif Writes the header schematic of the Entry
     [[nodiscard]] bool WriteIndex(std::ostream& out) const noexcept;
     /// @breif Writes the data of the Entry if it is loaded, fails if otherwise.
@@ -90,6 +87,8 @@ public:
     [[nodiscard]] std::filesystem::path GetPath() const;
     [[nodiscard]] const std::string& Name() const noexcept;
 };
+
+std::ostream& operator<<(std::ostream& out, const PackageEntry& obj) noexcept;
 
 
 #endif //JASON_PACKAGEENTRY_H

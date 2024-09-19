@@ -6,6 +6,8 @@
 #include "Package.h"
 #include "../Common.h"
 
+#include "PackageIndex.h"
+
 #include <utility>
 #include <string>
 #include <fstream>
@@ -21,20 +23,6 @@ PackageEntry::PackageEntry(PackageEntryKey key, std::string name, VariableType* 
 
     this->Data(data);
 }
-PackageEntry::PackageEntry(PackageEntry&& obj) noexcept : key(std::exchange(obj.key, PackageEntryKey())), 
-    type(obj.type), 
-    name(std::move(obj.name)), 
-    data(std::move(obj.data)), 
-    parent(std::move(obj.parent)), 
-    state(std::move(obj.state))
-{
-    if (this->parent)
-        this->parent->SwapEntry(this->key.EntryID, this);
-
-    obj.data = {};
-    obj.parent = nullptr;
-    obj.state = 0;
-}
 PackageEntry::~PackageEntry()
 {
     if (this->parent)
@@ -45,22 +33,16 @@ PackageEntry::~PackageEntry()
 
 PackageEntry* PackageEntry::FromIndexTableLine(std::istream& in, Package* parent)
 {
-    PackageEntry result;
-
     if (!in)
         return nullptr;
-    
-    result.parent = parent;
-    result.key.PackageID = !parent ? 0 : parent->GetID();
-    ReadIndex(in, result);
-    
-    if (result.state & load_imm)
-    {
-        if (!result.Load())
-            throw std::logic_error("The load idmediatley flag was set, but the file could not be resolved, or it does not contain proper formatted data");
-    }
 
-    return new PackageEntry(std::move(result));
+    PackageEntry* result = new PackageEntry();
+    
+    result->parent = parent;
+    result->key.PackageID = !parent ? 0 : parent->GetID();
+    ReadIndex(in, *result);
+
+    return result;
 }
 PackageEntry* PackageEntry::FromIndexTableLine(const std::string& line, Package* parent)
 {
@@ -101,10 +83,6 @@ PackageEntry* PackageEntry::ExpandFromCompressed(const std::string& line, Packag
     return ExpandFromCompressed(ss, parent, out);
 }
 
-bool PackageEntry::Compress(std::ostream& out) const noexcept
-{
-    return WriteIndex(out) && (out << ' ') && WriteData(out);
-}
 bool PackageEntry::WriteData(std::ostream& out) const noexcept
 {
     if (!out || !this->data)
@@ -273,4 +251,10 @@ std::filesystem::path PackageEntry::GetPath() const
 const std::string& PackageEntry::Name() const noexcept
 {
     return this->name;
+}
+
+std::ostream& operator<<(std::ostream& out, const PackageEntry& obj) noexcept
+{
+    (void)obj.WriteData(out);
+    return out;
 }

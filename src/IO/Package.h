@@ -43,8 +43,12 @@ private:
 
     [[nodiscard]] bool IndexEntries();
 
+    /*
     [[nodiscard]] const PackageEntry* GetEntry(unsigned long ID) const noexcept;
     [[nodiscard]] PackageEntry* GetEntry(unsigned long ID) noexcept;
+    */
+    [[nodiscard]] std::vector<PackageEntry*>::const_iterator GetEntry(unsigned long ID) const noexcept;
+    [[nodiscard]] std::vector<PackageEntry*>::iterator GetEntry(unsigned long ID) noexcept;
 
     unsigned long GetNextID() noexcept { return currID++;}
 
@@ -70,22 +74,17 @@ public:
     [[nodiscard]] PackageHeader& Header() noexcept;
 
     [[nodiscard]] bool Compress(std::ostream& out) const noexcept;
-    [[nodiscard]] bool WriteIndex(std::ostream& out) const noexcept;
-    [[nodiscard]] bool WriteHeader(std::ostream& out) const noexcept;
     void Close() noexcept;
 
-    std::optional<PackageEntryKey> ResolveEntry(std::string& name) noexcept;
-    const PackageEntry& ResolveEntry(PackageEntryKey key) const;
-    PackageEntry& ResolveEntry(PackageEntryKey key);
+    [[nodiscard]] const PackageEntry& ResolveEntry(const std::string& name) const;
+    [[nodiscard]] PackageEntry& ResolveEntry(const std::string& name);
+    [[nodiscard]] const PackageEntry& ResolveEntry(PackageEntryKey key) const;
+    [[nodiscard]] PackageEntry& ResolveEntry(PackageEntryKey key);
+    [[nodiscard]] bool DoesEntryExist(unsigned long ID) noexcept;
 
-    bool RemoveEntry(unsigned long ID) noexcept; //Removes from the internal list & deletes it.
-    PackageEntry* ReleaseEntry(unsigned long ID) noexcept; //Removes from the internal list, but does not delete it.
-    bool SwapEntry(unsigned long ID, PackageEntry* newItem) noexcept;
-    std::optional<PackageEntryKey> AddEntry(std::string name, PackageEntryType type, VariableType* data) noexcept;
-
-    bool DoesEntryExist(unsigned long ID) noexcept;
-    const VariableType& GetEntryValue(unsigned long ID);
-    bool SetEntryValue(unsigned long ID, VariableType* Data) noexcept;
+    [[nodiscard]] bool RemoveEntry(unsigned long ID) noexcept; //Removes from the internal list & deletes it.
+    [[nodiscard]] PackageEntry* ReleaseEntry(unsigned long ID) noexcept; //Removes from the internal list, but does not delete it.
+    [[nodiscard]] std::optional<PackageEntryKey> AddEntry(std::string name, PackageEntryType type, VariableType* data) noexcept;
 };
 
 #endif //JASON_PACKAGE_H
