@@ -60,7 +60,10 @@ public:
 
     void Print(std::ostream& out) const noexcept override;
 
-    [[maybe_unused]] constexpr explicit operator double() const noexcept;
+    [[maybe_unused]] constexpr explicit operator double() const noexcept
+    {
+        return this->Data;
+    }
 };
 
 #include "ScalarT.tpp"

@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "Package.h" 
+#include "PackageEntryIndex.h"
 #include "../Common.h"
 
 Package::Package(std::filesystem::path location, unsigned long ID, PackageHeader&& header, PackageIndex&& index, bool isCompressed) : location(location), packID(ID), header(std::move(header)), index(std::move(index))
@@ -23,8 +24,8 @@ bool Package::IndexEntries()
 
     for (PackageEntry* entry : this->entries)
     {
-        if (entry->LoadImmediate() && !entry->Load())
-            throw std::logic_error("For entry = " + this->name + "::" + entry->Name() + ", the data could not be loaded and the Load Idemedatley flag was set");
+        if (entry->GetIndex().LoadImmediate() && !entry->Load())
+            throw std::logic_error("For entry = " + this->name + "::" + entry->GetIndex().Name() + ", the data could not be loaded and the Load Idemedatley flag was set");
     }
 
     return true;
@@ -118,7 +119,7 @@ const PackageEntry& Package::ResolveEntry(const std::string& name) const
 {
     auto iter = std::find_if(this->entries.begin(), this->entries.end(), [&name](const PackageEntry* obj) -> bool 
     {
-        return obj->Name() == name;
+        return obj->GetIndex().Name() == name;
     });
 
     if (iter == this->entries.end())
@@ -133,7 +134,7 @@ PackageEntry& Package::ResolveEntry(const std::string& name)
 const PackageEntry& Package::ResolveEntry(PackageEntryKey key) const
 {
     auto target = GetEntry(key.EntryID);
-    if (target == this->entries.end() || !key.PackageID != this->packID)
+    if (target == this->entries.end() || key.PackageID != this->packID)
         throw std::logic_error("This entry is not in this package");
 
     return *(*target);
@@ -163,10 +164,10 @@ PackageEntry* Package::ReleaseEntry(unsigned long ID) noexcept
 }
 std::optional<PackageEntryKey> Package::AddEntry(std::string name, PackageEntryType type, VariableType* data) noexcept
 {
-    if (!type != PackageEntryType::Temporary && name.empty())
+    if (type != PackageEntryType::Temporary && name.empty())
         return {};
 
-    PackageEntry* result = new PackageEntry(PackageEntryKey(this->packID, this->GetNextID()), name, data, type, this);
+    PackageEntry* result = new PackageEntry(PackageEntryKey(this->packID, this->GetNextID()), data, PackageEntryIndex(type, name, 0), this);
     this->entries.push_back(result);
     return result->Key();
 }

@@ -43,10 +43,6 @@ private:
 
     [[nodiscard]] bool IndexEntries();
 
-    /*
-    [[nodiscard]] const PackageEntry* GetEntry(unsigned long ID) const noexcept;
-    [[nodiscard]] PackageEntry* GetEntry(unsigned long ID) noexcept;
-    */
     [[nodiscard]] std::vector<PackageEntry*>::const_iterator GetEntry(unsigned long ID) const noexcept;
     [[nodiscard]] std::vector<PackageEntry*>::iterator GetEntry(unsigned long ID) noexcept;
 

@@ -1,3 +1,6 @@
+#ifndef JASON_PACKAGEINDEX_H
+#define JASON_PACKAGEINDEX_H
+
 #include <iostream>
 #include <filesystem>
 #include <fstream>
@@ -35,3 +38,5 @@ public:
 
 using PackageIndexReadLine = PackageIndexLine<std::istream>;
 using PackageIndexWriteLine = PackageIndexLine<std::ostream>;
+
+#endif

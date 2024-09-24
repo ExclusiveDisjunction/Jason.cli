@@ -5,7 +5,6 @@
 #include "Session.h"
 
 #include "../Common.h"
-#include "PackageHandle.h"
 #include "UnloadedPackage.h"
 
 #include <filesystem>

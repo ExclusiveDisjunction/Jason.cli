@@ -1,8 +1,8 @@
 add_library(IO SHARED
         Package.cpp
         Package.h
-        Session.cpp
-        Session.h
+        #Session.cpp
+        #Session.h
         PackageEntry.cpp
         PackageEntry.h
         PackageEntryKey.h
@@ -12,4 +12,6 @@ add_library(IO SHARED
         UnloadedPackage.h
         UnloadedPackage.cpp
         PackageHeader.cpp
-        PackageHeader.h)
+        PackageHeader.h
+        PackageEntryIndex.h
+        PackageEntryIndex.cpp)

@@ -10,7 +10,6 @@
 
 #include "PackageUtility.h"
 #include "Package.h"
-#include "PackageHandle.h"
 #include "UnloadedPackage.h"
 
 class Session

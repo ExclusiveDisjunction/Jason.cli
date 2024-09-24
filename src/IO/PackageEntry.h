@@ -10,49 +10,34 @@
 #include <optional>
 
 #include "PackageEntryKey.h"
+#include "PackageEntryIndex.h"
 #include "../Calc/VariableType.h"
 
 class Package;
 
-enum PackageEntryType
-{
-    Variable,
-    Temporary,
-    Environment
-};
-
 class PackageEntry
 {
 private:
-    enum State
-    {
-        none = 0,
-        load_imm = 1,
-        readonly = 2
-    };
-
-    PackageEntryKey key;
-    PackageEntryType type;
-    std::string name;
     std::optional<VariableType*> data = {};
     Package* parent = nullptr;
-    unsigned char state = 0;
+    PackageEntryIndex index;
+    bool modified = false;
 
-    static void ReadIndex(std::istream& in, PackageEntry& result);
-
-    PackageEntry() : key(), name(), data(std::optional<VariableType*>()), type(PackageEntryType::Variable), parent(nullptr), state(0) {}
+    PackageEntry() : data(), parent(nullptr), index(), modified(false) {}
 
 public:
-    PackageEntry(PackageEntryKey key, std::string name, VariableType* data, PackageEntryType type, Package* parent, unsigned char state = 0);
+    PackageEntry(VariableType* data, PackageEntryIndex&& schema, Package* parent);
     PackageEntry(const PackageEntry& obj) = delete;
     ~PackageEntry();
 
     friend class Package;
 
+    /*
     [[nodiscard]] static PackageEntry* FromIndexTableLine(std::istream& in, Package* parent);
     [[nodiscard]] static PackageEntry* FromIndexTableLine(const std::string& line, Package* parent);
     [[nodiscard]] static PackageEntry* ExpandFromCompressed(std::istream& in, Package* parent, std::ostream& out);
     [[nodiscard]] static PackageEntry* ExpandFromCompressed(const std::string& line, Package* parent, std::ostream& out);
+    */
 
     PackageEntry& operator=(const PackageEntry& obj) = delete;
     PackageEntry& operator=(PackageEntry&& obj) noexcept = delete;
@@ -77,15 +62,14 @@ public:
     void Data(VariableType* New) noexcept;
 
     [[nodiscard]] std::optional<bool> HasData() const noexcept;
+    [[nodiscard]] bool IsModified() const noexcept;
 
-    [[nodiscard]] bool LoadImmediate() const noexcept;
-    [[nodiscard]] bool IsReadOnly() const noexcept;
-    [[nodiscard]] bool IsTemporary() const noexcept;
+    void LoadImmediate(bool New) noexcept;
+    void IsReadOnly(bool New) noexcept;
 
     [[nodiscard]] PackageEntryKey Key() const noexcept;
-    [[nodiscard]] PackageEntryType Type() const noexcept;
     [[nodiscard]] std::filesystem::path GetPath() const;
-    [[nodiscard]] const std::string& Name() const noexcept;
+    [[nodiscard]] const PackageEntryIndex& GetIndex() const noexcept;
 };
 
 std::ostream& operator<<(std::ostream& out, const PackageEntry& obj) noexcept;

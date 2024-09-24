@@ -49,6 +49,8 @@ std::ostream& operator<<(std::ostream& out, const PackageHeader& obj)
     out << "version=" << obj.version << '\n' <<
            (obj.author.has_value() ? "author=" + *obj.author + '\n' : std::string()) << 
            "readonly=" << (obj.readonly ? 't' : 'f');
+
+    return out;
 }
 std::istream& operator>>(std::istream& in, PackageHeader& obj)
 {

@@ -42,7 +42,7 @@ Scalar* Scalar::FromSterilize(std::istream& in)
 
 [[nodiscard]] VariableType* Scalar::MoveIntoPointer() noexcept
 {
-    auto* result = new Scalar(*this);
+    Scalar* result = new Scalar(*this);
     this->Data = 0;
     return result;
 }
@@ -61,11 +61,6 @@ Scalar* Scalar::FromSterilize(std::istream& in)
 [[nodiscard]] long long Scalar::ToLongTrunc() const noexcept
 {
     return static_cast<long long>(this->Data);
-}
-
-constexpr Scalar::operator double() const noexcept
-{
-    return this->Data;
 }
 
 bool Scalar::operator==(const VariableType& obj) const noexcept

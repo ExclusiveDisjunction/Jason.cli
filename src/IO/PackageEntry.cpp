@@ -13,24 +13,25 @@
 #include <fstream>
 #include <sstream>
 
-PackageEntry::PackageEntry(PackageEntryKey key, std::string name, VariableType* data, PackageEntryType type, Package* parent, unsigned char state) : key(key), name(std::move(name)), data(nullptr), type(type), parent(parent), state(state)
+PackageEntry::PackageEntry(PackageEntryKey key, VariableType* data, PackageEntryIndex&& index, Package* parent) : key(key), data(data), index(std::move(index)), parent(parent) 
 {
-    if (this->type != PackageEntryType::Temporary && name.empty())
+    if (this->index.type != PackageEntryType::Temporary && this->index.name.empty())
         throw std::logic_error("Cannot construct a variable entry with no name, unless type is temporary.");
-
-    if (this->type == PackageEntryType::Temporary)
-        this->name.clear();
+    
+    if (this->index.type == PackageEntryType::Temporary)
+        this->index.name.clear();
 
     this->Data(data);
 }
 PackageEntry::~PackageEntry()
 {
     if (this->parent)
-        this->parent->ReleaseEntry(this->key.EntryID);
+        (void)this->parent->ReleaseEntry(this->key.EntryID);
 
     (void)Unload();
 }
 
+/*
 PackageEntry* PackageEntry::FromIndexTableLine(std::istream& in, Package* parent)
 {
     if (!in)
@@ -82,6 +83,7 @@ PackageEntry* PackageEntry::ExpandFromCompressed(const std::string& line, Packag
     std::stringstream ss(line);
     return ExpandFromCompressed(ss, parent, out);
 }
+*/
 
 bool PackageEntry::WriteData(std::ostream& out) const noexcept
 {
@@ -102,6 +104,7 @@ bool PackageEntry::WriteData() const noexcept
 
     return WriteData(out);
 }
+/*
 bool PackageEntry::WriteIndex(std::ostream& out) const noexcept
 {
     if (!out)
@@ -145,6 +148,7 @@ void PackageEntry::ReadIndex(std::istream& in, PackageEntry& result)
         }
     }
 }
+*/
 
 bool PackageEntry::Load() noexcept
 {
@@ -159,7 +163,7 @@ bool PackageEntry::Load() noexcept
         std::ofstream out(thisPath, std::ios::trunc);
         if (!out) //Failed to construct the path
         {
-            std::cerr << "When loading package entry '" << (this->parent ? this->parent->GetName() : "") << "::" << this->name << "', the located path could not be found." << std::endl;
+            std::cerr << "When loading package entry '" << (this->parent ? this->parent->GetName() : "") << "::" << this->index.name << "', the located path could not be found." << std::endl;
             return false;
         }  
         
@@ -219,27 +223,23 @@ std::optional<bool> PackageEntry::HasData() const noexcept
 {
     return !this->data ? std::optional<bool>() : *this->data != nullptr;
 }
+bool PackageEntry::IsModified() const noexcept
+{
+    return this->modified || this->index.IsModified();
+}
 
-bool PackageEntry::LoadImmediate() const noexcept
+void PackageEntry::LoadImmediate(bool New) noexcept 
 {
-    return this->state & load_imm;
+    this->index.LoadImmediate(New);
 }
-bool PackageEntry::IsReadOnly() const noexcept
+void PackageEntry::IsReadOnly(bool New) noexcept 
 {
-    return this->state & readonly;
-}
-bool PackageEntry::IsTemporary() const noexcept
-{
-    return this->type == Temporary;
+    this->index.IsReadOnly(New);
 }
 
 PackageEntryKey PackageEntry::Key() const noexcept
 {
     return this->key;
-}
-PackageEntryType PackageEntry::Type() const noexcept
-{
-    return this->type;
 }
 std::filesystem::path PackageEntry::GetPath() const
 {
@@ -248,9 +248,9 @@ std::filesystem::path PackageEntry::GetPath() const
 
     return this->parent->VarLocation() / std::to_string(this->key.EntryID);
 }
-const std::string& PackageEntry::Name() const noexcept
+const PackageEntryIndex& PackageEntry::GetIndex() const noexcept
 {
-    return this->name;
+    return this->index;
 }
 
 std::ostream& operator<<(std::ostream& out, const PackageEntry& obj) noexcept
