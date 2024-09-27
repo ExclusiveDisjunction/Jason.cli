@@ -17,6 +17,12 @@ const std::filesystem::path& PackageHeader::GetLocation() const noexcept
     return handle.path;
 }
 
+bool PackageHeader::Write()
+{
+    this->handle.file << *this;
+    return this->handle.file.good();
+}
+
 const Version& PackageHeader::GetVersion() const noexcept
 {
     return this->version;
@@ -42,6 +48,11 @@ bool PackageHeader::IsReadOnly() const noexcept
 bool PackageHeader::SetReadOnly(bool New) noexcept
 {
     return SetValue(readonly, New);
+}
+
+void PackageHeader::Close()
+{
+    this->handle.Close();
 }
 
 std::ostream& operator<<(std::ostream& out, const PackageHeader& obj)

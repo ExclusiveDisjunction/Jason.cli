@@ -2,11 +2,12 @@
 #define JASON_PACKAGEINDEX_H
 
 #include <iostream>
-#include <filesystem>
-#include <fstream>
 #include <utility>
+#include <fstream>
+#include <vector>
 
 #include "FileHandle.h"
+#include "PackageEntryIndex.h"
 
 class PackageEntry;
 
@@ -19,24 +20,11 @@ private:
 public:
     PackageIndex(FileHandle&& handle);
 
-    bool ReadIndex(std::vector<PackageEntry*>& entries) noexcept;
+    std::vector<PackageEntryIndex> ReadIndex() noexcept;
+    bool Write(const std::vector<PackageEntry*>& entries) noexcept;
     bool Write(std::ostream& out, const std::vector<PackageEntry*>& entries) const noexcept;
 
     void Close();
 };
-
-template<typename stream>
-class PackageIndexLine
-{
-private:
-    stream& s;
-public:
-    explicit PackageIndexLine(stream& target) : s(target) { }
-
-    stream& Expose() noexcept { return s; }
-};
-
-using PackageIndexReadLine = PackageIndexLine<std::istream>;
-using PackageIndexWriteLine = PackageIndexLine<std::ostream>;
 
 #endif

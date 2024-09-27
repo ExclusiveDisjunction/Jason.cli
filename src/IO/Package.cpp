@@ -19,13 +19,16 @@ Package::~Package()
 
 bool Package::IndexEntries() 
 {
-    if (!this->index.ReadIndex(this->entries))
-        return false;
+    std::vector<PackageEntryIndex> indexes = this->index.ReadIndex();
+    if (indexes.empty())
+        return true;
 
-    for (PackageEntry* entry : this->entries)
+    for (PackageEntryIndex& obj : indexes)
     {
-        if (entry->GetIndex().LoadImmediate() && !entry->Load())
-            throw std::logic_error("For entry = " + this->name + "::" + entry->GetIndex().Name() + ", the data could not be loaded and the Load Idemedatley flag was set");
+        auto result = this->entries.emplace_back(new PackageEntry(nullptr, std::move(obj), this));
+        
+        if (result && result->GetIndex().LoadImmediate() && !result->Load())
+            throw std::logic_error("For entry = " + this->name + "::" + result->GetIndex().Name() + ", the data could not be loaded and the Load Idemedatley flag was set");
     }
 
     return true;
@@ -35,14 +38,14 @@ std::vector<PackageEntry*>::const_iterator Package::GetEntry(unsigned long ID) c
 {
     return std::find_if(this->entries.begin(), this->entries.end(), [ID](const PackageEntry* item) -> bool
     {
-        return item->Key().EntryID == ID;
+        return item->GetIndex().Key().EntryID == ID;
     });
 }
 std::vector<PackageEntry*>::iterator Package::GetEntry(unsigned long ID) noexcept
 {
     return std::find_if(this->entries.begin(), this->entries.end(), [ID](PackageEntry* item) -> bool
     {
-        return item->Key().EntryID == ID;
+        return item->GetIndex().Key().EntryID == ID;
     });
 }
 
@@ -97,7 +100,7 @@ bool Package::Compress(std::ostream& out) const noexcept
     out << "\ndata\n";
 
     for (const auto* entry : this->entries)
-        out << entry->Key().EntryID << ' ' << *entry << '\n';
+        out << entry->GetIndex().Key().EntryID << ' ' << *entry << '\n';
 
     return out.good();
 }
@@ -167,9 +170,12 @@ std::optional<PackageEntryKey> Package::AddEntry(std::string name, PackageEntryT
     if (type != PackageEntryType::Temporary && name.empty())
         return {};
 
-    PackageEntry* result = new PackageEntry(PackageEntryKey(this->packID, this->GetNextID()), data, PackageEntryIndex(type, name, 0), this);
-    this->entries.push_back(result);
-    return result->Key();
+    PackageEntry* result = new PackageEntry(data,
+                                           PackageEntryIndex( PackageEntryKey(this->packID, this->GetNextID()), type, name, 0),
+                                            this);
+    this->entries.emplace_back(result);
+
+    return result->GetIndex().Key();
 }
 
 bool Package::DoesEntryExist(unsigned long ID) noexcept

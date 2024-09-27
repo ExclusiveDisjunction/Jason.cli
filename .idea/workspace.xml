@@ -3,9 +3,9 @@
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
-  <component name="CMakePresetLoader"><![CDATA[{
-  "useNewFormat": true
-}]]></component>
+  <component name="CMakePresetLoader">{
+  &quot;useNewFormat&quot;: true
+}</component>
   <component name="CMakeProjectFlavorService">
     <option name="flavorId" value="CMakePlainProjectFlavor" />
   </component>
@@ -30,112 +30,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="683fe54f-8f91-4de1-8561-9c98dd14fb55" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/../docs/Writerside/in.tree" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../docs/Writerside/topics/starter.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/vcs.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.vscode/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/../.vscode/settings.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../CMakeLists.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Makefile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../rust-ver/functions.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../rust-ver/main.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../rust-ver/math_types.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../rust-ver/ops.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../rust-ver/ops/num_resolver.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../rust-ver/ops/operators.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../rust-ver/ops/parsing.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../rust-ver/stack.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../rust-ver/testing.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../rust-ver/variables.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../rust-ver/variables/file_instances.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../rust-ver/variables/variable_storage.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../rust-ver/variables/variable_types.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/CMakeLists.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/CMakeLists.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/Numerics.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/Numerics/Constraints.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/Numerics/MathVector.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/Numerics/MathVector.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/Numerics/MathVectorT.tpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/Numerics/Matrix.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/Numerics/Matrix.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/Numerics/MatrixT.tpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/Numerics/Scalar.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/Numerics/Scalar.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/Numerics/ScalarT.tpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/OperatorException.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/Roadmap.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/StdCalc.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/StdCalc.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/TODO.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/VariableType.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Calc/VariableType.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Common.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Common.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/DateTime.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/DateTime.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Entry.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/CMakeLists.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Composite/Polynomial.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Composite/Polynomial.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Composite/PolynomialT.tpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Composite/RationalFunction.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Composite/RationalFunction.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Composite/RationalFunctionT.tpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Function.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/FunctionBase.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/FunctionBase.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/FunctionIterator.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/FunctionIterator.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Goalmap.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Impls/Bezier.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Impls/Bezier.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Impls/Core/AbsoluteValue.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Impls/Core/Constant.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Impls/Core/Exponent.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Impls/Core/FnMonomial.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Impls/Core/Logarithm.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Impls/Core/Monomial.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Impls/Core/PFnMonomial.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Impls/Core/Trig.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Impls/CoreFunctions.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Impls/GeneralFunctions.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Impls/GeneralFunctions.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Impls/VectorFunction.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Impls/VectorFunction.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Function/Impls/VectorFunctionT.tpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/CMakeLists.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/FileHandle.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/FileHandle.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/Package.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/Package.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/PackageEntry.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/PackageEntry.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/PackageEntryKey.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/PackageHeader.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/PackageHeader.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/PackageIndex.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/PackageUtility.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/Session.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/Session.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/Test.jason" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/UnloadedPackage.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/UnloadedPackage.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/old/Package.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/old/Package.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/old/Session.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/IO/old/Session.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Log.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Log.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Operators/CMakeLists.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Operators/Expression.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Operators/Expression.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Operators/ExpressionElement.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Operators/ExpressionType.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Operators/Operator.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Operators/Operator.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Operators/SubExpression.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Testing.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../src/Testing.h" beforeDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/IO/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/IO/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/IO/Package.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/IO/Package.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/IO/PackageEntryIndex.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/IO/PackageEntryIndex.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/IO/PackageHeader.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/IO/PackageHeader.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/IO/PackageIndex.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/IO/PackageIndex.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -147,7 +49,7 @@
   </component>
   <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectApplicationVersion">
     <option name="ide" value="CLion" />
@@ -155,10 +57,11 @@
     <option name="minorVersion" value="2.2" />
     <option name="productBranch" value="Classic" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 2
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
   <component name="ProjectId" id="2mTz8htLJSIWbC9xXWFTwXOispS" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -168,6 +71,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.cidr.known.project.marker": "true",
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
     "git-widget-placeholder": "Operators",
@@ -177,15 +81,11 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
   <component name="RunManager" selected="CMake Application.Jason">
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="Calc" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Jason" TARGET_NAME="Calc" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -207,6 +107,11 @@
       </method>
     </configuration>
     <configuration name="Operators" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Jason" TARGET_NAME="Operators" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -234,10 +139,21 @@
       <option name="presentableId" value="Default" />
       <updated>1727115196124</updated>
       <workItem from="1727115197150" duration="326000" />
+      <workItem from="1727405394121" duration="695000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VCPKGProject">
+    <isAutomaticCheckingOnLaunch value="false" />
+    <isAutomaticFoundErrors value="true" />
+    <isAutomaticReloadCMake value="true" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$/.." />
+    </ignored-roots>
   </component>
 </project>

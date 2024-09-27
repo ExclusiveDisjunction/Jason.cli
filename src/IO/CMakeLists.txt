@@ -14,4 +14,7 @@ add_library(IO SHARED
         PackageHeader.cpp
         PackageHeader.h
         PackageEntryIndex.h
-        PackageEntryIndex.cpp)
+        PackageEntryIndex.cpp
+        PackageIndex.cpp)
+
+target_link_libraries(IO Calc)

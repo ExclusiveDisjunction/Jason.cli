@@ -93,7 +93,7 @@ std::istream& operator>>(std::istream& in, PackageEntryIndex& obj)
                 obj.state |= PackageEntryIndex::readonly;
                 break;
             default:
-                throw std::logic_error("Could not resolve flag '" + item + '\'');
+                throw std::logic_error(std::string("Could not resolve flag '") + item + "\'");
         }
     }
 
