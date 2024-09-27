@@ -26,7 +26,7 @@ private:
     PackageEntry() : data(), parent(nullptr), index(), modified(false) {}
 
 public:
-    PackageEntry(VariableType* data, PackageEntryIndex&& schema, Package* parent);
+    PackageEntry(VariableType* data, PackageEntryIndex&& index, Package* parent);
     PackageEntry(const PackageEntry& obj) = delete;
     ~PackageEntry();
 
@@ -66,8 +66,7 @@ public:
 
     void LoadImmediate(bool New) noexcept;
     void IsReadOnly(bool New) noexcept;
-
-    [[nodiscard]] PackageEntryKey Key() const noexcept;
+    
     [[nodiscard]] std::filesystem::path GetPath() const;
     [[nodiscard]] const PackageEntryIndex& GetIndex() const noexcept;
 };

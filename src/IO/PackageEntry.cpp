@@ -13,7 +13,7 @@
 #include <fstream>
 #include <sstream>
 
-PackageEntry::PackageEntry(PackageEntryKey key, VariableType* data, PackageEntryIndex&& index, Package* parent) : key(key), data(data), index(std::move(index)), parent(parent) 
+PackageEntry::PackageEntry(VariableType* data, PackageEntryIndex&& index, Package* parent) : data(data), index(std::move(index)), parent(parent) 
 {
     if (this->index.type != PackageEntryType::Temporary && this->index.name.empty())
         throw std::logic_error("Cannot construct a variable entry with no name, unless type is temporary.");
@@ -26,7 +26,7 @@ PackageEntry::PackageEntry(PackageEntryKey key, VariableType* data, PackageEntry
 PackageEntry::~PackageEntry()
 {
     if (this->parent)
-        (void)this->parent->ReleaseEntry(this->key.EntryID);
+        (void)this->parent->ReleaseEntry(this->index.Key().EntryID);
 
     (void)Unload();
 }
@@ -104,51 +104,6 @@ bool PackageEntry::WriteData() const noexcept
 
     return WriteData(out);
 }
-/*
-bool PackageEntry::WriteIndex(std::ostream& out) const noexcept
-{
-    if (!out)
-        return false;
-
-    out << this->key.EntryID << ' ' << (this->type == Variable ? "var" : this->type == Environment ? "env" : "tmp") << " f:" << (this->state & load_imm ? '!' : 0) << (this->state & readonly ? '~' : 0) << ' ' << this->name;
-    return true;
-}
-void PackageEntry::ReadIndex(std::istream& in, PackageEntry& result) 
-{
-    if (!in)
-        throw std::logic_error("Bad stream");
-
-    std::string type, flags;
-    in >> result.key.EntryID >> type >> flags >> result.name;
-
-    //Parse type
-    if (type == "var")
-        result.type = Variable;
-    else if (type == "env")
-        result.type = Environment;
-    else if (type == "tmp")
-        result.type = Temporary;
-    else 
-        throw std::logic_error("Could not resolve variable entry type '" + type + '\'');
-
-    //Parse state
-    result.state = 0;
-    for (const char& item : flags) 
-    {
-        switch (item) 
-        {
-            case '!': //Load imm 
-                result.state |= load_imm;
-                break;
-            case '~': //Readonly
-                result.state |= readonly;
-                break;
-            default:
-                throw std::logic_error("Could not resolve flag '" + item + '\'');
-        }
-    }
-}
-*/
 
 bool PackageEntry::Load() noexcept
 {
@@ -237,16 +192,12 @@ void PackageEntry::IsReadOnly(bool New) noexcept
     this->index.IsReadOnly(New);
 }
 
-PackageEntryKey PackageEntry::Key() const noexcept
-{
-    return this->key;
-}
 std::filesystem::path PackageEntry::GetPath() const
 {
     if (!this->parent)
         throw std::logic_error("Could not locate parent's path.");
 
-    return this->parent->VarLocation() / std::to_string(this->key.EntryID);
+    return this->parent->VarLocation() / std::to_string(this->index.Key().EntryID);
 }
 const PackageEntryIndex& PackageEntry::GetIndex() const noexcept
 {

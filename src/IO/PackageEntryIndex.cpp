@@ -56,9 +56,46 @@ void PackageEntryIndex::Name(const std::string& New) noexcept
 
 std::ostream& operator<<(std::ostream& out, const PackageEntryIndex& obj) noexcept
 {
-    return out << obj.key.EntryID << ' ' << (obj.type == Variable ? "var" : obj.)
+    return out << obj.key.EntryID << ' ' << (obj.type == Variable ? "var" : obj.type == Environment ? "env" : "tmp") << " f:";
+    if (obj.state & PackageEntryIndex::load_imm)
+        out << '!';
+    if (obj.state & PackageEntryIndex::readonly)
+        out << '~';
+
+    out << ' ' << obj.name;
+    return out;
 }
 std::istream& operator>>(std::istream& in, PackageEntryIndex& obj)
 {
+    std::string type, flags;
+    in >> obj.key.EntryID >> type >> flags >> obj.name;
 
+    //Parse type
+    if (type == "var")
+        obj.type = Variable;
+    else if (type == "env")
+        obj.type = Environment;
+    else if (type == "tmp")
+        obj.type = Temporary;
+    else 
+        throw std::logic_error("Could not resolve variable entry type '" + type + '\'');
+
+    //Parse state
+    obj.state = 0;
+    for (const char& item : flags) 
+    {
+        switch (item) 
+        {
+            case '!': //Load imm 
+                obj.state |= PackageEntryIndex::load_imm;
+                break;
+            case '~': //Readonly
+                obj.state |= PackageEntryIndex::readonly;
+                break;
+            default:
+                throw std::logic_error("Could not resolve flag '" + item + '\'');
+        }
+    }
+
+    return in;
 }
