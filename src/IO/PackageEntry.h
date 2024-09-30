@@ -26,7 +26,7 @@ private:
     PackageEntry() : data(), parent(nullptr), index(), modified(false) {}
 
 public:
-    PackageEntry(VariableType* data, PackageEntryIndex&& index, Package* parent);
+    PackageEntry(std::optional<VariableType*> data, PackageEntryIndex&& index, Package* parent);
     PackageEntry(const PackageEntry& obj) = delete;
     ~PackageEntry();
 

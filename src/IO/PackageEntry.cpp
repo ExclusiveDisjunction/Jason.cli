@@ -13,7 +13,7 @@
 #include <fstream>
 #include <sstream>
 
-PackageEntry::PackageEntry(VariableType* data, PackageEntryIndex&& index, Package* parent) : data(data), index(std::move(index)), parent(parent) 
+PackageEntry::PackageEntry(std::optional<VariableType*> data, PackageEntryIndex&& index, Package* parent) : index(std::move(index)), parent(parent) 
 {
     if (this->index.type != PackageEntryType::Temporary && this->index.name.empty())
         throw std::logic_error("Cannot construct a variable entry with no name, unless type is temporary.");
@@ -21,7 +21,10 @@ PackageEntry::PackageEntry(VariableType* data, PackageEntryIndex&& index, Packag
     if (this->index.type == PackageEntryType::Temporary)
         this->index.name.clear();
 
-    this->Data(data);
+    if (data.has_value())
+        this->Data(*data);
+    else
+        this->data = {};
 }
 PackageEntry::~PackageEntry()
 {
