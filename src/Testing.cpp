@@ -39,23 +39,23 @@ void testCalc()
 
     cout << endl << "Test Two: Vectors" << endl << endl;
     {
-        MathVector a(3.2, 1.6), b(1.6, -1.9), c(1.6, 3.3, 4.5);
+        MathVector a = MathVector::FromList(3.2, 1.6), b = MathVector::FromList(1.6, -1.9), c = MathVector::FromList(1.6, 3.3, 4.5);
 
         MathVector d = a + b;
         auto result = std::make_pair(3.2+1.6, 1.6 + -1.9);
-        cout << "a + b == (" << result.first << ", " << result.second << ") ? " << (d == MathVector(result.first, result.second) ? "yes" : "no") << ", d = " << d << endl;
+        cout << "a + b == (" << result.first << ", " << result.second << ") ? " << (d == MathVector::FromList(result.first, result.second) ? "yes" : "no") << ", d = " << d << endl;
 
         d = a - b;
         result = std::make_pair(3.2-1.6, 1.6 - -1.9);
-        cout << "a - b == (" << result.first << ", " << result.second << ") ? " << (d == MathVector(result.first, result.second) ? "yes" : "no") << ", d = " << d << endl;
+        cout << "a - b == (" << result.first << ", " << result.second << ") ? " << (d == MathVector::FromList(result.first, result.second) ? "yes" : "no") << ", d = " << d << endl;
 
         d = a * 3.1;
         result = std::make_pair(3.2*3.1, 1.6 *3.1);
-        cout << "a * 3.1 == (" << result.first << ", " << result.second << ") ? " << (d == MathVector(result.first, result.second) ? "yes" : "no") << ", d = " << d << endl;
+        cout << "a * 3.1 == (" << result.first << ", " << result.second << ") ? " << (d == MathVector::FromList(result.first, result.second) ? "yes" : "no") << ", d = " << d << endl;
 
         d = a / 1.6;
         result = std::make_pair(3.2/1.6, 1.6 / 1.6);
-        cout << "a / 1.6 == (" << result.first << ", " << result.second << ") ? " << (d == MathVector(result.first, result.second) ? "yes" : "no") << ", d = " << d << endl;
+        cout << "a / 1.6 == (" << result.first << ", " << result.second << ") ? " << (d == MathVector::FromList(result.first, result.second) ? "yes" : "no") << ", d = " << d << endl;
 
         auto mag = c.Magnitude();
         auto expec = sqrt( pow(c[0], 2) + pow(c[1], 2) + pow(c[2], 2) );

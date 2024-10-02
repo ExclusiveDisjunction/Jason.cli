@@ -20,9 +20,9 @@ private:
 public:
     PackageIndex(FileHandle&& handle);
 
-    std::vector<PackageEntryIndex> ReadIndex() noexcept;
+    std::vector<PackageEntryIndex> ReadIndex(unsigned long PackageID) noexcept;
     bool Write(const std::vector<PackageEntry*>& entries) noexcept;
-    bool Write(std::ostream& out, const std::vector<PackageEntry*>& entries) const noexcept;
+    static bool Write(std::ostream& out, const std::vector<PackageEntry*>& entries) noexcept;
 
     void Close();
 };

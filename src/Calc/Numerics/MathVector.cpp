@@ -194,7 +194,7 @@ void MathVector::Sterilize(std::ostream& out) const noexcept
 {
     out << "VEC " << this->d;
     for (unsigned i = 0; i < this->d; i++)
-        out << this->Point[i] << ' ';
+        out << ' ' << this->Point[i];
 }
 [[nodiscard]] VariableTypes MathVector::GetType() const noexcept
 {
@@ -229,8 +229,8 @@ void MathVector::Print(std::ostream& out) const noexcept
     switch (One.Dim())
     {
     case 2:
-        A = MathVector(One[0], One[1], 0);
-        B = MathVector(Two[0], Two[1], 0);
+        A = MathVector::FromList(One[0], One[1], 0);
+        B = MathVector::FromList(Two[0], Two[1], 0);
         break;
     case 3:
         A = One;
@@ -240,7 +240,7 @@ void MathVector::Print(std::ostream& out) const noexcept
         throw OperatorException('X', One.GetTypeString(), Two.GetTypeString(), "Cannot cross with these dimensions.");
     }
 
-    return MathVector((A[1] * B[2]) - (A[2] * B[1]), (A[2] * B[0]) - (A[0] * B[2]), (A[0] * B[1]) - (A[1] * B[0])); //Uses the cross product equation.
+    return MathVector::FromList((A[1] * B[2]) - (A[2] * B[1]), (A[2] * B[0]) - (A[0] * B[2]), (A[0] * B[1]) - (A[1] * B[0])); //Uses the cross product equation.
 }
 [[maybe_unused]] [[nodiscard]] double MathVector::DotProduct(const MathVector& One, const MathVector& Two)
 {

@@ -9,7 +9,7 @@
 
 FileHandle::FileHandle(std::filesystem::path path, std::ios::openmode flags) : path(std::move(path)), file()
 {
-    file.open(this->path.string(), flags);
+    file.open(this->path, flags);
 
     if (!this->file)
     {

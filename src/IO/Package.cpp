@@ -8,20 +8,31 @@
 #include "PackageEntryIndex.h"
 #include "../Common.h"
 
-Package::Package(std::filesystem::path location, unsigned long ID, PackageHeader&& header, PackageIndex&& index, bool isCompressed) : location(location), packID(ID), header(std::move(header)), index(std::move(index))
+Package::Package(unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index) : packID(ID), name(std::move(name)), header(std::move(header)), index(std::move(index)), state(0)
 {
-    state |= (isCompressed ? Compressed : None);
+
+}
+Package::Package(std::filesystem::path location, unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index) : Package(ID, name, std::move(header), std::move(index))
+{
+    this->location = std::move(location);
+    this->compressedLocation = {};
+}
+Package::Package(std::filesystem::path uLocation, std::filesystem::path cLocation, unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index) : Package(ID, name, std::move(header), std::move(index)) 
+{
+    this->location = std::move(uLocation);
+    this->compressedLocation = std::move(cLocation);
+    this->state |= Compressed;
 }
 Package::~Package()
 {
     Close();
 }
 
-bool Package::IndexEntries() 
+void Package::IndexEntries()
 {
-    std::vector<PackageEntryIndex> indexes = this->index.ReadIndex();
+    std::vector<PackageEntryIndex> indexes = this->index.ReadIndex(this->packID);
     if (indexes.empty())
-        return true;
+        return;
 
     for (PackageEntryIndex& obj : indexes)
     {
@@ -30,8 +41,6 @@ bool Package::IndexEntries()
         if (result && result->GetIndex().LoadImmediate() && !result->Load())
             throw std::logic_error("For entry = " + this->name + "::" + result->GetIndex().Name() + ", the data could not be loaded and the Load Idemedatley flag was set");
     }
-
-    return true;
 }
 
 std::vector<PackageEntry*>::const_iterator Package::GetEntry(unsigned long ID) const noexcept
@@ -51,11 +60,86 @@ std::vector<PackageEntry*>::iterator Package::GetEntry(unsigned long ID) noexcep
 
 Package* Package::OpenFromDirectory(std::filesystem::path& dir, unsigned long ID)
 {
-    return nullptr;
+    /*
+     * We look for the following things:
+     * 1 -> Header file
+     * 2 -> Index File
+     * 3 -> var directory
+     *
+     * Then we load the header, then index.
+     */
+
+    std::filesystem::path header_l(dir / "header"), index_l(dir / "index"), var_l(dir / "var");
+    Package* result = nullptr;
+    try
+    {
+        FileHandle header_f(header_l), index_f(index_l);
+        if (!std::filesystem::exists(var_l))
+            throw std::logic_error("");
+
+        PackageHeader header(std::move(header_f), JASON_CURRENT_VERSION);
+        PackageIndex index(std::move(index_f));
+
+        if (!header.Read())
+            throw std::logic_error("");
+
+        result = new Package(dir, ID, dir.filename(), std::move(header), std::move(index));
+        result->IndexEntries();
+    }
+    catch (std::logic_error& e)
+    {
+        if (!result)
+            delete result;
+
+        return nullptr;
+    }
+
+    return result;
 }
 Package* Package::OpenFromCompressed(std::filesystem::path& pack, std::filesystem::path& targetDir, unsigned long ID)
 {
+    throw std::logic_error("Not implemented yet.");
+
     return OpenFromDirectory(targetDir, ID);
+}
+Package* Package::NewPackage(const std::string& name, const std::filesystem::path& landingDirectory, unsigned long ID)
+{
+    if (!std::filesystem::exists(landingDirectory) || !std::filesystem::is_directory(landingDirectory) || name.empty())
+        throw std::logic_error("Landing directory is not a directory, does not exist, or the name is empty.");
+
+    std::filesystem::path path = landingDirectory / name;
+    if (std::filesystem::exists(path)) //Already exists
+        return OpenFromDirectory(path, ID);
+
+    if (!std::filesystem::create_directory(path))
+        throw std::logic_error("The new directory could not be created.");
+
+    std::filesystem::path header_p = path / "header", index_p = path / "index", entries_p = path / "var";
+
+    if (!std::filesystem::create_directory(entries_p))
+        throw std::logic_error("Could not make the entries directory for the package.");
+
+    Package* Return = nullptr;
+    try
+    {
+        FileHandle header_h(header_p, std::ios::trunc | std::ios::in | std::ios::out),
+                   index_h(index_p, std::ios::trunc | std::ios::in | std::ios::out);
+
+        PackageHeader header(std::move(header_h), JASON_CURRENT_VERSION);
+        PackageIndex index(std::move(index_h));
+        if (!header.Write())
+            throw std::logic_error("");
+
+        Return = new Package(path, ID, name, std::move(header), std::move(index));
+    }
+    catch (std::logic_error& e)
+    {
+        throw std::logic_error("Could not make package because a sub-file could not be created.");
+    }
+
+
+
+    return Return;
 }
 
 const std::filesystem::path& Package::Location() const noexcept
@@ -104,6 +188,24 @@ bool Package::Compress(std::ostream& out) const noexcept
 
     return out.good();
 }
+bool Package::Save() noexcept
+{
+    //Header autosaves
+    //Entries autosaves
+    if (!this->index.Write(this->entries))
+        return false;
+
+    if (this->IsCompressed())
+    {
+        if (!this->compressedLocation.has_value())
+            return false;
+
+        std::ofstream outFile(*this->compressedLocation, std::ios::trunc);
+        return this->Compress(outFile);
+    }
+
+    return true;
+}
 void Package::Close() noexcept
 {
     index.Close();
@@ -116,6 +218,11 @@ void Package::Close() noexcept
         item = nullptr;
     }
     entries.clear();
+}
+void Package::DisplayContents(std::ostream& out) const noexcept
+{
+    for (const auto& item : entries)
+        out << item->GetIndex().Key() << ": " << *item << '\n';
 }
 
 const PackageEntry& Package::ResolveEntry(const std::string& name) const

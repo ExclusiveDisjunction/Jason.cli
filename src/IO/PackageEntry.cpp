@@ -34,60 +34,6 @@ PackageEntry::~PackageEntry()
     (void)Unload();
 }
 
-/*
-PackageEntry* PackageEntry::FromIndexTableLine(std::istream& in, Package* parent)
-{
-    if (!in)
-        return nullptr;
-
-    PackageEntry* result = new PackageEntry();
-    
-    result->parent = parent;
-    result->key.PackageID = !parent ? 0 : parent->GetID();
-    ReadIndex(in, *result);
-
-    return result;
-}
-PackageEntry* PackageEntry::FromIndexTableLine(const std::string& line, Package* parent)
-{
-    std::stringstream ss(line);
-    return FromIndexTableLine(ss, parent);
-}
-PackageEntry* PackageEntry::ExpandFromCompressed(std::istream& in, Package* parent, std::ostream& out)
-{
-    PackageEntry result;
-    if (!in)
-        return nullptr;
-
-    //Process header & fill structure
-    result.parent = parent;
-    result.key.PackageID = !parent ? 0 : parent->GetID();
-    ReadIndex(in, result);
-
-    //Output to the specified output location.
-    std::string sterilized;
-    std::getline(in, sterilized);
-    
-    std::stringstream ss_steril(sterilized);
-    sterilized.clear();
-
-    out << ss_steril.rdbuf();
-    ss_steril.seekp(0, std::ios::beg);
-
-    //Load from sterilized string, prevents opening & closing of file streams.
-    if (result.state & load_imm)
-    {
-        if (!result.Load(ss_steril))
-            throw std::logic_error("The load idmediatley flag was set, but the file could not be resolved, or it does not contain proper formatted data");
-    }
-}
-PackageEntry* PackageEntry::ExpandFromCompressed(const std::string& line, Package* parent, std::ostream& out)
-{
-    std::stringstream ss(line);
-    return ExpandFromCompressed(ss, parent, out);
-}
-*/
-
 bool PackageEntry::WriteData(std::ostream& out) const noexcept
 {
     if (!out || !this->data)
@@ -98,6 +44,7 @@ bool PackageEntry::WriteData(std::ostream& out) const noexcept
     else
         out << "NULL";
 
+    out.flush();
     return out.good();
 }
 bool PackageEntry::WriteData() const noexcept

@@ -27,6 +27,9 @@ public:
 std::ostream& operator<<(std::ostream& out, const Version& obj) noexcept;
 std::istream& operator>>(std::istream& in, Version& obj);
 
+#define JASON_VERSION_1_0_0 (Version(1, 0, 0))
+#define JASON_CURRENT_VERSION JASON_VERSION_1_0_0
+
 class PackageHeader
 {
 private:
@@ -35,7 +38,6 @@ private:
     std::optional<std::string> author;
     bool readonly;
 
-    [[nodiscard]] bool Write();
     template<typename T>
     [[nodiscard]] bool SetValue(T& target, const T& New)
     {
@@ -55,6 +57,9 @@ public:
 
     friend std::ostream& operator<<(std::ostream&, const PackageHeader&);
     friend std::istream& operator>>(std::istream&, PackageHeader&);
+
+    [[nodiscard]] bool Write() noexcept;
+    [[nodiscard]] bool Read() noexcept;
 
     [[nodiscard]] const std::filesystem::path& GetLocation() const noexcept;
 

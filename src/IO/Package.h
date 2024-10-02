@@ -27,9 +27,12 @@ private:
         Compressed = 1
     };
 
-    Package(std::filesystem::path location, unsigned long ID, PackageHeader&& header, PackageIndex&& index, bool isCompressed = false);
+    Package(unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index);
+    Package(std::filesystem::path location, unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index);
+    Package(std::filesystem::path uLocation, std::filesystem::path cLocation, unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index);
 
     std::filesystem::path location;
+    std::optional<std::filesystem::path> compressedLocation;
 
     unsigned long packID;
     unsigned long currID = 0;
@@ -41,7 +44,7 @@ private:
 
     std::vector<PackageEntry*> entries;
 
-    [[nodiscard]] bool IndexEntries();
+    void IndexEntries();
 
     [[nodiscard]] std::vector<PackageEntry*>::const_iterator GetEntry(unsigned long ID) const noexcept;
     [[nodiscard]] std::vector<PackageEntry*>::iterator GetEntry(unsigned long ID) noexcept;
@@ -60,6 +63,7 @@ public:
 
     [[nodiscard]] static Package* OpenFromDirectory(std::filesystem::path& dir, unsigned long ID);
     [[nodiscard]] static Package* OpenFromCompressed(std::filesystem::path& pack, std::filesystem::path& targetDir, unsigned long ID);
+    [[nodiscard]] static Package* NewPackage(const std::string& name, const std::filesystem::path& landingDirectory, unsigned long ID);
 
     [[nodiscard]] const std::filesystem::path& Location() const noexcept;
     [[nodiscard]] std::filesystem::path VarLocation() const noexcept;
@@ -70,7 +74,9 @@ public:
     [[nodiscard]] PackageHeader& Header() noexcept;
 
     [[nodiscard]] bool Compress(std::ostream& out) const noexcept;
+    [[nodiscard]] bool Save() noexcept;
     void Close() noexcept;
+    void DisplayContents(std::ostream& out) const noexcept;
 
     [[nodiscard]] const PackageEntry& ResolveEntry(const std::string& name) const;
     [[nodiscard]] PackageEntry& ResolveEntry(const std::string& name);

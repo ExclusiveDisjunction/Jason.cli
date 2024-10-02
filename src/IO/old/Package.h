@@ -37,7 +37,7 @@ private:
     std::vector<PackageEntry> entries;
     unsigned long CurrID;
 
-    [[nodiscard]] bool IndexEntries();
+    [[nodiscard]] void IndexEntries();
 
     std::string GetEntryPath(unsigned long ID) noexcept;
 

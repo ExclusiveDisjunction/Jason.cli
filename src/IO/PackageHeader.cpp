@@ -17,10 +17,16 @@ const std::filesystem::path& PackageHeader::GetLocation() const noexcept
     return handle.path;
 }
 
-bool PackageHeader::Write()
+bool PackageHeader::Write() noexcept
 {
     this->handle.file << *this;
+    this->handle.file.flush();
     return this->handle.file.good();
+}
+bool PackageHeader::Read() noexcept
+{
+    this->handle.file >> *this;
+    return !this->handle.file.bad();
 }
 
 const Version& PackageHeader::GetVersion() const noexcept
@@ -90,7 +96,7 @@ std::istream& operator>>(std::istream& in, PackageHeader& obj)
         else if (name == "author")
             obj.author = value;
         else if (name == "readonly")
-            obj.readonly = (value == "t" ? true : false);
+            obj.readonly = value == "t";
     }
     return in;
 }

@@ -27,12 +27,13 @@ private:
 
 public:
     [[maybe_unused]] explicit MathVector(unsigned int Dim, double Val = 0.0);
-    template<std::convertible_to<double>... Args>
-    explicit MathVector(Args... Value) noexcept;
     explicit MathVector(std::istream &in);
     MathVector(const MathVector &Obj) noexcept;
     [[maybe_unused]] MathVector(MathVector &&Obj) noexcept;
     ~MathVector();
+
+    template<std::convertible_to<double>... Args>
+    static MathVector FromList(Args... Value) noexcept;
 
     [[nodiscard]] VariableType* MoveIntoPointer() noexcept override;
 

@@ -15,5 +15,11 @@ public:
     unsigned long EntryID;
 };
 
+inline std::ostream& operator<<(std::ostream& obj, const PackageEntryKey& key) noexcept
+{
+    obj << key.PackageID << '.' << key.EntryID;
+    return obj;
+}
+
 
 #endif //JASON_PACKAGEENTRYKEY_H

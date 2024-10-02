@@ -3,20 +3,19 @@
 //Includes templated functions for MathVector.
 
 template<std::convertible_to<double>... Args>
-MathVector::MathVector(Args... Value) noexcept : MathVector()
+MathVector MathVector::FromList(Args... Value) noexcept
 {
     auto ToFill = std::vector<double>({((double) Value)...});
     size_t Dim = ToFill.size();
+    MathVector result(Dim, 0);
 
-    if (Dim == 0)
-        DeAllocate();
-    else
+    if (Dim != 0)
     {
-        Allocate(Dim, 0);
-
         for (size_t i = 0; i < Dim; i++)
-            Point[i] = ToFill[i];
+            result[i] = ToFill[i];
     }
+
+    return result;
 }
 
 template<typename T> requires IsScalarOrDouble<T>

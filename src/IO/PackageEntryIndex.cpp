@@ -56,7 +56,7 @@ void PackageEntryIndex::Name(const std::string& New) noexcept
 
 std::ostream& operator<<(std::ostream& out, const PackageEntryIndex& obj) noexcept
 {
-    return out << obj.key.EntryID << ' ' << (obj.type == Variable ? "var" : obj.type == Environment ? "env" : "tmp") << " f:";
+    return out << obj.key.EntryID << ' ' << (obj.type == Variable ? "var" : obj.type == Environment ? "env" : "tmp") << " f:" << obj.name;
     if (obj.state & PackageEntryIndex::load_imm)
         out << '!';
     if (obj.state & PackageEntryIndex::readonly)

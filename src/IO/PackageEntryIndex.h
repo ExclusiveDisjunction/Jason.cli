@@ -38,6 +38,7 @@ public:
     PackageEntryIndex(const PackageEntryIndex& obj) noexcept = default;
     PackageEntryIndex(PackageEntryIndex&& obj) noexcept = default;
 
+    friend class PackageIndex;
     friend class PackageEntry;
     friend std::ostream& operator<<(std::ostream&, const PackageEntryIndex&) noexcept;
     friend std::istream& operator>>(std::istream&, PackageEntryIndex&);
