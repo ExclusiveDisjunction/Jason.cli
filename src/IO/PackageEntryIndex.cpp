@@ -56,7 +56,7 @@ void PackageEntryIndex::Name(const std::string& New) noexcept
 
 std::ostream& operator<<(std::ostream& out, const PackageEntryIndex& obj) noexcept
 {
-    return out << obj.key.EntryID << ' ' << (obj.type == Variable ? "var" : obj.type == Environment ? "env" : "tmp") << " f:" << obj.name;
+    out << obj.key.EntryID << ' ' << (obj.type == Variable ? "var" : obj.type == Environment ? "env" : "tmp") << " f:";
     if (obj.state & PackageEntryIndex::load_imm)
         out << '!';
     if (obj.state & PackageEntryIndex::readonly)
@@ -82,20 +82,25 @@ std::istream& operator>>(std::istream& in, PackageEntryIndex& obj)
 
     //Parse state
     obj.state = 0;
-    for (const char& item : flags) 
+    if (flags.starts_with("f:"))
     {
-        switch (item) 
+        for (const char& item : flags.substr(2))
         {
-            case '!': //Load imm 
-                obj.state |= PackageEntryIndex::load_imm;
-                break;
-            case '~': //Readonly
-                obj.state |= PackageEntryIndex::readonly;
-                break;
-            default:
-                throw std::logic_error(std::string("Could not resolve flag '") + item + "\'");
+            switch (item)
+            {
+                case '!': //Load imm
+                    obj.state |= PackageEntryIndex::load_imm;
+                    break;
+                case '~': //Readonly
+                    obj.state |= PackageEntryIndex::readonly;
+                    break;
+                default:
+                    throw std::logic_error(std::string("Could not resolve flag '") + item + "\'");
+            }
         }
     }
+    else
+        throw std::logic_error("Flag specifier format is incorrect.");
 
     return in;
 }

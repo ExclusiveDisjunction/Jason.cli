@@ -5,6 +5,8 @@
 #ifndef JASON_PACKAGEENTRYKEY_H
 #define JASON_PACKAGEENTRYKEY_H
 
+#include <iostream>
+
 class PackageEntryKey
 {
 public:
@@ -15,11 +17,7 @@ public:
     unsigned long EntryID;
 };
 
-inline std::ostream& operator<<(std::ostream& obj, const PackageEntryKey& key) noexcept
-{
-    obj << key.PackageID << '.' << key.EntryID;
-    return obj;
-}
+std::ostream& operator<<(std::ostream& obj, const PackageEntryKey& key) noexcept;
 
 
 #endif //JASON_PACKAGEENTRYKEY_H

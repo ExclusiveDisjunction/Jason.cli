@@ -15,10 +15,13 @@ std::vector<PackageEntryIndex> PackageIndex::ReadIndex(unsigned long PackageID) 
     std::istream& in = this->handle.file;
     in.seekg(0, std::ios::beg);
 
-    while (in.good() && !in.eof())
+    while (!in.eof())
     {
         std::string line_r;
         std::getline(in, line_r);
+        if (line_r.empty())
+            break;
+
         std::stringstream line(line_r);
         line_r.clear();
 
@@ -31,10 +34,15 @@ std::vector<PackageEntryIndex> PackageIndex::ReadIndex(unsigned long PackageID) 
 }
 bool PackageIndex::Write(const std::vector<PackageEntry*>& entries) noexcept
 {
+    this->handle.file.close();
+    this->handle.file.open(this->handle.path, std::ios::in | std::ios::out | std::ios::trunc);
+
     return Write(this->handle.file, entries);
 }
 bool PackageIndex::Write(std::ostream& out, const std::vector<PackageEntry*>& entries) noexcept
 {
+    out.seekp(0, std::ios::beg);
+
     for (PackageEntry* obj : entries)
     {
         const PackageEntryIndex& index = obj->GetIndex();
@@ -42,7 +50,7 @@ bool PackageIndex::Write(std::ostream& out, const std::vector<PackageEntry*>& en
     }
 
     out.flush();
-    return out.good();
+    return !out.bad();
 }
 
 void PackageIndex::Close()

@@ -102,6 +102,13 @@ Matrix& Matrix::operator=(Matrix&& Other) noexcept
 
 void Matrix::Allocate(unsigned int NewRows, unsigned int NewColumns, double Value) noexcept
 {
+    if (!this->Data)
+    {
+        Data = new double* [NewRows];
+        for (unsigned int i = 0; i < NewRows; i++)
+            Data[i] = new double[NewColumns] { Value };
+    }
+
     if (NewRows != m || NewColumns != n)
     {
         DeAllocate();
@@ -186,6 +193,10 @@ VariableType* Matrix::MoveIntoPointer() noexcept
     this->DeAllocate();
 
     return Return;
+}
+VariableType* Matrix::Clone() const noexcept
+{
+    return new Matrix(*this);
 }
 
 const double* Matrix::operator[](unsigned int Row) const

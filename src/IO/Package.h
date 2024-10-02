@@ -84,7 +84,11 @@ public:
     [[nodiscard]] PackageEntry& ResolveEntry(PackageEntryKey key);
     [[nodiscard]] bool DoesEntryExist(unsigned long ID) noexcept;
 
+    [[nodiscard]] bool LoadAllEntries() noexcept;
+    void UnloadAllEntries() noexcept;
+
     [[nodiscard]] bool RemoveEntry(unsigned long ID) noexcept; //Removes from the internal list & deletes it.
+    void RemoveAllEntries() noexcept;
     [[nodiscard]] PackageEntry* ReleaseEntry(unsigned long ID) noexcept; //Removes from the internal list, but does not delete it.
     [[nodiscard]] std::optional<PackageEntryKey> AddEntry(std::string name, PackageEntryType type, VariableType* data) noexcept;
 };

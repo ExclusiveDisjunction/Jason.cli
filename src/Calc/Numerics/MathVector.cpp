@@ -148,6 +148,10 @@ MathVector MathVector::ErrorVector()
 
     return Return;
 }
+[[nodiscard]] VariableType* MathVector::Clone() const noexcept
+{
+    return new MathVector(*this);
+}
 
 double& MathVector::operator[](unsigned int Index)
 {

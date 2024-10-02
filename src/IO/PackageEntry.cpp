@@ -13,18 +13,13 @@
 #include <fstream>
 #include <sstream>
 
-PackageEntry::PackageEntry(std::optional<VariableType*> data, PackageEntryIndex&& index, Package* parent) : index(std::move(index)), parent(parent) 
+PackageEntry::PackageEntry(PackageEntryIndex&& index, Package* parent) : index(std::move(index)), parent(parent), data()
 {
     if (this->index.type != PackageEntryType::Temporary && this->index.name.empty())
         throw std::logic_error("Cannot construct a variable entry with no name, unless type is temporary.");
     
     if (this->index.type == PackageEntryType::Temporary)
         this->index.name.clear();
-
-    if (data.has_value())
-        this->Data(*data);
-    else
-        this->data = {};
 }
 PackageEntry::~PackageEntry()
 {
@@ -45,7 +40,31 @@ bool PackageEntry::WriteData(std::ostream& out) const noexcept
         out << "NULL";
 
     out.flush();
-    return out.good();
+    return !out.bad();
+}
+bool PackageEntry::DisplayData(std::ostream& out) noexcept
+{
+    if (!this->data.has_value())
+    {
+        if (!this->Load())
+            return false;
+    }
+
+    if (!(*this->data))
+        out << "NULL";
+    else
+        (*this->data)->Print(out);
+
+    return !out.bad();
+}
+bool PackageEntry::WriteIndex(std::ostream& out) const noexcept
+{
+    if (!out)
+        return false;
+
+    out << this->index;
+    out.flush();
+    return !out.bad();
 }
 bool PackageEntry::WriteData() const noexcept
 {
@@ -117,11 +136,13 @@ const VariableType& PackageEntry::Data() const
 
     return *(*this->data);
 }
-void PackageEntry::Data(VariableType* New) noexcept
+bool PackageEntry::Data(VariableType* New) noexcept
 {
-    Reset();
+    if (this->data.has_value())
+        delete (*this->data);
+
     this->data = New;
-    (void)WriteData();
+    return WriteData();
 }
 
 std::optional<bool> PackageEntry::HasData() const noexcept

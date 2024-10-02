@@ -36,11 +36,15 @@ void Package::IndexEntries()
 
     for (PackageEntryIndex& obj : indexes)
     {
-        auto result = this->entries.emplace_back(new PackageEntry(nullptr, std::move(obj), this));
+        this->currID = std::max(this->currID, obj.Key().EntryID);
+
+        auto result = this->entries.emplace_back(new PackageEntry(std::move(obj), this));
         
         if (result && result->GetIndex().LoadImmediate() && !result->Load())
             throw std::logic_error("For entry = " + this->name + "::" + result->GetIndex().Name() + ", the data could not be loaded and the Load Idemedatley flag was set");
     }
+    //We need to increment the currID, because right now it has the highest value of the current key.
+    this->currID++;
 }
 
 std::vector<PackageEntry*>::const_iterator Package::GetEntry(unsigned long ID) const noexcept
@@ -190,8 +194,8 @@ bool Package::Compress(std::ostream& out) const noexcept
 }
 bool Package::Save() noexcept
 {
-    //Header autosaves
-    //Entries autosaves
+    //Header auto-saves
+    //Entries auto-saves
     if (!this->index.Write(this->entries))
         return false;
 
@@ -222,7 +226,11 @@ void Package::Close() noexcept
 void Package::DisplayContents(std::ostream& out) const noexcept
 {
     for (const auto& item : entries)
-        out << item->GetIndex().Key() << ": " << *item << '\n';
+    {
+        out << item->GetIndex().Name() << " @ " << item->GetIndex().Key() << ": ";
+        (void)item->DisplayData(out);
+        out << '\n';
+    }
 }
 
 const PackageEntry& Package::ResolveEntry(const std::string& name) const
@@ -254,11 +262,46 @@ PackageEntry& Package::ResolveEntry(PackageEntryKey key)
     return const_cast<PackageEntry&>(const_cast<const Package*>(this)->ResolveEntry(key));
 }
 
+bool Package::LoadAllEntries() noexcept
+{
+    try
+    {
+        for (auto& item : entries)
+            if (!item->Load())
+                return false;
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+    return true;
+}
+void Package::UnloadAllEntries() noexcept
+{
+    for (auto& item : entries)
+        (void)item->Unload();
+}
+
 bool Package::RemoveEntry(unsigned long ID) noexcept
 {
     PackageEntry* released = this->ReleaseEntry(ID);
     delete released;
     return released != nullptr;
+}
+void Package::RemoveAllEntries() noexcept
+{
+    std::filesystem::remove_all(this->VarLocation());
+    std::filesystem::create_directory(this->VarLocation());
+    for (auto& entry : entries)
+    {
+        entry->parent = nullptr; //This is needed so that the entry will not attempt to remove itself from this->entries.
+        delete entry;
+    }
+    this->currID = 0;
+    this->entries.clear();
+
+    (void)this->index.Write(this->entries);
 }
 PackageEntry* Package::ReleaseEntry(unsigned long ID) noexcept
 {  
@@ -277,10 +320,16 @@ std::optional<PackageEntryKey> Package::AddEntry(std::string name, PackageEntryT
     if (type != PackageEntryType::Temporary && name.empty())
         return {};
 
-    PackageEntry* result = new PackageEntry(data,
-                                           PackageEntryIndex( PackageEntryKey(this->packID, this->GetNextID()), type, name, 0),
-                                            this);
-    this->entries.emplace_back(result);
+    PackageEntry* result = new PackageEntry(PackageEntryIndex(PackageEntryKey(this->packID, this->GetNextID()), type, std::move(name), 0),
+            this);
+
+    if (!result->Data(data))
+    {
+        delete result;
+        return {};
+    }
+    else
+        this->entries.emplace_back(result);
 
     return result->GetIndex().Key();
 }

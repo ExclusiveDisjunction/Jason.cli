@@ -30,6 +30,7 @@ public:
 
     //Moves all information out of the current instance and makes a pointer to the corresponding type. Saves on calling the memory constructor.
     [[nodiscard]] virtual VariableType* MoveIntoPointer() noexcept = 0;
+    [[nodiscard]] virtual VariableType* Clone() const noexcept = 0;
 
     [[nodiscard]] virtual std::string Sterilize() const noexcept; //Writes to a string value
     virtual void Sterilize(std::ostream& out) const noexcept = 0; //Writes to a file, can be retrieved.

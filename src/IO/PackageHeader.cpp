@@ -19,6 +19,9 @@ const std::filesystem::path& PackageHeader::GetLocation() const noexcept
 
 bool PackageHeader::Write() noexcept
 {
+    this->handle.file.close();
+    this->handle.file.open(this->handle.path, std::ios::in | std::ios::out | std::ios::trunc);
+
     this->handle.file << *this;
     this->handle.file.flush();
     return this->handle.file.good();

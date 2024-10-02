@@ -8,7 +8,12 @@
 
 Scalar::Scalar(std::istream& in)
 {
+    std::string header;
+    in >> header;
+    if (header != "SCA")
+        throw std::logic_error("Inputted stream is not a scalar");
 
+    in >> this->Data;
 }
 
 [[nodiscard]] VariableTypes Scalar::GetType() const noexcept
@@ -45,6 +50,10 @@ Scalar* Scalar::FromSterilize(std::istream& in)
     Scalar* result = new Scalar(*this);
     this->Data = 0;
     return result;
+}
+VariableType* Scalar::Clone() const noexcept
+{
+    return new Scalar(*this);
 }
 
 [[nodiscard]] long long Scalar::ToLongNoRound() const

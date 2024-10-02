@@ -26,7 +26,7 @@ private:
     PackageEntry() : data(), parent(nullptr), index(), modified(false) {}
 
 public:
-    PackageEntry(std::optional<VariableType*> data, PackageEntryIndex&& index, Package* parent);
+    PackageEntry(PackageEntryIndex&& index, Package* parent);
     PackageEntry(const PackageEntry& obj) = delete;
     ~PackageEntry();
 
@@ -46,6 +46,7 @@ public:
     [[nodiscard]] bool WriteIndex(std::ostream& out) const noexcept;
     /// @breif Writes the data of the Entry if it is loaded, fails if otherwise.
     [[nodiscard]] bool WriteData(std::ostream& out) const noexcept;
+    [[nodiscard]] bool DisplayData(std::ostream& out) noexcept;
     /// @brief  Writes the data of the Entry if it is loaded to the path at GetPath(), fails if otherwise. 
     [[nodiscard]] bool WriteData() const noexcept;
 
@@ -59,7 +60,7 @@ public:
     bool Reset() noexcept;
 
     [[nodiscard]] const VariableType& Data() const;
-    void Data(VariableType* New) noexcept;
+    bool Data(VariableType* New) noexcept;
 
     [[nodiscard]] std::optional<bool> HasData() const noexcept;
     [[nodiscard]] bool IsModified() const noexcept;
