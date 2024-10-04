@@ -5,6 +5,7 @@
 #include "PackageHeader.h"
 
 #include <sstream>
+#include <algorithm>
 
 PackageHeader::PackageHeader(FileHandle&& handle, Version ver, std::optional<std::string>&& author, bool readonly) : handle(std::move(handle)), version(ver), author(std::move(author)), readonly(readonly)
 {

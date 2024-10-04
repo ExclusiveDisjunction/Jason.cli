@@ -3,8 +3,7 @@
 //
 
 #include "FileHandle.h"
-#include <fstream>
-#include <filesystem>
+#include <cstring>
 #include <sstream>
 
 FileHandle::FileHandle(std::filesystem::path path, std::ios::openmode flags) : path(std::move(path)), file()

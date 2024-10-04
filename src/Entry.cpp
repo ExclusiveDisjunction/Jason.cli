@@ -18,6 +18,8 @@ using std::chrono::milliseconds;
 //#include "IO/Session.h"
 #include "IO/Package.h"
 
+#include <cstring>
+
 int main(int ArgsCount, char** Args)
 {
     cout << " Welcome to Jason " << '\n'
@@ -53,11 +55,22 @@ int main(int ArgsCount, char** Args)
 
     struct passwd *pw = getpwuid(getuid());
     const char *homedir = pw->pw_dir;
-    std::filesystem::path location = std::filesystem::path(homedir) / ".jason" / "usr";
+
+    std::filesystem::path landing = std::filesystem::path(homedir) / ".jason";
+    std::filesystem::path location = landing / "usr";
     if (!std::filesystem::exists(location))
         std::filesystem::create_directories(location);
 
     Package* New = Package::OpenFromDirectory(location, 0);
+    if (!New)
+    {
+        New = Package::NewPackage("usr", landing, 0);
+        if (!New)
+        {
+            std::cerr << "Could not load Jason project." << std::endl;
+            return 1;
+        }
+    }
 
     std::cout << "Modes:" << std::endl <<
                  "i: Insert Items Manually" << std::endl <<

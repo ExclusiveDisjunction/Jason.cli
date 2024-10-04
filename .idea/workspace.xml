@@ -30,25 +30,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="683fe54f-8f91-4de1-8561-9c98dd14fb55" name="Changes" comment="Finished up on PackageHeader, PackageIndex, Package, PackageEntry, and various utilities. Began on debugging phase.">
-      <change afterPath="$PROJECT_DIR$/src/IO/PackageEntryKey.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Calc/Numerics/MathVector.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calc/Numerics/MathVector.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Calc/Numerics/MathVector.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calc/Numerics/MathVector.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Calc/Numerics/Matrix.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calc/Numerics/Matrix.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Calc/Numerics/Matrix.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calc/Numerics/Matrix.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Calc/Numerics/Scalar.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calc/Numerics/Scalar.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Calc/Numerics/Scalar.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calc/Numerics/Scalar.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Calc/VariableType.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Calc/VariableType.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Entry.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entry.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/IO/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/IO/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/IO/Package.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/IO/Package.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/IO/Package.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/IO/Package.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/IO/PackageEntry.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/IO/PackageEntry.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/IO/PackageEntry.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/IO/PackageEntry.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/IO/PackageEntryIndex.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/IO/PackageEntryIndex.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/IO/PackageEntryKey.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/IO/PackageEntryKey.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/IO/FileHandle.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/IO/FileHandle.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/IO/PackageHeader.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/IO/PackageHeader.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/IO/PackageIndex.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/IO/PackageIndex.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,7 +48,20 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "ExclusiveDisjunction"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "git@github.com:ExclusiveDisjunction/Jason.git",
+    "accountId": "2ba87564-53c5-456e-816a-a86b18bbccb9"
+  }
+}]]></component>
   <component name="ProjectApplicationVersion">
     <option name="ide" value="CLion" />
     <option name="majorVersion" value="2024" />
@@ -72,7 +72,9 @@
   &quot;associatedIndex&quot;: 2
 }</component>
   <component name="ProjectId" id="2mTz8htLJSIWbC9xXWFTwXOispS" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
@@ -99,11 +101,6 @@
   }
 }]]></component>
   <component name="RunManager" selected="CMake Application.Jason">
-    <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="CLION.EXTERNAL.BUILD" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="Calc" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Jason" TARGET_NAME="Calc" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -125,6 +122,11 @@
       </method>
     </configuration>
     <configuration name="Operators" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Jason" TARGET_NAME="Operators" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
