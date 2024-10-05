@@ -1,7 +1,6 @@
 #include <iostream>
 #include <chrono>
 #include <unistd.h>
-#include <sys/types.h>
 #include <pwd.h>
 
 
@@ -31,12 +30,6 @@ int main(int ArgsCount, char** Args)
 
     /*
     auto* sess = new Session();
-    if (!sess->CheckForUnclosedPackages())
-    {
-        std::cout << "Goodbye!" << std::endl;
-        l << Info << "Exiting Jason (Reason: Preserve Open Packages), Exit Code 2" << EndLog;
-        return 2;
-    }
 
     if (!sess->Initiate())
     {
@@ -46,7 +39,7 @@ int main(int ArgsCount, char** Args)
     }
     else
     {
-        std::cout << "Session created properly." << std::endl;
+        std::cout << "Session created, and all packages loaded properly." << std::endl;
         l << Info << "Jason Session & Packages loaded." << EndLog;
     }
 
@@ -170,7 +163,7 @@ int main(int ArgsCount, char** Args)
             case 'f':
             {
                 //This will clear the project, add n elements, record the time to add them, unload the project, and then load it again.
-                std::vector<int> test_runs = {10}; //100, 1'000, 10'000};
+                std::vector<int> test_runs = {10, 100, 1'000, 10'000};
                 std::vector<VariableType*> test_data = {
                         new Scalar(4),
                         new MathVector(3, 0),

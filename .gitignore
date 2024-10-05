@@ -1,6 +1,7 @@
 rust-ver
 *.DS_Store
 run_variables
+.idea
 
 *.log
 build
