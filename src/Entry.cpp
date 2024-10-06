@@ -7,6 +7,7 @@
 #include "Log.h"
 #include "Calc/Numerics.h"
 //#include "Testing.h"
+#include "Commands/CommandParser.h"
 
 using namespace std;
 using std::chrono::duration_cast;
@@ -46,6 +47,7 @@ int main(int ArgsCount, char** Args)
     delete sess;
     */
 
+    /*
     struct passwd *pw = getpwuid(getuid());
     const char *homedir = pw->pw_dir;
 
@@ -219,6 +221,23 @@ int main(int ArgsCount, char** Args)
         }
     }
     (void)New->Save();
+     */
+
+    CommandSingleValue sv;
+    CommandMultiValue mv;
+
+    std::cout << "Enter a a value for CommandSingleValue: ";
+    std::cin >> sv;
+
+    try
+    {
+        std::cout << "Enter a value for CommandMultiValue: ";
+        std::cin >> mv;
+    }
+    catch (std::logic_error& e)
+    {
+        std::cerr << "Caught: " << e.what() << std::endl;
+    }
 
     l << Info << "Exiting Jason, Exit Code 0" << EndLog;
     return 0;
