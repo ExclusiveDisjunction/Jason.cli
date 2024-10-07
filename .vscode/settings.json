@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "*.h": "cpp",
+        "new": "cpp",
+        "string": "cpp",
+        "tuple": "cpp",
+        "typeinfo": "cpp",
+        "stdexcept": "cpp"
+    }
+}

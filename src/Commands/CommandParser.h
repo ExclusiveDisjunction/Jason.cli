@@ -39,15 +39,16 @@ std::istream& operator>>(std::istream& in, CommandParser& obj);
 class CommandSpecifier
 {
 public:
+    CommandSpecifier() = default;
     CommandSpecifier(std::string name, std::optional<std::string> value);
-    CommandSpecifier(const CommandSpecifier& obj) noexcept = default;
-    CommandSpecifier(CommandSpecifier&& obj) noexcept = default;
+    CommandSpecifier(const CommandSpecifier& obj) noexcept;
+    CommandSpecifier(CommandSpecifier&& obj) noexcept;
 
-    [[nodiscard]] CommandSpecifier Parse(std::istream& in);
-    [[nodiscard]] CommandSpecifier Parse(const std::string& in);
+    [[nodiscard]] static CommandSpecifier Parse(std::istream& in);
+    [[nodiscard]] static CommandSpecifier Parse(const std::string& in);
 
-    CommandSpecifier& operator=(const CommandSpecifier& obj) noexcept = default;
-    CommandSpecifier& operator=(CommandSpecifier&& obj) noexcept = default;
+    CommandSpecifier& operator=(const CommandSpecifier& obj) noexcept;
+    CommandSpecifier& operator=(CommandSpecifier&& obj) noexcept;
 
     std::string Name;
     std::optional<std::string> Value;

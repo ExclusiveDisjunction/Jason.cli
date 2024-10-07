@@ -228,11 +228,13 @@ int main(int ArgsCount, char** Args)
 
     std::cout << "Enter a a value for CommandSingleValue: ";
     std::cin >> sv;
+    std::cout << "Value put: " << sv << std::endl;
 
     try
     {
         std::cout << "Enter a value for CommandMultiValue: ";
         std::cin >> mv;
+        std::cout << "Value put: " << mv << std::endl;
     }
     catch (std::logic_error& e)
     {
