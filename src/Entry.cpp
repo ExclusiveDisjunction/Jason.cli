@@ -225,6 +225,7 @@ int main(int ArgsCount, char** Args)
 
     CommandSingleValue sv;
     CommandMultiValue mv;
+    CommandSpecifier sp;
 
     std::cout << "Enter a a value for CommandSingleValue: ";
     std::cin >> sv;
@@ -235,6 +236,10 @@ int main(int ArgsCount, char** Args)
         std::cout << "Enter a value for CommandMultiValue: ";
         std::cin >> mv;
         std::cout << "Value put: " << mv << std::endl;
+
+        std::cout << "Enter a command specifier: ";
+        std::cin >> sp;
+        std::cout << "Specifier put: " << sp << std::endl;
     }
     catch (std::logic_error& e)
     {

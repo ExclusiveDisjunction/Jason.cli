@@ -6,6 +6,7 @@
 
 #include "../Common.h"
 
+///@breif Used to delimit only based on \n, instead of spaces.
 struct only_end_line_whitespace : std::ctype<char>
 {
     static const mask* make_table()
@@ -13,14 +14,15 @@ struct only_end_line_whitespace : std::ctype<char>
         static mask
                 rc[table_size]; // Creating a table with the
         // size of the character set
-        rc['\n']
-                = ctype_base::space; // Set the newline
+        /*
+         rc['\n'] = ctype_base::space; // Set the newline
+         */
         // character to be treated
         // as whitespace
         return rc; // Return the modified table
     }
 
-    only_end_line_whitespace(std::size_t refs = 0) : ctype(make_table(), false, refs) {}
+    explicit only_end_line_whitespace(std::size_t refs = 0) : ctype(make_table(), false, refs) {}
 };
 
 const char CommandMultiValue::DenoteStart = '[';
@@ -31,12 +33,10 @@ CommandValue* CommandValue::Parse(std::istream& in)
     auto pos = in.tellg();
     char beg;
     in >> beg;
+    in.seekg(pos);
 
     if (beg == CommandMultiValue::DenoteStart)
-    {
-        in.seekg(beg);
         return new CommandMultiValue(std::move(CommandMultiValue::Parse(in)));
-    }
     else
         return new CommandSingleValue(std::move(CommandSingleValue::Parse(in)));
 }
@@ -64,7 +64,7 @@ CommandSingleValue& CommandSingleValue::operator=(CommandSingleValue&& obj) noex
     return *this;
 }
 
-CommandMultiValue::CommandMultiValue(const CommandMultiValue& obj) noexcept : Value(std::move(obj.Value))
+CommandMultiValue::CommandMultiValue(const CommandMultiValue& obj) noexcept : Value(obj.Value)
 {
 
 }
@@ -143,6 +143,10 @@ CommandMultiValue CommandMultiValue::Parse(std::istream& in)
             currStr.clear();
             continue;
         }
+        case '\n':
+        case '\t':
+        case '\r':
+            curr = ' ';
         default:
             if (!started)
                 throw std::logic_error("Format error: List not started.");

@@ -15,12 +15,14 @@
 class CommandParser;
 class CommandSpecifier;
 class CommandValue;
+class CommandSingleValue;
+class CommandMultiValue;
 
 
 class CommandParser
 {
 private:
-    CommandParser(std::string name, std::vector<char> flags, std::vector<CommandSpecifier> specifiers, std::vector<CommandValue*> values);
+    [[maybe_unused]] CommandParser(std::string name, std::vector<char> flags, std::vector<CommandSpecifier> specifiers, std::vector<CommandValue*> values);
 
     std::string top_command;
     std::vector<char> flags;
@@ -38,9 +40,13 @@ std::istream& operator>>(std::istream& in, CommandParser& obj);
 
 class CommandSpecifier
 {
+private:
+    CommandValue* val;
 public:
-    CommandSpecifier() = default;
-    CommandSpecifier(std::string name, std::optional<std::string> value);
+    CommandSpecifier();
+    explicit CommandSpecifier(std::string name);
+    CommandSpecifier(std::string name, CommandSingleValue&& obj);
+    CommandSpecifier(std::string name, CommandMultiValue&& obj);
     CommandSpecifier(const CommandSpecifier& obj) noexcept;
     CommandSpecifier(CommandSpecifier&& obj) noexcept;
 
@@ -51,7 +57,9 @@ public:
     CommandSpecifier& operator=(CommandSpecifier&& obj) noexcept;
 
     std::string Name;
-    std::optional<std::string> Value;
+    [[nodiscard]] const CommandValue& Value() const;
+    [[nodiscard]] CommandValue& Value();
+    [[nodiscard]] bool HasValue() const noexcept;
 
     void Print(std::ostream& out) const noexcept;
 };
@@ -83,14 +91,14 @@ public:
 
     std::string Value;
 
-    bool IsSingleValue() const noexcept override { return true; }
+    [[nodiscard]] bool IsSingleValue() const noexcept override { return true; }
     void Print(std::ostream& out) const noexcept override;
 };
 class CommandMultiValue : public CommandValue
 {
 public:
     CommandMultiValue() = default;
-    explicit CommandMultiValue(std::vector<std::string> list) : Value(std::move(list)) {}
+    [[maybe_unused]] explicit CommandMultiValue(std::vector<std::string> list) : Value(std::move(list)) {}
     CommandMultiValue(const CommandMultiValue& obj) noexcept;
     CommandMultiValue(CommandMultiValue&& obj) noexcept;
 
@@ -102,7 +110,7 @@ public:
 
     [[nodiscard]] static CommandMultiValue Parse(std::istream& in);
 
-    bool IsSingleValue() const noexcept override { return false; }
+    [[nodiscard]] bool IsSingleValue() const noexcept override { return false; }
     void Print(std::ostream& out) const noexcept override;
 };
 

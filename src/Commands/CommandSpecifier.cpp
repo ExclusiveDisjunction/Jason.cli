@@ -4,7 +4,19 @@
 
 #include <sstream>
 
-CommandSpecifier::CommandSpecifier(std::string name, std::optional<std::string> value) : Name(std::move(name)), Value(std::move(value))
+CommandSpecifier::CommandSpecifier() : Name(), val(nullptr)
+{
+
+}
+CommandSpecifier::CommandSpecifier(std::string name) : Name(std::move(name)), val(nullptr)
+{
+
+}
+CommandSpecifier::CommandSpecifier(std::string name, CommandSingleValue&& obj) : Name(std::move(name)), val(new CommandSingleValue(std::move(obj)))
+{
+
+}
+CommandSpecifier::CommandSpecifier(std::string name, CommandMultiValue&& obj) : Name(std::move(name)), val(new CommandMultiValue(std::move(obj)))
 {
 
 }
@@ -21,12 +33,17 @@ CommandSpecifier CommandSpecifier::Parse(std::istream& in)
     if (one != '-' && two != '-') //Not --
         throw std::logic_error("Format error: Could not construct a command specifier from this input.");
 
+    std::string wholeLine;
+    std::getline(in, wholeLine);
+    std::stringstream line(wholeLine);
+    wholeLine.clear();
+
     CommandSpecifier result;
     std::string& name = result.Name;
-    while (one != '=' && !in.eof())
+    while (one != '=' && !line.eof())
     {
-        in >> one;
-        if (one == '=')
+        line >> one;
+        if (one == '=' || line.eof())
             break;
         else
             name += one;
@@ -34,13 +51,9 @@ CommandSpecifier CommandSpecifier::Parse(std::istream& in)
     trim(name);
 
     if (one == '=') //We get the value
-    {
-        result.Value = std::string();
-        std::string& value = *result.Value;
+        result.val = CommandValue::Parse(line);
 
-        std::getline(in, value);
-        trim(value);
-    }
+    return result;
 }
 CommandSpecifier CommandSpecifier::Parse(const std::string& in)
 {
@@ -62,6 +75,6 @@ std::istream& operator>>(std::istream& in, CommandSpecifier& obj)
 void CommandSpecifier::Print(std::ostream& out) const noexcept
 {
     out << "--" << Name;
-    if (Value.has_value())
-        out << '=' << *Value;
+    if (val)
+        out << '=' << *val;
 }
