@@ -8,6 +8,8 @@
 #include <iostream>
 #include <optional>
 
+#include "CommandParser.h"
+
 enum CommandTypeE
 {
 
@@ -40,8 +42,8 @@ public:
     CommandBase& operator=(const CommandBase& obj) noexcept = delete;
     CommandBase& operator=(CommandBase&& obj) noexcept = delete;
 
-    virtual CommandBase* Clone() const noexcept = 0;
-    virtual const CommandType& Type() const noexcept = 0;
+    [[nodiscard]] virtual CommandBase* Clone() const noexcept = 0;
+    [[nodiscard]] virtual const CommandType& Type() const noexcept = 0;
 
     template<typename T> requires std::is_base_of<CommandBase, T>::value
     T* Convert() noexcept
@@ -54,8 +56,8 @@ public:
         return dynamic_cast<const T*>(this);
     }
 
-    virtual bool Execute(Session& On, std::ostream& error) = 0;
-    virtual bool Parse(std::istream& in, std::ostream& error) = 0;
+    [[nodiscard]] virtual bool Execute(Session& On) = 0;
+    [[nodiscard]] virtual bool Parse(const CommandParser& Parser) = 0;
 };
 
 
