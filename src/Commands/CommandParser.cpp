@@ -5,80 +5,179 @@
 #include "CommandParser.h"
 
 #include <sstream>
+#include <utility>
 
-CommandParser::CommandParser() = default;
-CommandParser::CommandParser(std::string name, std::vector<char> flags, std::vector<CommandSpecifier> specifiers, std::vector<CommandValue*> values) :
-top_command(std::move(name)), flags(std::move(flags)), specifiers(std::move(specifiers)), values(std::move(values))
+CommandParserCore::CommandParserCore(const CommandParserCore& obj) : top_command(obj.top_command), flags(obj.flags), specifiers(obj.specifiers), counter(0)
+{
+    for (const auto& val : obj.values)
+        this->values.emplace_back(val->Clone());
+}
+CommandParserCore::CommandParserCore(CommandParserCore&& obj) noexcept : top_command(std::move(obj.top_command)),
+                                                                     flags(std::move(obj.flags)),
+                                                                     specifiers(std::move(obj.specifiers)),
+                                                                     values(std::move(obj.values)),
+                                                                     counter(std::exchange(obj.counter, 0))
 {
 
 }
+CommandParserCore::~CommandParserCore()
+{
+    Free();
+}
+
+CommandParserCore& CommandParserCore::operator=(const CommandParserCore& obj) noexcept
+{
+    if (this == &obj)
+        return *this;
+
+    Free();
+
+    this->top_command = obj.top_command;
+    this->flags = obj.flags;
+    this->specifiers = obj.specifiers;
+    for (const auto& val : obj.values)
+        this->values.emplace_back(val->Clone());
+
+    return *this;
+}
+CommandParserCore& CommandParserCore::operator=(CommandParserCore&& obj) noexcept
+{
+    Free();
+
+    this->top_command = std::move(obj.top_command);
+    this->flags = std::move(obj.flags);
+    this->specifiers = std::move(obj.specifiers);
+    this->values = std::move(obj.values);
+    this->counter = std::exchange(obj.counter, 0);
+
+    return *this;
+}
+
+void CommandParserCore::Increment()
+{
+    this->counter++;
+}
+void CommandParserCore::Decrement()
+{
+    this->counter--;
+    if (this->counter <= 0)
+        delete this;
+}
+void CommandParserCore::Free()
+{
+    for (auto& item : values)
+        delete item;
+    values.clear();
+    specifiers.clear();
+    flags.clear();
+    top_command.clear();
+}
+
+CommandParser::CommandParser() : core(new CommandParserCore())
+{
+    core->Increment();
+}
+CommandParser::CommandParser(const CommandParser& obj) : core(obj.core)
+{
+    core->Increment();
+}
+CommandParser::CommandParser(CommandParser&& obj) noexcept : core(std::exchange(obj.core, nullptr))
+{
+    // Counter does not move.
+}
 CommandParser::~CommandParser()
 {
-    for (auto& val : values)
-    {
-        delete val;
-        val = nullptr;
-    }
+    if (this->core)
+        this->core->Decrement();
 
-    values.clear();
+    this->core = nullptr;
+}
+
+CommandParser& CommandParser::operator=(const CommandParser& obj)
+{
+    if (this == &obj || this->core == obj.core) //Already sharing a core
+        return *this;
+
+    if (this->core)
+        this->core->Decrement();
+
+    this->core = obj.core;
+    this->core->Increment();
+    return *this;
+}
+CommandParser& CommandParser::operator=(CommandParser&& obj) noexcept
+{
+    if (this->core)
+        this->core->Decrement();
+
+    this->core = std::exchange(obj.core, nullptr);
+    //No increment
+
+    return *this;
 }
 
 const std::string& CommandParser::TopCommand() const noexcept
 {
-    return this->top_command;
+    return this->core->top_command;
 }
 const std::vector<char>& CommandParser::Flags() const noexcept
 {
-    return this->flags;
+    return this->core->flags;
 }
 const std::vector<CommandSpecifier>& CommandParser::Specifiers() const noexcept
 {
-    return this->specifiers;
+    return this->core->specifiers;
 }
 const std::vector<CommandValue*>& CommandParser::Values() const noexcept
 {
-    return this->values;
+    return this->core->values;
 }
 
 CommandParser CommandParser::Parse(std::istream& in)
 {
     CommandParser result;
 
-    in >> result.top_command;
+    std::string& top_command = result.core->top_command;
+    auto& specifiers = result.core->specifiers;
+    auto& values = result.core->values;
+    auto& flags = result.core->flags;
+
+    in >> top_command;
     std::string wholeLineR;
     std::getline(in, wholeLineR);
+    if (wholeLineR.empty()) //Nothing to do
+        return result;
+
     std::stringstream wholeLine(wholeLineR);
     wholeLineR.clear();
 
     while (!wholeLine.eof())
     {
-        std::string element;
-        wholeLine >> element;
-        std::stringstream elementS(element);
-        if (element.empty())
-            continue;
+        char first, second;
+        std::streampos loc = wholeLine.tellg();
+        wholeLine >> first >> second;
+        wholeLine.seekg(loc); // Reset to front
 
-        if (element.starts_with("--")) //Specifier
-            result.specifiers.emplace_back(std::move(CommandSpecifier::Parse(elementS)));
-        else if (element.starts_with("-")) //Flag(s)
+        if (first == '-' && second == '-') //Specifier
+            specifiers.emplace_back(std::move(CommandSpecifier::Parse(wholeLine)));
+        else if (first == '-') //Flag(s)
         {
             char f;
-            elementS >> f; //Remove the '-'
+            wholeLine >> f; //Remove the '-'
 
-            elementS >> f; //First char
-            do
+            std::string flagsString;
+            wholeLine >> flagsString; //Pull in all flags
+
+            for (char item : flagsString)
             {
-                if (!isalpha(f)) //Format error
+                if (!isalpha(item))
                     throw std::logic_error("Format error: Flags can only be alphabetical");
 
-                result.flags.emplace_back(f);
-                elementS >> f;
-            } while(!elementS.eof());
+                flags.emplace_back(item);
+            }
         }
         else //Value
-            result.values.emplace_back(CommandValue::Parse(elementS));
-
-        element.clear();
+            values.emplace_back(CommandValue::Parse(wholeLine));
     }
 
     return result;
@@ -86,19 +185,19 @@ CommandParser CommandParser::Parse(std::istream& in)
 
 void CommandParser::Print(std::ostream& out) const noexcept
 {
-    out << top_command << ' ';
-    if (!flags.empty())
+    out << TopCommand() << ' ';
+    if (!Flags().empty())
     {
         out << '-';
-        for (const auto& flag : flags)
+        for (const auto& flag : Flags())
             out << flag;
         out << ' ';
     }
 
-    for (const auto& specifier : specifiers)
+    for (const auto& specifier : Specifiers())
         out << specifier << ' ';
 
-    for (const auto& value : values)
+    for (const auto& value : Values())
         out << *value << ' ';
 }
 

@@ -1,5 +1,4 @@
-#include "CommandParser.h"
-
+#include "CommandSpecifier.h"
 #include "../Common.h"
 
 #include <sstream>
