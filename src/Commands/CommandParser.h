@@ -22,14 +22,23 @@ class CommandMultiValue;
 class CommandParser
 {
 private:
-    [[maybe_unused]] CommandParser(std::string name, std::vector<char> flags, std::vector<CommandSpecifier> specifiers, std::vector<CommandValue*> values);
-
     std::string top_command;
     std::vector<char> flags;
     std::vector<CommandSpecifier> specifiers;
     std::vector<CommandValue*> values;
 
+    using val_iter = std::vector<CommandValue*>::const_iterator;
+
 public:
+    CommandParser();
+    [[maybe_unused]] CommandParser(std::string name, std::vector<char> flags, std::vector<CommandSpecifier> specifiers, std::vector<CommandValue*> values);
+    ~CommandParser();
+
+    [[nodiscard]] const std::string& TopCommand() const noexcept;
+    [[nodiscard]] const std::vector<char>& Flags() const noexcept;
+    [[nodiscard]] const std::vector<CommandSpecifier>& Specifiers() const noexcept;
+    [[nodiscard]] const std::vector<CommandValue*>& Values() const noexcept;
+
     [[nodiscard]] static CommandParser Parse(std::istream& in);
 
     void Print(std::ostream& out) const noexcept;
@@ -70,6 +79,9 @@ std::istream& operator>>(std::istream& in, CommandSpecifier& obj);
 class CommandValue
 {
 public:
+    CommandValue() = default;
+    virtual ~CommandValue() = default;
+
     [[nodiscard]] virtual bool IsSingleValue() const noexcept = 0;
 
     virtual void Print(std::ostream& out) const noexcept = 0;

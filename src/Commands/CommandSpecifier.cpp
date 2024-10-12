@@ -26,6 +26,22 @@ CommandSpecifier::CommandSpecifier(CommandSpecifier&& obj) noexcept = default;
 CommandSpecifier& CommandSpecifier::operator=(const CommandSpecifier& obj) noexcept = default;
 CommandSpecifier& CommandSpecifier::operator=(CommandSpecifier&& obj) noexcept = default;
 
+const CommandValue& CommandSpecifier::Value() const
+{
+    if (!HasValue())
+        throw std::logic_error("No Data: There is no value.");
+
+    return *this->val;
+}
+CommandValue& CommandSpecifier::Value()
+{
+    return const_cast<CommandValue&>(const_cast<const CommandSpecifier*>(this)->Value());
+}
+bool CommandSpecifier::HasValue() const noexcept
+{
+    return this->val != nullptr;
+}
+
 CommandSpecifier CommandSpecifier::Parse(std::istream& in)
 {
     char one, two;

@@ -30,11 +30,11 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="683fe54f-8f91-4de1-8561-9c98dd14fb55" name="Changes" comment="Worked on CommandValue parsing, specifically CommandMultiValue. Both CommandValues have been tested. CommandSpecifier has started to be worked on, but is not completed or tested.">
+    <list default="true" id="683fe54f-8f91-4de1-8561-9c98dd14fb55" name="Changes" comment="Fixed issues with CommandValue components, and finished/tested the CommandSpecifier.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Commands/CommandParser.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Commands/CommandParser.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Commands/CommandParser.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Commands/CommandParser.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Commands/CommandSpecifier.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Commands/CommandSpecifier.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Commands/CommandValue.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Commands/CommandValue.cpp" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Entry.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Entry.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -183,7 +183,7 @@
       <workItem from="1728247195055" duration="2826000" />
       <workItem from="1728311649626" duration="3776000" />
       <workItem from="1728322795519" duration="1607000" />
-      <workItem from="1728529113771" duration="1000" />
+      <workItem from="1728529113771" duration="1808000" />
     </task>
     <task id="LOCAL-00001" summary="Started on PackageIndex, and resolved linker errors/compile errors &amp; warnings.">
       <option name="closed" value="true" />
@@ -233,7 +233,15 @@
       <option name="project" value="LOCAL" />
       <updated>1728314872722</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Fixed issues with CommandValue components, and finished/tested the CommandSpecifier.">
+      <option name="closed" value="true" />
+      <created>1728529246256</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1728529246256</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -254,15 +262,16 @@
     <MESSAGE value="Set up the Remaining tasks for the IO branch for future reference." />
     <MESSAGE value="Worked on Command Parsing." />
     <MESSAGE value="Worked on CommandValue parsing, specifically CommandMultiValue. Both CommandValues have been tested. CommandSpecifier has started to be worked on, but is not completed or tested." />
-    <option name="LAST_COMMIT_MESSAGE" value="Worked on CommandValue parsing, specifically CommandMultiValue. Both CommandValues have been tested. CommandSpecifier has started to be worked on, but is not completed or tested." />
+    <MESSAGE value="Fixed issues with CommandValue components, and finished/tested the CommandSpecifier." />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixed issues with CommandValue components, and finished/tested the CommandSpecifier." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
-          <url>file://$PROJECT_DIR$/src/Commands/CommandSpecifier.cpp</url>
-          <line>52</line>
-          <option name="timeStamp" value="5" />
+          <url>file://$PROJECT_DIR$/src/Entry.cpp</url>
+          <line>232</line>
+          <option name="timeStamp" value="8" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

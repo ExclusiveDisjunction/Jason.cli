@@ -223,23 +223,16 @@ int main(int ArgsCount, char** Args)
     (void)New->Save();
      */
 
-    CommandSingleValue sv;
-    CommandMultiValue mv;
-    CommandSpecifier sp;
-
-    std::cout << "Enter a a value for CommandSingleValue: ";
-    std::cin >> sv;
-    std::cout << "Value put: " << sv << std::endl;
+    CommandParser cm;
 
     try
     {
-        std::cout << "Enter a value for CommandMultiValue: ";
-        std::cin >> mv;
-        std::cout << "Value put: " << mv << std::endl;
-
-        std::cout << "Enter a command specifier: ";
-        std::cin >> sp;
-        std::cout << "Specifier put: " << sp << std::endl;
+        while (true)
+        {
+            std::cout << "Enter a Command Expression to be parsed: ";
+            std::cin >> cm;
+            std::cout << "Command was: " << cm << std::endl;
+        }
     }
     catch (std::logic_error& e)
     {
