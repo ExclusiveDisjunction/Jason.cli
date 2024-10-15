@@ -29,7 +29,6 @@ public:
 
 class Session;
 
-
 class CommandBase
 {
 private:

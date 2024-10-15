@@ -8,3 +8,4 @@ add_library(Commands SHARED CommandBase.cpp
 
 target_link_libraries(Commands Calc)
 target_link_libraries(Commands IO)
+target_link_libraries(Commands Expressions)

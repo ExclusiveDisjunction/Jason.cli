@@ -1,7 +1,7 @@
-add_library(Operators SHARED Expression.cpp
+add_library(Expressions SHARED Expression.cpp
             Operator.cpp
             SubExpression.cpp
 )
 
-target_link_libraries(Operators Calc)
-target_link_libraries(Operators IO)
+target_link_libraries(Expressions Calc)
+target_link_libraries(Expressions IO)
