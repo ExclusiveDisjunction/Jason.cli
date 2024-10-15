@@ -4,42 +4,43 @@
 #include <sstream>
 #include <algorithm>
 
-CommandSpecifier::CommandSpecifier() : Name(), val(nullptr)
+CommandSpecifier::CommandSpecifier() : Name(), Value()
 {
 
 }
-CommandSpecifier::CommandSpecifier(std::string name) : Name(std::move(name)), val(nullptr)
+CommandSpecifier::CommandSpecifier(std::string name) : Name(std::move(name))
 {
 
 }
-CommandSpecifier::CommandSpecifier(std::string name, CommandSingleValue&& obj) : Name(std::move(name)), val(new CommandSingleValue(std::move(obj)))
-{
-
-}
-CommandSpecifier::CommandSpecifier(std::string name, CommandMultiValue&& obj) : Name(std::move(name)), val(new CommandMultiValue(std::move(obj)))
+CommandSpecifier::CommandSpecifier(std::string name, CommandValue&& obj) : Name(std::move(name)), Value(std::move(obj))
 {
 
 }
 CommandSpecifier::CommandSpecifier(const CommandSpecifier& obj) noexcept = default;
-CommandSpecifier::CommandSpecifier(CommandSpecifier&& obj) noexcept = default;
-
-CommandSpecifier& CommandSpecifier::operator=(const CommandSpecifier& obj) noexcept = default;
-CommandSpecifier& CommandSpecifier::operator=(CommandSpecifier&& obj) noexcept = default;
-
-const CommandValue& CommandSpecifier::Value() const
+CommandSpecifier::CommandSpecifier(CommandSpecifier&& obj) noexcept : Name(std::move(obj.Name)), Value(std::move(obj.Value))
 {
-    if (!HasValue())
-        throw std::logic_error("No Data: There is no value.");
 
-    return *this->val;
 }
-CommandValue& CommandSpecifier::Value()
+CommandSpecifier::~CommandSpecifier()
 {
-    return const_cast<CommandValue&>(const_cast<const CommandSpecifier*>(this)->Value());
+
 }
-bool CommandSpecifier::HasValue() const noexcept
+
+CommandSpecifier& CommandSpecifier::operator=(const CommandSpecifier& obj) noexcept
 {
-    return this->val != nullptr;
+    if (this == &obj)
+        return *this;
+
+    this->Name = obj.Name;
+    this->Value = obj.Value;
+    return *this;
+}
+CommandSpecifier& CommandSpecifier::operator=(CommandSpecifier&& obj) noexcept
+{
+    this->Name = std::move(obj.Name);
+    this->Value = std::move(obj.Value);
+
+    return *this;
 }
 
 CommandSpecifier CommandSpecifier::Parse(std::istream& in)
@@ -65,15 +66,10 @@ CommandSpecifier CommandSpecifier::Parse(std::istream& in)
             throw std::logic_error("Format Error: Empty specifier value");
 
         std::stringstream value_stream(value_str);
-        result.val = CommandValue::Parse(value_stream);
+        result.Value = CommandValue::Parse(value_stream);
     }
 
     return result;
-}
-CommandSpecifier CommandSpecifier::Parse(const std::string& in)
-{
-    std::stringstream ss(in);
-    return Parse(ss);
 }
 
 std::ostream& operator<<(std::ostream& out, const CommandSpecifier& obj) noexcept
@@ -90,6 +86,6 @@ std::istream& operator>>(std::istream& in, CommandSpecifier& obj)
 void CommandSpecifier::Print(std::ostream& out) const noexcept
 {
     out << "--" << Name;
-    if (val)
-        out << '=' << *val;
+    if (Value.has_value())
+        out << '=' << *Value;
 }

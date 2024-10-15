@@ -30,10 +30,17 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="683fe54f-8f91-4de1-8561-9c98dd14fb55" name="Changes" comment="Restarted work on CommandBase">
+    <list default="true" id="683fe54f-8f91-4de1-8561-9c98dd14fb55" name="Changes" comment="Discovered a bug and tried to fix it.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Commands/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/Commands/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Commands/CommandMultiValue.cpp" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Commands/CommandParser.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Commands/CommandParser.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Commands/CommandParser.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Commands/CommandParser.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Commands/CommandSingleValue.cpp" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Commands/CommandSpecifier.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Commands/CommandSpecifier.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Commands/CommandSpecifier.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Commands/CommandSpecifier.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Commands/CommandValue.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Commands/CommandValue.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Commands/CommandValue.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Commands/CommandValue.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -143,11 +150,6 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="src" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Jason" TARGET_NAME="src" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -187,7 +189,11 @@
       <workItem from="1728311649626" duration="3776000" />
       <workItem from="1728322795519" duration="1607000" />
       <workItem from="1728529113771" duration="1808000" />
-      <workItem from="1729014523660" duration="211000" />
+      <workItem from="1728952301745" duration="217000" />
+      <workItem from="1728952525618" duration="1125000" />
+      <workItem from="1728954249887" duration="510000" />
+      <workItem from="1729012301349" duration="107000" />
+      <workItem from="1729019738183" duration="1000" />
     </task>
     <task id="LOCAL-00001" summary="Started on PackageIndex, and resolved linker errors/compile errors &amp; warnings.">
       <option name="closed" value="true" />
@@ -253,13 +259,13 @@
       <option name="project" value="LOCAL" />
       <updated>1728699014348</updated>
     </task>
-    <task id="LOCAL-00009" summary="Restarted work on CommandBase">
+    <task id="LOCAL-00009" summary="Discovered a bug and tried to fix it.">
       <option name="closed" value="true" />
-      <created>1728699205428</created>
+      <created>1728849642528</created>
       <option name="number" value="00009" />
       <option name="presentableId" value="LOCAL-00009" />
       <option name="project" value="LOCAL" />
-      <updated>1728699205428</updated>
+      <updated>1728849642528</updated>
     </task>
     <option name="localTasksCounter" value="10" />
     <servers />
@@ -284,7 +290,18 @@
     <MESSAGE value="Worked on CommandValue parsing, specifically CommandMultiValue. Both CommandValues have been tested. CommandSpecifier has started to be worked on, but is not completed or tested." />
     <MESSAGE value="Fixed issues with CommandValue components, and finished/tested the CommandSpecifier." />
     <MESSAGE value="Debugged the CommandParser class, separated classes into multiple files, and organized code." />
-    <MESSAGE value="Restarted work on CommandBase" />
-    <option name="LAST_COMMIT_MESSAGE" value="Restarted work on CommandBase" />
+    <MESSAGE value="Discovered a bug and tried to fix it." />
+    <option name="LAST_COMMIT_MESSAGE" value="Discovered a bug and tried to fix it." />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/src/Commands/CommandSpecifier.cpp</url>
+          <line>46</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

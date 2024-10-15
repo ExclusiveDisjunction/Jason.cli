@@ -3,8 +3,6 @@ add_library(Commands SHARED CommandBase.cpp
         CommandParser.h
         CommandValue.cpp
         CommandSpecifier.cpp
-        CommandSingleValue.cpp
-        CommandMultiValue.cpp
         CommandSpecifier.h
         CommandValue.h)
 

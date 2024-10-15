@@ -4,21 +4,49 @@
 
 #include "CommandValue.h"
 
-CommandValue* CommandValue::Parse(std::istream& in)
+CommandValue::CommandValue(const CommandValue& obj) noexcept : Value(obj.Value)
 {
-    auto pos = in.tellg();
-    char beg;
-    in >> beg;
-    in.seekg(pos);
 
-    if (beg == CommandMultiValue::DenoteStart)
-        return new CommandMultiValue(std::move(CommandMultiValue::Parse(in)));
-    else
-        return new CommandSingleValue(std::move(CommandSingleValue::Parse(in)));
+}
+CommandValue::CommandValue(CommandValue&& obj) noexcept : Value(std::move(obj.Value))
+{
+
+}
+
+CommandValue& CommandValue::operator=(const CommandValue& obj) noexcept
+{
+    if (this == &obj)
+        return *this;
+
+    this->Value = obj.Value;
+    return *this;
+}
+CommandValue& CommandValue::operator=(CommandValue&& obj) noexcept
+{
+    this->Value = std::move(obj.Value);
+    return *this;
+}
+
+CommandValue CommandValue::Parse(std::istream& in)
+{
+    CommandValue result;
+    in >> result.Value;
+
+    return result;
+}
+
+void CommandValue::Print(std::ostream& out) const noexcept
+{
+    out << this->Value;
 }
 
 std::ostream& operator<<(std::ostream& out, const CommandValue& obj) noexcept
 {
     obj.Print(out);
     return out;
+}
+std::istream& operator>>(std::istream& in, CommandValue& obj)
+{
+    obj = CommandValue::Parse(in);
+    return in;
 }

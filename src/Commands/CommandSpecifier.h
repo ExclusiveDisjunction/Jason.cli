@@ -7,31 +7,28 @@
 
 #include "CommandValue.h"
 
+#include <optional>
+
 class CommandSpecifier;
 
 class CommandSpecifier
 {
 private:
-    CommandValue* val;
-
 public:
     CommandSpecifier();
     explicit CommandSpecifier(std::string name);
-    CommandSpecifier(std::string name, CommandSingleValue&& obj);
-    CommandSpecifier(std::string name, CommandMultiValue&& obj);
+    CommandSpecifier(std::string name, CommandValue&& obj);
     CommandSpecifier(const CommandSpecifier& obj) noexcept;
     CommandSpecifier(CommandSpecifier&& obj) noexcept;
+    ~CommandSpecifier();
 
     [[nodiscard]] static CommandSpecifier Parse(std::istream& in);
-    [[nodiscard]] static CommandSpecifier Parse(const std::string& in);
 
     CommandSpecifier& operator=(const CommandSpecifier& obj) noexcept;
     CommandSpecifier& operator=(CommandSpecifier&& obj) noexcept;
 
     std::string Name;
-    [[nodiscard]] const CommandValue& Value() const;
-    [[nodiscard]] CommandValue& Value();
-    [[nodiscard]] bool HasValue() const noexcept;
+    std::optional<CommandValue> Value;
 
     void Print(std::ostream& out) const noexcept;
 };

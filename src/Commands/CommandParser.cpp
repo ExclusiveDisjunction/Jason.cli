@@ -8,140 +8,69 @@
 #include <utility>
 #include <algorithm>
 
-CommandParserCore::CommandParserCore(const CommandParserCore& obj) : top_command(obj.top_command), flags(obj.flags), specifiers(obj.specifiers), counter(0)
+CommandParser::CommandParser() = default;
+CommandParser::CommandParser(const CommandParser& obj) : top_command(obj.top_command), flags(obj.flags), specifiers(obj.specifiers)
 {
     for (const auto& val : obj.values)
-        this->values.emplace_back(val->Clone());
+        this->values.emplace_back(val);
 }
-CommandParserCore::CommandParserCore(CommandParserCore&& obj) noexcept : top_command(std::move(obj.top_command)),
+CommandParser::CommandParser(CommandParser&& obj) noexcept : top_command(std::move(obj.top_command)),
                                                                      flags(std::move(obj.flags)),
                                                                      specifiers(std::move(obj.specifiers)),
-                                                                     values(std::move(obj.values)),
-                                                                     counter(std::exchange(obj.counter, 0))
+                                                                     values(std::move(obj.values))
 {
 
 }
-CommandParserCore::~CommandParserCore()
-{
-    Free();
-}
+CommandParser::~CommandParser() = default;
 
-CommandParserCore& CommandParserCore::operator=(const CommandParserCore& obj) noexcept
+CommandParser& CommandParser::operator=(const CommandParser& obj)
 {
     if (this == &obj)
         return *this;
-
-    Free();
 
     this->top_command = obj.top_command;
     this->flags = obj.flags;
     this->specifiers = obj.specifiers;
     for (const auto& val : obj.values)
-        this->values.emplace_back(val->Clone());
+        this->values.emplace_back(val);
 
-    return *this;
-}
-CommandParserCore& CommandParserCore::operator=(CommandParserCore&& obj) noexcept
-{
-    Free();
-
-    this->top_command = std::move(obj.top_command);
-    this->flags = std::move(obj.flags);
-    this->specifiers = std::move(obj.specifiers);
-    this->values = std::move(obj.values);
-    this->counter = std::exchange(obj.counter, 0);
-
-    return *this;
-}
-
-void CommandParserCore::Increment()
-{
-    this->counter++;
-}
-void CommandParserCore::Decrement()
-{
-    this->counter--;
-    if (this->counter <= 0)
-        delete this;
-}
-void CommandParserCore::Free()
-{
-    for (auto& item : values)
-        delete item;
-    values.clear();
-    specifiers.clear();
-    flags.clear();
-    top_command.clear();
-}
-
-CommandParser::CommandParser() : core(new CommandParserCore())
-{
-    core->Increment();
-}
-CommandParser::CommandParser(const CommandParser& obj) : core(obj.core)
-{
-    core->Increment();
-}
-CommandParser::CommandParser(CommandParser&& obj) noexcept : core(std::exchange(obj.core, nullptr))
-{
-    // Counter does not move.
-}
-CommandParser::~CommandParser()
-{
-    if (this->core)
-        this->core->Decrement();
-
-    this->core = nullptr;
-}
-
-CommandParser& CommandParser::operator=(const CommandParser& obj)
-{
-    if (this == &obj || this->core == obj.core) //Already sharing a core
-        return *this;
-
-    if (this->core)
-        this->core->Decrement();
-
-    this->core = obj.core;
-    this->core->Increment();
     return *this;
 }
 CommandParser& CommandParser::operator=(CommandParser&& obj) noexcept
 {
-    if (this->core)
-        this->core->Decrement();
-
-    this->core = std::exchange(obj.core, nullptr);
-    //No increment
+    this->top_command = std::move(obj.top_command);
+    this->flags = std::move(obj.flags);
+    this->specifiers = std::move(obj.specifiers);
+    this->values = std::move(obj.values);
 
     return *this;
 }
 
 const std::string& CommandParser::TopCommand() const noexcept
 {
-    return this->core->top_command;
+    return this->top_command;
 }
 const std::vector<char>& CommandParser::Flags() const noexcept
 {
-    return this->core->flags;
+    return this->flags;
 }
 const std::vector<CommandSpecifier>& CommandParser::Specifiers() const noexcept
 {
-    return this->core->specifiers;
+    return this->specifiers;
 }
-const std::vector<CommandValue*>& CommandParser::Values() const noexcept
+const std::vector<CommandValue>& CommandParser::Values() const noexcept
 {
-    return this->core->values;
+    return this->values;
 }
 
 CommandParser CommandParser::Parse(std::istream& in)
 {
     CommandParser result;
 
-    std::string& top_command = result.core->top_command;
-    auto& specifiers = result.core->specifiers;
-    auto& values = result.core->values;
-    auto& flags = result.core->flags;
+    std::string& top_command = result.top_command;
+    auto& specifiers = result.specifiers;
+    auto& values = result.values;
+    auto& flags = result.flags;
 
     in >> top_command;
     std::string wholeLineR;
@@ -220,7 +149,7 @@ void CommandParser::Print(std::ostream& out) const noexcept
         out << specifier << ' ';
 
     for (const auto& value : Values())
-        out << *value << ' ';
+        out << value << ' ';
 }
 
 std::ostream& operator<<(std::ostream& out, const CommandParser& obj) noexcept
