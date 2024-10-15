@@ -10,7 +10,7 @@
 #include <functional>
 #include <utility>
 
-using OperatorFunc = std::function<VariableType*(const VariableType&, const VariableType&)>;
+using OperatorFunc = std::function<std::unique_ptr<VariableType*>(const VariableType&, const VariableType&)>;
 
 class Operator : public ExpressionElement
 {
@@ -27,7 +27,7 @@ public:
     Operator& operator=(const Operator& obj) = delete;
     Operator& operator=(Operator&& obj) = delete;
 
-    [[nodiscard]] VariableType* Evaluate(const VariableType& a, const VariableType& b) const;
+    [[nodiscard]] std::unique_ptr<VariableType*> Evaluate(const VariableType& a, const VariableType& b) const;
 
     [[nodiscard]] constexpr unsigned GetPrecedence() const noexcept;
 
