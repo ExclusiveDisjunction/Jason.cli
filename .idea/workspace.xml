@@ -15,8 +15,8 @@
   <component name="CMakeRunConfigurationManager">
     <generated>
       <config projectName="Jason" targetName="Function" />
+      <config projectName="Jason" targetName="Expressions" />
       <config projectName="Jason" targetName="Jason" />
-      <config projectName="Jason" targetName="Operators" />
       <config projectName="Jason" targetName="IO" />
       <config projectName="Jason" targetName="Calc" />
       <config projectName="Jason" targetName="src" />
@@ -31,16 +31,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="683fe54f-8f91-4de1-8561-9c98dd14fb55" name="Changes" comment="Discovered a bug and tried to fix it.">
+      <change afterPath="$PROJECT_DIR$/src/Commands/CommandsCode/EvaluateCommand.cpp" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/Commands/JasonCommands.h" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Operators/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/Expressions/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Operators/Expression.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Expressions/Expression.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Operators/Expression.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Expressions/Expression.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Operators/ExpressionElement.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Expressions/ExpressionElement.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Operators/ExpressionType.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Expressions/ExpressionType.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Operators/Operator.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Expressions/Operator.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Operators/Operator.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Expressions/Operator.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Operators/SubExpression.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Expressions/SubExpression.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Commands/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/src/Commands/CMakeLists.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Commands/CommandBase.h" beforeDir="false" afterPath="$PROJECT_DIR$/src/Commands/CommandBase.h" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -119,6 +114,11 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/Commands" />
+    </key>
+  </component>
   <component name="RunManager" selected="CMake Application.Jason">
     <configuration default="true" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
       <method v="2">
@@ -131,6 +131,11 @@
       </method>
     </configuration>
     <configuration name="Commands" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Jason" TARGET_NAME="Commands" CONFIG_NAME="Debug">
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Expressions" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Jason" TARGET_NAME="Expressions" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
@@ -150,11 +155,6 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="Operators" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Jason" TARGET_NAME="Operators" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="src" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Jason" TARGET_NAME="src" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -163,10 +163,10 @@
     <list>
       <item itemvalue="CMake Application.Calc" />
       <item itemvalue="CMake Application.Commands" />
+      <item itemvalue="CMake Application.Expressions" />
       <item itemvalue="CMake Application.Function" />
       <item itemvalue="CMake Application.IO" />
       <item itemvalue="CMake Application.Jason" />
-      <item itemvalue="CMake Application.Operators" />
       <item itemvalue="CMake Application.src" />
     </list>
   </component>

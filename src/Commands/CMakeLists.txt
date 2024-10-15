@@ -4,7 +4,9 @@ add_library(Commands SHARED CommandBase.cpp
         CommandValue.cpp
         CommandSpecifier.cpp
         CommandSpecifier.h
-        CommandValue.h)
+        CommandValue.h
+        JasonCommands.h
+        CommandsCode/EvaluateCommand.cpp)
 
 target_link_libraries(Commands Calc)
 target_link_libraries(Commands IO)
