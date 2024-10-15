@@ -30,9 +30,9 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="683fe54f-8f91-4de1-8561-9c98dd14fb55" name="Changes" comment="Debugged the CommandParser class, separated classes into multiple files, and organized code.">
+    <list default="true" id="683fe54f-8f91-4de1-8561-9c98dd14fb55" name="Changes" comment="Restarted work on CommandBase">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Commands/CommandSpecifier.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/src/Commands/CommandSpecifier.cpp" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -142,11 +142,6 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="src" type="CMakeRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Jason" TARGET_NAME="src" CONFIG_NAME="Debug">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
@@ -186,6 +181,7 @@
       <workItem from="1728311649626" duration="3776000" />
       <workItem from="1728322795519" duration="1607000" />
       <workItem from="1728529113771" duration="1808000" />
+      <workItem from="1729014523660" duration="211000" />
     </task>
     <task id="LOCAL-00001" summary="Started on PackageIndex, and resolved linker errors/compile errors &amp; warnings.">
       <option name="closed" value="true" />
@@ -251,7 +247,15 @@
       <option name="project" value="LOCAL" />
       <updated>1728699014348</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Restarted work on CommandBase">
+      <option name="closed" value="true" />
+      <created>1728699205428</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1728699205428</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -274,6 +278,7 @@
     <MESSAGE value="Worked on CommandValue parsing, specifically CommandMultiValue. Both CommandValues have been tested. CommandSpecifier has started to be worked on, but is not completed or tested." />
     <MESSAGE value="Fixed issues with CommandValue components, and finished/tested the CommandSpecifier." />
     <MESSAGE value="Debugged the CommandParser class, separated classes into multiple files, and organized code." />
-    <option name="LAST_COMMIT_MESSAGE" value="Debugged the CommandParser class, separated classes into multiple files, and organized code." />
+    <MESSAGE value="Restarted work on CommandBase" />
+    <option name="LAST_COMMIT_MESSAGE" value="Restarted work on CommandBase" />
   </component>
 </project>
