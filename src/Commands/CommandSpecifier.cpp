@@ -2,6 +2,7 @@
 #include "../Common.h"
 
 #include <sstream>
+#include <algorithm>
 
 CommandSpecifier::CommandSpecifier() : Name(), val(nullptr)
 {
@@ -57,8 +58,12 @@ CommandSpecifier CommandSpecifier::Parse(std::istream& in)
         result.Name = nameRaw;
     else
     {
-        result.Name = nameRaw.substr(0, nameRaw.end() - iter + 1);
-        std::string value_str = nameRaw.substr(nameRaw.end() - iter + 2);
+        size_t loc = std::distance(nameRaw.begin(), iter);
+        result.Name = nameRaw.substr(0, loc);
+        std::string value_str = nameRaw.substr(loc+1);
+        if (value_str.empty())
+            throw std::logic_error("Format Error: Empty specifier value");
+
         std::stringstream value_stream(value_str);
         result.val = CommandValue::Parse(value_stream);
     }

@@ -6,6 +6,7 @@
 
 #include <sstream>
 #include <utility>
+#include <algorithm>
 
 CommandParserCore::CommandParserCore(const CommandParserCore& obj) : top_command(obj.top_command), flags(obj.flags), specifiers(obj.specifiers), counter(0)
 {
@@ -180,7 +181,28 @@ CommandParser CommandParser::Parse(std::istream& in)
             values.emplace_back(CommandValue::Parse(wholeLine));
     }
 
-    return result;
+    //Now we check for duplicate flags
+    bool HasDuplicates = false;
+
+    for (size_t i = 0; i < flags.size(); i++)
+    {
+        for (size_t j = 0; j < flags.size(); j++)
+        {
+            if (j == i)
+                continue;
+
+            if (flags[i] == flags[j])
+            {
+                HasDuplicates = true;
+                break;
+            }
+        }
+    }
+
+    if (!HasDuplicates) //No duplicates found
+        return result;
+    else
+        throw std::logic_error("Format error: Duplicate flags found");
 }
 
 void CommandParser::Print(std::ostream& out) const noexcept
