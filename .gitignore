@@ -1,7 +1,7 @@
 rust-ver
 *.DS_Store
 run_variables
-.idea/workspace.xml
+.idea
 
 *.log
 build
