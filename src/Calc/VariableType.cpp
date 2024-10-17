@@ -212,7 +212,7 @@ std::string VariableType::Sterilize() const noexcept
     }
     catch (std::bad_cast& e)
     {
-        throw std::logic_error("A bad cast exception was thrown, meaning that a type lied about its GetType.");
+        throw std::logic_error("A bad cast exception was thrown, meaning that a type lied about its ElementType.");
     }
 }
 
