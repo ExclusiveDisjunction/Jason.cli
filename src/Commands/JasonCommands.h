@@ -39,7 +39,7 @@ public:
     StoreCommand(PackageEntryKey Target, Expression&& Expr);
 
     PackageEntryKey Target;
-    Expression Expression;
+    Expression TargetExpr;
 
     [[nodiscard]] std::unique_ptr<CommandBase*> Clone() const noexcept override;
     [[nodiscard]] const CommandType& Type() const noexcept override;

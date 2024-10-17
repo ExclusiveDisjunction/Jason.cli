@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <optional>
+#include <memory>
 
 #include "CommandParser.h"
 
