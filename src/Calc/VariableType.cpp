@@ -18,12 +18,12 @@ std::string VariableType::Sterilize() const noexcept
     return ss.str();
 }
 
-[[nodiscard]]std::optional<VariableType*> VariableType::FromSterilized(const std::string& val) noexcept
+[[nodiscard]] std::optional<std::unique_ptr<VariableType>> VariableType::FromSterilized(const std::string& val) noexcept
 {
     std::stringstream ss(val);
     return FromSterilized(ss);
 }
-[[nodiscard]] std::optional<VariableType*> VariableType::FromSterilized(std::istream& in) noexcept
+[[nodiscard]] std::optional<std::unique_ptr<VariableType>> VariableType::FromSterilized(std::istream& in) noexcept
 {
     std::string header;
     in >> header;
@@ -32,13 +32,13 @@ std::string VariableType::Sterilize() const noexcept
     try
     {
         if (header == "SCA")
-            return new Scalar(in);
+            return std::make_unique<Scalar>(in);
         else if (header == "VEC")
-            return new MathVector(in);
+            return std::make_unique<MathVector>(in);
         else if (header == "MAT")
-            return new Matrix(in);
+            return std::make_unique<Matrix>(in);
         else
-            return nullptr;
+            return {};
     }
     catch (...)
     {
@@ -46,30 +46,27 @@ std::string VariableType::Sterilize() const noexcept
     }
 }
 
-[[nodiscard]] VariableType *VariableType::ApplyOperation(const VariableType* One, const VariableType* Two, char oper)
+std::unique_ptr<VariableType> VariableType::ApplyOperation(const VariableType& One, const VariableType& Two, char oper)
 {
-    if (!One || !Two)
-        return nullptr; //Cannot apply any operations on none.
-
     try
     {
-        VariableTypes t1 = One->GetType(), t2 = Two->GetType();
+        VariableTypes t1 = One.GetType(), t2 = Two.GetType();
 
         if (t1 == VT_Scalar && t2 == VT_Scalar) //Trivial Case
         {
-            const auto& A = dynamic_cast<const Scalar&>(*One);
-            const auto& B = dynamic_cast<const Scalar&>(*Two);
+            const auto& A = dynamic_cast<const Scalar&>(One);
+            const auto& B = dynamic_cast<const Scalar&>(Two);
 
             switch (oper)
             {
                 case '+':
-                    return (A + B).MoveIntoPointer();
+                    return std::make_unique<Scalar>(A + B);
                 case '-':
-                    return (A - B).MoveIntoPointer();
+                    return std::make_unique<Scalar>(A - B);
                 case '*':
-                    return (A * B).MoveIntoPointer();
+                    return std::make_unique<Scalar>(A * B);
                 case '/':
-                    return (A / B).MoveIntoPointer();
+                    return std::make_unique<Scalar>(A / B);
                 case '%':
                 {
                     try
@@ -77,7 +74,7 @@ std::string VariableType::Sterilize() const noexcept
                         long long ConvA = A.ToLongNoRound();
                         long long ConvB = B.ToLongNoRound();
 
-                        return new Scalar(ConvA % ConvB);
+                        return std::make_unique<Scalar>(ConvA % ConvB);
                     }
                     catch (std::logic_error& e)
                     {
@@ -85,22 +82,22 @@ std::string VariableType::Sterilize() const noexcept
                     }
                 }
                 case '^':
-                    return (A.Pow(B)).MoveIntoPointer();
+                    return std::make_unique<Scalar>(A.Pow(B));
                 default:
                     return nullptr;
             }
         }
         else if (t1 == VT_Vector && t2 == VT_Vector)
         {
-            const auto& A = dynamic_cast<const MathVector&>(*One);
-            const auto& B = dynamic_cast<const MathVector&>(*Two);
+            const auto& A = dynamic_cast<const MathVector&>(One);
+            const auto& B = dynamic_cast<const MathVector&>(Two);
 
             switch (oper)
             {
                 case '+':
-                    return (A + B).MoveIntoPointer();
+                    return std::make_unique<MathVector>(A + B);
                 case '-':
-                    return (A - B).MoveIntoPointer();
+                    return std::make_unique<MathVector>(A - B);
                 case '*':
                 case '/':
                 case '%':
@@ -112,17 +109,17 @@ std::string VariableType::Sterilize() const noexcept
         }
         else if (t1 == VT_Matrix && t2 == VT_Matrix)
         {
-            const auto& A = dynamic_cast<const Matrix&>(*One);
-            const auto& B = dynamic_cast<const Matrix&>(*Two);
+            const auto& A = dynamic_cast<const Matrix&>(One);
+            const auto& B = dynamic_cast<const Matrix&>(Two);
 
             switch (oper)
             {
                 case '+':
-                    return (A + B).MoveIntoPointer();
+                    return std::make_unique<Matrix>(A + B);
                 case '-':
-                    return (A - B).MoveIntoPointer();
+                    return std::make_unique<Matrix>(A - B);
                 case '*':
-                    return (A * B).MoveIntoPointer();
+                    return std::make_unique<Matrix>(A * B);
                 case '/':
                 case '%':
                 case '^':
@@ -151,36 +148,35 @@ std::string VariableType::Sterilize() const noexcept
             case '+':
             {
                 if (t1 == VT_Matrix && t2 == VT_Vector)
-                    return (dynamic_cast<const Matrix&>(*One) + Matrix(dynamic_cast<const MathVector&>(*Two))).MoveIntoPointer();
+                    return std::make_unique<Matrix>( dynamic_cast<const Matrix&>(One) + Matrix(dynamic_cast<const MathVector&>(Two)) );
                 else if (t1 == VT_Vector && t2 == VT_Matrix)
-                    return (dynamic_cast<const Matrix&>(*Two) + Matrix(dynamic_cast<const MathVector&>(*One))).MoveIntoPointer();
+                    return std::make_unique<Matrix>( dynamic_cast<const Matrix&>(Two) + Matrix(dynamic_cast<const MathVector&>(One)) );
                 else
-                    throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
+                    throw OperatorException(oper, One.GetTypeString(), Two.GetTypeString());
             }
             case '-':
             {
                 if (t1 == VT_Matrix && t2 == VT_Vector)
-                    return (dynamic_cast<const Matrix&>(*One) - Matrix(dynamic_cast<const MathVector&>(*Two))).MoveIntoPointer();
+                    return std::make_unique<Matrix>( dynamic_cast<const Matrix&>(One) - Matrix(dynamic_cast<const MathVector&>(Two)) );
                 else if (t1 == VT_Vector && t2 == VT_Matrix)
-                    return (dynamic_cast<const Matrix&>(*Two) - Matrix(dynamic_cast<const MathVector&>(*One))).MoveIntoPointer();
+                    return std::make_unique<Matrix>( dynamic_cast<const Matrix&>(Two) - Matrix(dynamic_cast<const MathVector&>(One)) );
                 else
-                    throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
+                    throw OperatorException(oper, One.GetTypeString(), Two.GetTypeString());
             }
             case '*':
             {
                 if (t1 == VT_Scalar && t2 == VT_Vector)
-                    return (dynamic_cast<const MathVector&>(*Two) * dynamic_cast<const Scalar&>(*One)).MoveIntoPointer();
+                    return std::make_unique<MathVector>(dynamic_cast<const MathVector&>(Two) * dynamic_cast<const Scalar&>(One));
                 else if (t1 == VT_Vector && t2 == VT_Scalar)
-                    return (dynamic_cast<const MathVector&>(*One) * dynamic_cast<const Scalar&>(*Two)).MoveIntoPointer();
+                    return std::make_unique<MathVector>(dynamic_cast<const MathVector&>(One) * dynamic_cast<const Scalar&>(Two));
                 else if (t1 == VT_Scalar && t2 == VT_Matrix)
-                    return (dynamic_cast<const Matrix&>(*Two) * dynamic_cast<const Scalar&>(*One)).MoveIntoPointer();
+                    return std::make_unique<Matrix>(dynamic_cast<const Matrix&>(Two) * dynamic_cast<const Scalar&>(One));
                 else if (t1 == VT_Matrix && t2 == VT_Scalar)
-                    return (dynamic_cast<const Matrix&>(*One) * dynamic_cast<const Scalar&>(*Two)).MoveIntoPointer();
+                    return std::make_unique<Matrix>(dynamic_cast<const Matrix&>(One) * dynamic_cast<const Scalar&>(Two));
                 else if (t1 == VT_Matrix && t2 == VT_Vector)
-                    return (dynamic_cast<const Matrix&>(*One) *
-                                      Matrix(dynamic_cast<const MathVector&>(*Two))).MoveIntoPointer();
+                    return std::make_unique<Matrix>(dynamic_cast<const Matrix&>(One) * Matrix(dynamic_cast<const MathVector&>(Two)));
                 else
-                    throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
+                    throw OperatorException(oper, One.GetTypeString(), Two.GetTypeString());
             }
             case '^':
             {
@@ -188,31 +184,31 @@ std::string VariableType::Sterilize() const noexcept
                 {
                     try
                     {
-                        const auto& A = dynamic_cast<const Matrix&>(*One);
-                        const auto& B = dynamic_cast<const Scalar&>(*Two);
+                        const auto& A = dynamic_cast<const Matrix&>(One);
+                        const auto& B = dynamic_cast<const Scalar&>(Two);
 
                         long long ConvB = B.ToLongNoRound();
                         if (ConvB < 0)
-                            throw OperatorException('^', One->GetTypeString(), Two->GetTypeString(), "Cannot raise matrix to a negative power.");
+                            throw OperatorException('^', One.GetTypeString(), Two.GetTypeString(), "Cannot raise matrix to a negative power.");
 
-                        return A.Pow(static_cast<unsigned long long>(ConvB)).MoveIntoPointer();
+                        return std::make_unique<Matrix>(A.Pow(static_cast<unsigned long long>(ConvB)));
                     }
                     catch (std::logic_error& e)
                     {
-                        throw OperatorException('^', One->GetTypeString(), Two->GetTypeString(), "Cannot raise matrix to a non-integer power.");
+                        throw OperatorException('^', One.GetTypeString(), Two.GetTypeString(), "Cannot raise matrix to a non-integer power.");
                     }
                 }
 
-                throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
+                throw OperatorException(oper, One.GetTypeString(), Two.GetTypeString());
             }
             default:
-                throw OperatorException(oper, One->GetTypeString(), Two->GetTypeString());
+                throw OperatorException(oper, One.GetTypeString(), Two.GetTypeString());
         }
 
     }
     catch (std::bad_cast& e)
     {
-        throw std::logic_error("A bad cast exception was thrown, meaning that a type lied about its ElementType.");
+        throw std::logic_error("A bad cast exception was thrown, meaning that a type lied about its ElementType");
     }
 }
 

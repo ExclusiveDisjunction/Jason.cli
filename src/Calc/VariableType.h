@@ -9,6 +9,7 @@
 #include <sstream>
 #include <string>
 #include <optional>
+#include <memory>
 
 #include "StdCalc.h"
 
@@ -27,23 +28,20 @@ public:
     virtual ~VariableType() = default;
 
     [[nodiscard]] virtual VariableTypes GetType() const noexcept = 0;
-
-    //Moves all information out of the current instance and makes a pointer to the corresponding type. Saves on calling the memory constructor.
-    [[nodiscard]] virtual VariableType* MoveIntoPointer() noexcept = 0;
-    [[nodiscard]] virtual VariableType* Clone() const noexcept = 0;
+    [[nodiscard]] virtual std::unique_ptr<VariableType> Clone() const noexcept = 0;
 
     [[nodiscard]] virtual std::string Sterilize() const noexcept; //Writes to a string value
     virtual void Sterilize(std::ostream& out) const noexcept = 0; //Writes to a file, can be retrieved.
     [[nodiscard]] virtual std::string GetTypeString() const noexcept = 0; //Displays (None), (Scalar), (Vector:D), (Matrix:mxn)
     virtual void Print(std::ostream& out) const noexcept = 0; //Pretty prints
 
-    [[nodiscard]] static VariableType* ApplyOperation(const VariableType* One, const VariableType* Two, char oper);
+    [[nodiscard]] static std::unique_ptr<VariableType> ApplyOperation(const VariableType& One, const VariableType& Two, char oper);
 
     virtual bool operator==(const VariableType& obj) const noexcept = 0;
     virtual bool operator!=(const VariableType& obj) const noexcept = 0;
 
-    [[nodiscard]] static std::optional<VariableType*> FromSterilized(const std::string& val) noexcept;
-    [[nodiscard]] static std::optional<VariableType*> FromSterilized(std::istream& in) noexcept;
+    [[nodiscard]] static std::optional<std::unique_ptr<VariableType>> FromSterilized(const std::string& val) noexcept;
+    [[nodiscard]] static std::optional<std::unique_ptr<VariableType>> FromSterilized(std::istream& in) noexcept;
 };
 
 std::ostream& operator<<(std::ostream& out, const VariableType& Obj);

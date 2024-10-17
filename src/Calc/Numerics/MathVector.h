@@ -36,7 +36,7 @@ public:
     static MathVector FromList(Args... Value) noexcept;
 
     [[nodiscard]] VariableType* MoveIntoPointer() noexcept override;
-    [[nodiscard]] VariableType* Clone() const noexcept override;
+    [[nodiscard]] std::unique_ptr<VariableType> Clone() const noexcept override;
 
     void Sterilize(std::ostream& out) const noexcept override;
     [[maybe_unused]] [[nodiscard]] static MathVector* FromSterilized(const std::string &obj);

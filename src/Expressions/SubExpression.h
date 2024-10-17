@@ -13,13 +13,15 @@
 #include "../IO/PackageEntryKey.h"
 #include "ExpressionElement.h"
 
+class Session;
 class ParsedSubExpression;
 
 enum SubExpressionType
 {
     Numeric,
     Variable,
-    Declaration
+    Declaration,
+    Intermediate
 };
 
 class SubExpression : public ExpressionElement
@@ -31,9 +33,9 @@ public:
         return ExpressionElementT::SubExpr;
     }
 
-    [[nodiscard]] virtual const VariableType& GetValue() const = 0;
+    [[nodiscard]] virtual const VariableType& GetValue(Session& host) const = 0;
 
-    [[nodiscard]] static ParsedSubExpression Parse(std::istream& in) noexcept;
+    [[nodiscard]] static ParsedSubExpression Parse(std::istream& in, const Session& session) noexcept;
 };
 
 class NumericExpr : public SubExpression
@@ -55,7 +57,7 @@ public:
         out << Value;
     }
 
-    [[nodiscard]] const VariableType& GetValue() const override
+    [[nodiscard]] const VariableType& GetValue(Session& host) const override
     {
         return Value;
     }
@@ -69,13 +71,15 @@ private:
 public:
     explicit VariableExpr(PackageEntryKey key);
 
+    [[nodiscard]] static bool IsVariableString(std::istream& in) noexcept; //Assumes the variable is within the session
+
     [[nodiscard]] SubExpressionType GetType() const noexcept override
     {
         return SubExpressionType::Variable;
     }
     void Print(std::ostream& out) const noexcept override;
 
-    [[nodiscard]] const VariableType& GetValue() const override;
+    [[nodiscard]] const VariableType& GetValue(Session& host) const override;
 };
 /// @breif Holds a key to a package entry, but will call to delete it after this object goes out of scope.
 /// @breif Note that once this object is copied, it will call to copy its object.
@@ -93,14 +97,48 @@ public:
     DeclarationExpr& operator=(const DeclarationExpr& obj);
     DeclarationExpr& operator=(DeclarationExpr&& obj);
 
+    struct DeclarationSchema
+    {
+        VariableTypes Type;
+        int dim1, dim2;
+    };
+    [[nodiscard]] static std::optional<DeclarationSchema> IsDeclarationExpr(std::istream& in) noexcept;
+
     [[nodiscard]] SubExpressionType GetType() const noexcept override
     {
         return SubExpressionType::Declaration;
     }
     void Print(std::ostream& out) const noexcept override;
 
-    [[nodiscard]] const VariableType& GetValue() const override;
+    [[nodiscard]] const VariableType& GetValue(Session& host) const override;
 };
+class IntermediateExpr : public SubExpression
+{
+private:
+    std::stringstream Value;
+
+public:
+    explicit IntermediateExpr(std::stringstream Value) : Value(std::move(Value)) { }
+
+    [[nodiscard]] SubExpressionType GetType() const noexcept override
+    {
+        return SubExpressionType::Intermediate;
+    }
+    void Print(std::ostream& out) const noexcept override
+    {
+        out << Value.str();
+    }
+
+    [[nodiscard]] const VariableType& GetValue(Session& host) const override
+    {
+        throw std::logic_error("Invalid access");
+    }
+    [[nodiscard]] std::stringstream& Access() noexcept
+    {
+        return Value;
+    }
+};
+
 /// @breif Returned when the expression to be parsed is invalid.
 class InvalidExpr
 {
@@ -108,7 +146,7 @@ private:
     std::string message;
 
 public:
-    InvalidExpr(std::string m) : message(std::move(m)) {}
+    explicit InvalidExpr(std::string m) : message(std::move(m)) {}
 
     [[nodiscard]] const std::string& GetMessage() const noexcept
     {
@@ -132,15 +170,15 @@ public:
 struct ParsedSubExpression
 {
 private:
-    std::optional<std::unique_ptr<SubExpression*>> parsed;
+    std::optional<std::unique_ptr<SubExpression>> parsed;
     std::optional<InvalidExpr> invalid;
 
-    ParsedSubExpression(std::unique_ptr<SubExpression*>&& parsed);
-    ParsedSubExpression(InvalidExpr&& invalid);
+    explicit ParsedSubExpression(std::unique_ptr<SubExpression>&& parsed);
+    explicit ParsedSubExpression(InvalidExpr&& invalid);
 
 public:
     /// @breif Returns a ParsedSubExpression containing the parsed expression, but if the pointer is nullptr, it will return an error.
-    [[nodiscard]] static ParsedSubExpression FromParsed(std::unique_ptr<SubExpression*> parsed) noexcept;
+    [[nodiscard]] static ParsedSubExpression FromParsed(std::unique_ptr<SubExpression> parsed) noexcept;
     /// @breif Returns a ParsedSubExpression with the corresponding invalid expression.
     [[nodiscard]] static ParsedSubExpression FromError(InvalidExpr&& expr) noexcept;
 };

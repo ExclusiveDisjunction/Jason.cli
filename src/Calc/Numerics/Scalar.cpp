@@ -51,7 +51,7 @@ Scalar* Scalar::FromSterilize(std::istream& in)
     this->Data = 0;
     return result;
 }
-VariableType* Scalar::Clone() const noexcept
+std::unique_ptr<VariableType> Scalar::Clone() const noexcept
 {
     return new Scalar(*this);
 }

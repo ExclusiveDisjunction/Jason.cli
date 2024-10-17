@@ -51,7 +51,7 @@ public:
     [[nodiscard]] bool IsValid() const { return m != 0 && n != 0 && this->Data; }
 
     [[nodiscard]] VariableType* MoveIntoPointer() noexcept override;
-    [[nodiscard]] VariableType* Clone() const noexcept override;
+    [[nodiscard]] std::unique_ptr<VariableType> Clone() const noexcept override;
 
     [[nodiscard]] VariableTypes GetType() const noexcept override;
     void Sterilize(std::ostream& out) const noexcept override;
