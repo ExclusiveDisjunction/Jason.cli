@@ -147,7 +147,7 @@ int main(int, char**)
             }
             case 'f':
             {
-                //This will clear the project, add n elements, record the time to add them, unload the project, and then load it again.
+                //This will clear the project, add cols elements, record the time to add them, unload the project, and then load it again.
                 std::vector<int> test_runs = {10, 100, 1'000, 10'000};
                 std::vector<VariableType*> test_data = {
                         new Scalar(4),
@@ -155,18 +155,18 @@ int main(int, char**)
                         new Matrix(3, 3, 1, 2, 3, 4, 5, 6, 7, 8, 9)
                 };
 
-                for (int& n : test_runs)
+                for (int& cols : test_runs)
                 {
                     New->RemoveAllEntries();
                     auto start = std::chrono::system_clock::now();
 
-                    for (unsigned i = 0; i < n; i++)
+                    for (unsigned i = 0; i < cols; i++)
                     {
                         unsigned j = 0;
                         for (auto& val : test_data)
                         {
                             std::stringstream thisName;
-                            thisName << n << '\'' << i << '\'' << j;
+                            thisName << cols << '\'' << i << '\'' << j;
                             if (!New->AddEntry(thisName.str(), Variable, val->Clone()))
                                 std::cout << "Failed at " << i;
                             j++;
@@ -179,7 +179,7 @@ int main(int, char**)
                     bool loadingResult = New->LoadAllEntries();
                     auto time_for_load = std::chrono::system_clock::now();
 
-                    std::cout << "N = " << n << std::endl;
+                    std::cout << "N = " << cols << std::endl;
                     std::cout << "Results are:" << std::endl;
 
                     auto total = time_for_load - start;

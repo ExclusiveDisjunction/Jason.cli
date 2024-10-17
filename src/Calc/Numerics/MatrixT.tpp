@@ -36,8 +36,8 @@ Matrix& Matrix::operator*=(const T& Two)
         throw OperatorException('*', this->GetTypeString(), "(Scalar)", "Empty Matrix");
 
     auto fac = static_cast<double>(Two);
-    for (unsigned i = 0; i < this->m && this->Data; i++)
-        for (unsigned j = 0; j < this->n; j++)
+    for (unsigned i = 0; i < this->rows && this->Data; i++)
+        for (unsigned j = 0; j < this->cols; j++)
             this->Data[i][j] *= fac;
 
     return *this;
@@ -49,8 +49,8 @@ Matrix& Matrix::operator/=(const T& Two)
         throw OperatorException('/', this->GetTypeString(), "(Scalar)", "Empty Matrix");
 
     auto fac = static_cast<double>(Two);
-    for (unsigned i = 0; i < this->m && this->Data; i++)
-        for (unsigned j = 0; j < this->n; j++)
+    for (unsigned i = 0; i < this->rows && this->Data; i++)
+        for (unsigned j = 0; j < this->cols; j++)
             this->Data[i][j] /= fac;
 
     return *this;

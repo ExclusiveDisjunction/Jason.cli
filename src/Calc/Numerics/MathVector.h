@@ -15,31 +15,25 @@
 #include <string>
 #include <sstream>
 
-class MATH_LIB MathVector : public VariableType {
+class MATH_LIB MathVector : public VariableType
+{
 private:
-    void Allocate(unsigned int Dim, double Val);
-    void DeAllocate();
-
-    unsigned int d;
-    double *Point;
+    std::vector<double> Data;
 
     MathVector();
 
 public:
-    [[maybe_unused]] explicit MathVector(unsigned int Dim, double Val = 0.0);
-    explicit MathVector(std::istream &in);
+    explicit MathVector(unsigned int Dim, double Val = 0.0);
     MathVector(const MathVector &Obj) noexcept;
-    [[maybe_unused]] MathVector(MathVector &&Obj) noexcept;
-    ~MathVector();
+    MathVector(MathVector &&Obj) noexcept;
 
     template<std::convertible_to<double>... Args>
     static MathVector FromList(Args... Value) noexcept;
 
-    [[nodiscard]] VariableType* MoveIntoPointer() noexcept override;
     [[nodiscard]] std::unique_ptr<VariableType> Clone() const noexcept override;
 
     void Sterilize(std::ostream& out) const noexcept override;
-    [[maybe_unused]] [[nodiscard]] static MathVector* FromSterilized(const std::string &obj);
+    [[nodiscard]] static MathVector Desterilize(std::istream& obj);
     [[nodiscard]] std::string GetTypeString() const noexcept override;
     void Print(std::ostream& out) const noexcept override;
 
@@ -49,13 +43,13 @@ public:
 
     static MathVector ErrorVector();
 
-    [[nodiscard]] unsigned int Dim() const { return d; }
-    [[nodiscard]] bool IsValid() const { return d > 0; }
+    [[nodiscard]] unsigned int Dim() const { return Data.size(); }
+    [[nodiscard]] bool IsValid() const { return !Data.empty(); }
 
     double& operator[](unsigned int Index);
     double operator[](unsigned int Index) const;
 
-    [[maybe_unused]] [[nodiscard]]double Magnitude() const;
+    [[maybe_unused]] [[nodiscard]] double Magnitude() const;
     [[maybe_unused]] [[nodiscard]] double Angle() const;
 
     [[maybe_unused]] [[nodiscard]] static MathVector CrossProduct(const MathVector &One, const MathVector &Two);
@@ -77,7 +71,11 @@ public:
 
     bool operator==(const VariableType& in) const noexcept override;
     bool operator!=(const VariableType& in) const noexcept override;
+    bool operator==(const MathVector& in) const noexcept;
+    bool operator!=(const MathVector& in) const noexcept;
 };
+
+std::istream& operator>>(std::istream& in, MathVector& vec);
 
 #include "MathVectorT.tpp"
 
