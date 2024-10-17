@@ -148,7 +148,7 @@ MathVector MathVector::ErrorVector()
 
     return Return;
 }
-[[nodiscard]] VariableType* MathVector::Clone() const noexcept
+[[nodiscard]] std::unique_ptr<VariableType> MathVector::Clone() const noexcept
 {
     return new MathVector(*this);
 }

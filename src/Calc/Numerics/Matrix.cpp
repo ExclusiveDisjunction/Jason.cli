@@ -194,7 +194,7 @@ VariableType* Matrix::MoveIntoPointer() noexcept
 
     return Return;
 }
-VariableType* Matrix::Clone() const noexcept
+std::unique_ptr<VariableType> Matrix::Clone() const noexcept
 {
     return new Matrix(*this);
 }

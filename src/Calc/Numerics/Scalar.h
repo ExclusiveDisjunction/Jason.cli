@@ -25,7 +25,7 @@ public:
     void Sterilize(std::ostream& out) const noexcept override;
 
     [[nodiscard]] VariableType* MoveIntoPointer() noexcept override;
-    [[nodiscard]] VariableType* Clone() const noexcept override;
+    [[nodiscard]] std::unique_ptr<VariableType> Clone() const noexcept override;
 
     [[nodiscard]] static Scalar* FromSterilize(const std::string& in);
     [[nodiscard]] static Scalar* FromSterilize(std::istream& in);

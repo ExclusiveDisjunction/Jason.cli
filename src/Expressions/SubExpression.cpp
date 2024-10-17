@@ -4,32 +4,9 @@
 
 #include "SubExpression.h"
 
-SubExpression::SubExpression(ExpressionType* Included) : Included(Included)
-{
+#include "../IO/Session.h"
 
-}
-
-const ExpressionType& SubExpression::Data() const
-{
-    if (!Included)
-        throw std::logic_error("Cannot dereference a nullptr");
-
-    return *this->Included;
-}
-ExpressionType& SubExpression::Data()
-{
-    return const_cast<ExpressionType&>(const_cast<const SubExpression*>(this)->Data());
-}
-
-void SubExpression::Print(std::ostream& out) const noexcept
-{
-    if (!this->Included)
-        out << "[Empty Expression]";
-    else
-        this->Included->Print(out);
-}
-
-ParsedSubExpression::ParsedSubExpression(std::unique_ptr<SubExpression*>&& parsed) : parsed(std::move(parsed)), invalid()
+ParsedSubExpression::ParsedSubExpression(std::unique_ptr<SubExpression>&& parsed) : parsed(std::move(parsed)), invalid()
 {
 
 }
@@ -38,7 +15,7 @@ ParsedSubExpression::ParsedSubExpression(InvalidExpr&& invalid) : parsed(), inva
 
 }
 
-ParsedSubExpression ParsedSubExpression::FromParsed(std::unique_ptr<SubExpression*> parsed) noexcept
+ParsedSubExpression ParsedSubExpression::FromParsed(std::unique_ptr<SubExpression> parsed) noexcept
 {
     if (!parsed)
         return ParsedSubExpression { InvalidExpr("No sub-expression was provided") };
@@ -50,7 +27,20 @@ ParsedSubExpression ParsedSubExpression::FromError(InvalidExpr&& expr) noexcept
     return ParsedSubExpression { std::move(expr) };
 }
 
-ParsedSubExpression ParseExpression(const std::string& input)
+bool NumericExpr::IsNumericalString(std::istream& in) noexcept
+{
+
+}
+bool VariableExpr::IsVariableString(std::istream& in) noexcept
+{
+
+}
+std::optional<DeclarationExpr::DeclarationSchema> DeclarationExpr::IsDeclarationExpr(std::istream& in) noexcept
+{
+
+}
+
+ParsedSubExpression SubExpression::Parse(std::istream& in, const Session& session) noexcept
 {
 
 }
