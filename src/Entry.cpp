@@ -1,28 +1,11 @@
 #include <iostream>
-#include <chrono>
-#include <unistd.h>
-#include <pwd.h>
-
 
 #include "Log.h"
-#include "Calc/Numerics.h"
-//#include "Testing.h"
 #include "Commands/CommandParser.h"
 
-using namespace std;
-using std::chrono::duration_cast;
-using std::chrono::seconds;
-using std::chrono::microseconds;
-using std::chrono::milliseconds;
-
-//#include "IO/Session.h"
-#include "IO/Package.h"
-
-#include <cstring>
-
-int main(int ArgsCount, char** Args)
+int main(int, char**)
 {
-    cout << " Welcome to Jason " << '\n'
+    std::cout << " Welcome to Jason " << '\n'
          << "------------------" << '\n'
          << "   Version 0.1.0  " << '\n' << '\n';
 

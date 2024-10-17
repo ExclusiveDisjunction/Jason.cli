@@ -7,7 +7,7 @@
 
 #include <string>
 
-#include "ExpressionType.h"
+#include "SubExpression.h"
 #include "ExpressionElement.h"
 #include "../Calc/VariableType.h"
 
