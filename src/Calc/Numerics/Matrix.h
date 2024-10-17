@@ -22,42 +22,44 @@ private:
     /// <summary>
     /// The data stored in the matrix.
     /// </summary>
-    double** Data;
-    unsigned int m;
-    unsigned int n;
+    std::vector<std::vector<double>> Data;
+    unsigned int rows;
+    unsigned int cols;
 
     void Allocate(unsigned int NewRows, unsigned int NewColumns, double Value = 0) noexcept;
-    void DeAllocate() noexcept;
 
-    [[nodiscard]] std::vector<std::pair<bool, unsigned long>> GetColumnWidthSchematic() const;
-    [[nodiscard]] bool GetRowString(std::ostream& out, unsigned row, std::vector<std::pair<bool, unsigned long>>& schema, char open, char close) const;
+    using ColumnSchema = std::vector<std::pair<bool, unsigned long>>;
+    [[nodiscard]] ColumnSchema GetColumnWidthSchematic() const noexcept;
+    [[nodiscard]] bool GetRowString(std::ostream& out, unsigned row, ColumnSchema& schema, char open, char close) const;
 
     Matrix();
 
 public:
     Matrix(unsigned int Rows, unsigned int Columns) noexcept;
-    template<std::convertible_to<double>... args>
-    [[maybe_unused]] Matrix(unsigned Rows, unsigned Columns, args... vals);
     [[maybe_unused]] explicit Matrix(const MathVector& in);
-    explicit Matrix(std::istream& in);
     Matrix(const Matrix& Other) noexcept;
     Matrix(Matrix&& Other) noexcept;
-    ~Matrix();
 
-    friend void PrintMatrixSingleLine(std::ostream&, const Matrix&) noexcept;
+    template<std::convertible_to<double>... args>
+    [[nodiscard]] static Matrix FromList(unsigned Rows, unsigned Columns, args... vals);
 
-    [[nodiscard]] unsigned int Rows() const { return m; }
-    [[nodiscard]] unsigned int Columns() const { return n; }
-    [[nodiscard]] bool IsValid() const { return m != 0 && n != 0 && this->Data; }
+    Matrix& operator=(const Matrix& Other) noexcept;
+    Matrix& operator=(Matrix&& Other) noexcept;
 
-    [[nodiscard]] VariableType* MoveIntoPointer() noexcept override;
+    friend std::ostream& operator<<(std::ostream&, const class MatrixSingleLinePrint&);
+
+    [[nodiscard]] unsigned int Rows() const { return Data.size(); }
+    [[nodiscard]] unsigned int Columns() const { return Data.empty() ? 0 : Data[0].size(); }
+    [[nodiscard]] bool IsValid() const { return rows != 0 && cols != 0; }
+    [[nodiscard]] bool IsSquare() const { return IsValid() && rows == cols; }
+
     [[nodiscard]] std::unique_ptr<VariableType> Clone() const noexcept override;
 
     [[nodiscard]] VariableTypes GetType() const noexcept override;
     void Sterilize(std::ostream& out) const noexcept override;
     void Print(std::ostream& out) const noexcept override;
 
-    [[nodiscard]] [[maybe_unused]] static Matrix* FromSterilize(const std::string& sterilized);
+    [[nodiscard]] [[maybe_unused]] static Matrix Desterilize(std::istream& sterilized);
     [[nodiscard]] std::string GetTypeString() const noexcept override;
 
     [[nodiscard]] static Matrix ErrorMatrix();
@@ -65,11 +67,9 @@ public:
     [[nodiscard]] static Matrix Identity(unsigned int Rows, unsigned int Cols);
     [[nodiscard]] [[maybe_unused]] static Matrix RandomMatrix(unsigned int Rows, unsigned int Columns, bool Integers);
 
-    const double* operator[](unsigned int Row) const;
-    double* operator[](unsigned int Row);
-
-    Matrix& operator=(const Matrix& Other) noexcept;
-    Matrix& operator=(Matrix&& Other) noexcept;
+    const std::vector<double>& operator[](unsigned int Row) const;
+    const double& Access(unsigned int i, unsigned int j) const;
+    double& Access(unsigned int i, unsigned int j);
 
     [[nodiscard]] Matrix Extract(unsigned int StartI, unsigned int StartJ, unsigned int RowCount, unsigned int ColumnCount);
 
@@ -79,6 +79,7 @@ public:
     [[maybe_unused]] [[nodiscard]] double Determinant() const;
 
     [[maybe_unused]] [[nodiscard]] Matrix Invert() const;
+    void TransposeInplace();
     [[maybe_unused]] [[nodiscard]] Matrix Transpose() const;
 
     void RowEchelonForm();
@@ -107,17 +108,20 @@ public:
 
     bool operator==(const VariableType& two) const noexcept override;
     bool operator!=(const VariableType& two) const noexcept override;
+    bool operator==(const Matrix& two) const noexcept;
+    bool operator!=(const Matrix& two) const noexcept;
 };
 
 struct MatrixSingleLinePrint {
     const Matrix& Target;
 };
-inline MatrixSingleLinePrint PrintMatrixOneLine(const Matrix& obj) noexcept
+[[maybe_unused]] [[nodiscard]] inline MatrixSingleLinePrint PrintMatrixOneLine(const Matrix& obj) noexcept
 {
     return MatrixSingleLinePrint { obj };
 }
 
 std::ostream& operator<<(std::ostream& out, const MatrixSingleLinePrint& Obj);
+std::istream& operator>>(std::istream& in, Matrix& obj);
 
 #include "MatrixT.tpp"
 

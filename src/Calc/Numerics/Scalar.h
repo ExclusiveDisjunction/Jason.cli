@@ -14,9 +14,9 @@ class MATH_LIB Scalar;
 class MATH_LIB Scalar : public VariableType
 {
 public:
+    Scalar() : Scalar(0) { }
     template<typename T> requires IsScalarOrDouble<T>
     explicit Scalar(const T& Item);
-    explicit Scalar(std::istream& in);
 
     double Data = 0.00;
 
@@ -24,11 +24,9 @@ public:
     [[nodiscard]] std::string GetTypeString() const noexcept override;
     void Sterilize(std::ostream& out) const noexcept override;
 
-    [[nodiscard]] VariableType* MoveIntoPointer() noexcept override;
     [[nodiscard]] std::unique_ptr<VariableType> Clone() const noexcept override;
 
-    [[nodiscard]] static Scalar* FromSterilize(const std::string& in);
-    [[nodiscard]] static Scalar* FromSterilize(std::istream& in);
+    [[nodiscard]] static Scalar Desterilize(std::istream& in);
 
     template<typename T> requires IsScalarOrDouble<T>
     Scalar operator+(const T& in) const noexcept;
@@ -66,6 +64,8 @@ public:
         return this->Data;
     }
 };
+
+std::istream& operator>>(std::istream& in, Scalar& obj);
 
 #include "ScalarT.tpp"
 

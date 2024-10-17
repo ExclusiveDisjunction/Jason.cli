@@ -2,135 +2,41 @@
 
 #include <utility>
 
-MathVector::MathVector() : d(0), Point(nullptr)
+MathVector::MathVector() : Data()
 {
-    DeAllocate();
-}
-[[maybe_unused]] MathVector::MathVector(unsigned int Dim, double Val) : MathVector()
-{
-    if (Dim <= 0)
-        throw std::logic_error("The dimension is equal to zero, and this is not allowed.");
 
-    Allocate(Dim, Val);
+}
+MathVector::MathVector(unsigned int Dim, double Val) : MathVector()
+{
+    if (Dim == 0)
+        return; //No allocations take place.
+
+    Data.resize(Dim);
 
     for (unsigned int i = 0; i < Dim; i++)
-        Point[i] = Val;
+        Data[i] = Val;
 }
-MathVector::MathVector(std::istream &in) : MathVector()
+MathVector::MathVector(const MathVector& Obj) noexcept : Data(Obj.Data)
 {
-    std::string header;
-    in >> header;
-    if (header != "VEC")
-        throw std::logic_error("Cannot construct vector from stream because the header is not the stream.");
 
-    in >> this->d;
-    if (d < 0)
-        throw std::logic_error("Dimension is negative.");
-    else if (d == 0)
-    {
-        DeAllocate();
-        return;
-    }
-    else //Dim is positive
-    {
-        Allocate(d, 0);
-        for (int i = 0; i < d; i++)
-        {
-            if (!in)
-                throw std::logic_error("There is not enough inputs to match the dimensions.");
-
-            in >> this->Point[i];
-        }
-    }
 }
-MathVector::MathVector(const MathVector& Obj) noexcept : MathVector()
+MathVector::MathVector(MathVector&& Obj) noexcept : Data(std::move(Obj.Data))
 {
-    if (Obj.d == 0 || !Obj.Point)
-    {
-        DeAllocate();
-        return;
-    }
 
-    Allocate(Obj.d, 0);
-
-    for (unsigned int i = 0; i < d; i++)
-        Point[i] = Obj.Point[i];
-}
-[[maybe_unused]] MathVector::MathVector(MathVector&& Obj) noexcept : MathVector()
-{
-    if (Obj.d == 0 || !Obj.Point)
-    {
-        DeAllocate();
-        return;
-    }
-
-    Allocate(Obj.d, 0);
-
-    for (unsigned int i = 0; i < d; i++)
-        Point[i] = Obj.Point[i];
-
-    Obj.DeAllocate();
-}
-MathVector::~MathVector()
-{
-    DeAllocate();
 }
 
 MathVector& MathVector::operator=(const MathVector& Obj) noexcept
 {
-    if (this->Point == Obj.Point) //Self assignment
+    if (this == &Obj) //Self assignment
         return *this;
 
-    if (Obj.d == 0 || !Obj.Point)
-    {
-        DeAllocate();
-        return *this;
-    }
-
-    if (Obj.d != d)
-        Allocate(Obj.d, 0);
-
-    for (unsigned int i = 0; i < d; i++)
-        Point[i] = Obj.Point[i];
-
+    this->Data = Obj.Data;
     return *this;
 }
 MathVector& MathVector::operator=(MathVector&& Obj) noexcept
 {
-    if (*this == Obj)
-        return *this;
-
-    if (Obj.d == 0 || !Obj.Point)
-    {
-        DeAllocate();
-        return *this;
-    }
-
-    if (Obj.d != d)
-        Allocate(Obj.d, 0);
-
-    for (unsigned int i = 0; i < d; i++)
-        Point[i] = Obj.Point[i];
-
-    Obj.DeAllocate();
+    this->Data = std::move(Obj.Data);
     return *this;
-}
-
-void MathVector::Allocate(unsigned int Dim, double Val)
-{
-    DeAllocate();
-
-    Point = new double[Dim] {Val};
-    d = Dim;
-}
-void MathVector::DeAllocate()
-{
-    if (Point)
-    {
-        delete[] Point;
-        Point = nullptr;
-        d = 0;
-    }
 }
 
 MathVector MathVector::ErrorVector()
@@ -138,67 +44,78 @@ MathVector MathVector::ErrorVector()
     return {};
 }
 
-[[nodiscard]] VariableType* MathVector::MoveIntoPointer() noexcept
+std::unique_ptr<VariableType> MathVector::Clone() const noexcept
 {
-    auto* Return = new MathVector();
-    Return->Point = std::exchange(this->Point, nullptr);
-    Return->d = std::exchange(this->d, 0);
-
-    DeAllocate();
-
-    return Return;
-}
-[[nodiscard]] std::unique_ptr<VariableType> MathVector::Clone() const noexcept
-{
-    return new MathVector(*this);
+    return std::make_unique<MathVector>(*this);
 }
 
 double& MathVector::operator[](unsigned int Index)
 {
-    if (Index >= d)
+    if (Index >= Dim())
         throw std::logic_error("The index provided is invalid.");
 
-    return Point[Index];
+    return Data[Index];
 }
 double MathVector::operator[](unsigned int Index) const
 {
-    if (Index >= d)
+    if (Index >= Dim())
         throw std::logic_error("The index provided is invalid.");
 
-    return Point[Index];
+    return Data[Index];
 }
-[[maybe_unused]] [[nodiscard]] double MathVector::Magnitude() const
+double MathVector::Magnitude() const
 {
-    if (d == 1)
-        return Point[0];
+    if (Dim() == 1)
+        return Data[0];
 
-    if (d <= 0)
+    if (!IsValid())
         throw std::logic_error("A magnitude cannot be measured on a dimensionless object.");
 
     double Sum = 0;
-    for (unsigned int i = 0; i < d; i++)
-        Sum += Point[i] * Point[i];
+    for (const auto& slice : Data)
+        Sum += pow(slice, 2);
 
     return sqrt(Sum);
 }
-[[maybe_unused]] [[nodiscard]] double MathVector::Angle() const
+double MathVector::Angle() const
 {
-    if (d <= 1)
-        throw std::logic_error("Cannot measure the angle of a scalar or lower rank mathematical object.");
+    if (Dim() != 2) //nonsensical answer
+        throw std::logic_error("Numerical error: Taking the angle of a vector with dimension other than 2 is a nonsensical answer");
 
     return atan(Magnitude());
 }
 
-[[maybe_unused]] [[nodiscard]] MathVector* MathVector::FromSterilized(const std::string &obj)
+MathVector MathVector::Desterilize(std::istream& in)
 {
-    std::stringstream ss(obj);
-    return new MathVector(ss);
+    std::string header;
+    in >> header;
+    if (header != "VEC")
+        throw std::logic_error("Cannot construct vector from stream because the header is not the stream.");
+
+    unsigned int d;
+
+    in >> d;
+    if (d == 0) //'Error' vector
+        return {};
+    else
+    {
+        MathVector result(d);
+        for (int i = 0; i < d; i++)
+        {
+            if (!in)
+                throw std::logic_error("There is not enough inputs to match the dimensions.");
+
+            in >> result.Data[i];
+        }
+
+        return result;
+    }
 }
 void MathVector::Sterilize(std::ostream& out) const noexcept
 {
-    out << "VEC " << this->d;
-    for (unsigned i = 0; i < this->d; i++)
-        out << ' ' << this->Point[i];
+    out << "VEC " << this->Dim();
+    for (const auto& item : this->Data)
+        out << ' ' << item;
 }
 [[nodiscard]] VariableTypes MathVector::GetType() const noexcept
 {
@@ -211,7 +128,7 @@ void MathVector::Sterilize(std::ostream& out) const noexcept
     if (!this->IsValid())
         ss << "Err)";
     else
-        ss << this->d;
+        ss << this->Dim();
     ss << ")";
 
     return ss.str();
@@ -219,8 +136,9 @@ void MathVector::Sterilize(std::ostream& out) const noexcept
 void MathVector::Print(std::ostream& out) const noexcept
 {
     out << "{ ";
+    size_t d = this->Data.size();
     for (unsigned i = 0; i < d; i++)
-        out << this->Point[i] << (i == d - 1 ? " " : ", ");
+        out << this->Data[i] << (i == d - 1 ? " " : ", ");
     out << '}';
 }
 
@@ -248,12 +166,12 @@ void MathVector::Print(std::ostream& out) const noexcept
 }
 [[maybe_unused]] [[nodiscard]] double MathVector::DotProduct(const MathVector& One, const MathVector& Two)
 {
-    if (One.d != Two.d)
+    if (One.Dim() != Two.Dim())
         throw std::logic_error("The dimensions of the two vectors do not match.");
 
     double Return = 0.0;
-    for (unsigned int i = 0; i < One.d; i++)
-        Return += One[i] * Two[i];
+    for (auto i = One.Data.begin(), j = Two.Data.begin(); i != One.Data.end() && j != Two.Data.end(); i++, j++)
+        Return += *i + *j;
 
     return Return;
 }
@@ -274,26 +192,32 @@ MathVector MathVector::operator-(const MathVector& in) const
 MathVector& MathVector::operator+=(const MathVector& in)
 {
     if (!this->IsValid() || !in.IsValid())
-        throw OperatorException('+', this->GetTypeString(), in.GetTypeString(), "Cannot combine error vectors.");
+        throw OperatorException('+', *this, in, "Cannot combine error vectors.");
 
-    if (this->d != in.d)
-        throw OperatorException('+', this->GetTypeString(), in.GetTypeString(), "Dimension mismatch");
+    if (this->Dim() != in.Dim())
+        throw OperatorException('+', *this, in, "Dimension mismatch");
 
-    for (unsigned i = 0; i < this->d && this->Point; i++)
-        this->Point[i] += in.Point[i];
+    auto i = this->Data.begin();
+    auto j = in.Data.begin();
+
+    for (; i != this->Data.end() && j != in.Data.end(); i++, j++)
+        *i += *j;
 
     return *this;
 }
 MathVector& MathVector::operator-=(const MathVector& in)
 {
     if (!this->IsValid() || !in.IsValid())
-        throw OperatorException('+', this->GetTypeString(), in.GetTypeString(), "Cannot combine error vectors.");
+        throw OperatorException('-', *this, in, "Cannot combine error vectors.");
 
-    if (this->d != in.d)
-        throw OperatorException('+', this->GetTypeString(), in.GetTypeString(), "Dimension mismatch");
+    if (this->Dim() != in.Dim())
+        throw OperatorException('-', *this, in, "Dimension mismatch");
 
-    for (unsigned i = 0; i < this->d && this->Point; i++)
-        this->Point[i] -= in.Point[i];
+    auto i = this->Data.begin();
+    auto j = in.Data.begin();
+
+    for (; i != this->Data.end() && j != in.Data.end(); i++, j++)
+        *i -= *j;
 
     return *this;
 }
@@ -303,15 +227,7 @@ bool MathVector::operator==(const VariableType& in) const noexcept
     try
     {
         const auto& obj = dynamic_cast<const MathVector&>(in);
-
-        if (d != obj.d)
-            return false;
-
-        for (unsigned i = 0; i < d; i++)
-            if (Point[i] != obj.Point[i])
-                return false;
-
-        return true;
+        return (*this == obj);
     }
     catch (std::bad_cast& e)
     {
@@ -319,6 +235,22 @@ bool MathVector::operator==(const VariableType& in) const noexcept
     }
 }
 bool MathVector::operator!=(const VariableType& in) const noexcept
+{
+    return !(*this == in);
+}
+bool MathVector::operator==(const MathVector& in) const noexcept
+{
+    if (this->Dim() != in.Dim())
+        return false;
+
+    auto i = this->Data.begin(), j = in.Data.begin();
+    for (; i != this->Data.end() && j != in.Data.end(); i++, j++)
+        if (*i != *j)
+            return false;
+
+    return true;
+}
+bool MathVector::operator!=(const MathVector& in) const noexcept
 {
     return !(*this == in);
 }

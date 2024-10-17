@@ -21,7 +21,7 @@ void testCalc()
         std::stringstream tempB;
         b.Sterilize(tempB);
 
-        auto* bFrom = Scalar::FromSterilize(tempB.str());
+        auto* bFrom = Scalar::Desterilize(tempB.str());
         cout << "b -> sterilized -> Scalar == b? (Expect yes) " << (b == *bFrom ? "yes" : "no") << endl;
         delete bFrom;
 

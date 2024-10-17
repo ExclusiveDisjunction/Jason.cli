@@ -136,7 +136,7 @@ std::unique_ptr<VariableType> VariableType::ApplyOperation(const VariableType& O
          *  2. Vector * Scalar
          *  3. Scalar * Matrix
          *  4. Matrix * Scalar
-         *  5. Matrix * Vector (Given d == n)
+         *  5. Matrix * Vector (Given d == cols)
          *  6. Matrix ^ Scalar (Given (Sca -> N || Sca == 0)  && Matrix is square if Sca >= 2)
          *  7. Matrix + Vector (Given dims match)
          *  8. Vector + Matrix (Given dims match)

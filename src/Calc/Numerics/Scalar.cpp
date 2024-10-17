@@ -6,16 +6,6 @@
 
 #include <iomanip>
 
-Scalar::Scalar(std::istream& in)
-{
-    std::string header;
-    in >> header;
-    if (header != "SCA")
-        throw std::logic_error("Inputted stream is not a scalar");
-
-    in >> this->Data;
-}
-
 [[nodiscard]] VariableTypes Scalar::GetType() const noexcept
 {
     return VariableTypes::VT_Scalar;
@@ -24,12 +14,7 @@ void Scalar::Sterilize(std::ostream& out) const noexcept
 {
     out << "SCA " << this->operator double();
 }
-Scalar* Scalar::FromSterilize(const std::string& in)
-{
-    std::stringstream ss(in);
-    return FromSterilize(ss);
-}
-Scalar* Scalar::FromSterilize(std::istream& in)
+Scalar Scalar::Desterilize(std::istream& in)
 {
     std::string header;
     std::streampos pos = in.tellg();
@@ -37,23 +22,18 @@ Scalar* Scalar::FromSterilize(std::istream& in)
     if (header != "SCA")
         throw std::logic_error("Cannot construct a scalar from this object.");
 
-    in.seekg(pos);
-    return new Scalar(in);
+    Scalar result;
+    in >> result.Data;
+    return result;
 }
 [[nodiscard]] std::string Scalar::GetTypeString() const noexcept
 {
     return "(Scalar)";
 }
 
-[[nodiscard]] VariableType* Scalar::MoveIntoPointer() noexcept
-{
-    Scalar* result = new Scalar(*this);
-    this->Data = 0;
-    return result;
-}
 std::unique_ptr<VariableType> Scalar::Clone() const noexcept
 {
-    return new Scalar(*this);
+    return std::make_unique<Scalar>(*this);
 }
 
 [[nodiscard]] long long Scalar::ToLongNoRound() const
@@ -99,4 +79,9 @@ bool Scalar::operator!=(double obj) const noexcept
 void Scalar::Print(std::ostream& out) const noexcept
 {
     out << this->Data;
+}
+std::istream& operator>>(std::istream& in, Scalar& obj)
+{
+    obj = Scalar::Desterilize(in);
+    return in;
 }
