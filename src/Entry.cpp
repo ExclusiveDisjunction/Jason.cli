@@ -1,13 +1,22 @@
 #include <iostream>
+#include <unistd.h>
+#include <pwd.h>
+#include <iomanip>
+#include <chrono>
 
 #include "Log.h"
+#include "IO/Package.h"
+#include "Calc/Numerics.h"
 #include "Commands/CommandParser.h"
+
+using namespace std;
+using namespace std::chrono;
 
 int main(int, char**)
 {
     std::cout << " Welcome to Jason " << '\n'
          << "------------------" << '\n'
-         << "   Version 0.1.0  " << '\n' << '\n';
+         << "   Version " << JASON_CURRENT_VERSION << "  " << '\n' << '\n';
 
     Logger l("run.log");
     l << Info << "Starting up Jason" << EndLog;
@@ -30,197 +39,227 @@ int main(int, char**)
     delete sess;
     */
 
-    /*
     struct passwd *pw = getpwuid(getuid());
     const char *homedir = pw->pw_dir;
 
     std::filesystem::path landing = std::filesystem::path(homedir) / ".jason";
     std::filesystem::path location = landing / "usr";
-    if (!std::filesystem::exists(location))
+    if (!std::filesystem::exists(landing))
         std::filesystem::create_directories(location);
 
-    Package* New = Package::OpenFromDirectory(location, 0);
-    if (!New)
+    std::unique_ptr<Package> New;
+    std::optional<std::unique_ptr<Package>> RawHandle = Package::OpenFromDirectory(location, 0);
+    if (!RawHandle)
     {
-        New = Package::NewPackage("usr", landing, 0);
-        if (!New)
+        RawHandle = Package::NewPackage("usr", landing, 0);
+        if (!RawHandle)
         {
             std::cerr << "Could not load Jason project." << std::endl;
             return 1;
         }
+        else
+            New = std::move(*RawHandle);
     }
+    else
+        New = std::move(*RawHandle);
 
-    std::cout << "Modes:" << std::endl <<
-                 "i: Insert Items Manually" << std::endl <<
-                 "t: Group Insert + Time" << std::endl <<
-                 "s: Load Speed Test" << std::endl <<
-                 "d: Display current elements" << std::endl <<
-                 "f: Full test (clear and update for different times)" << std::endl <<
-                 "r: Remove all current objects" << std::endl <<
-                 "q: Quit" << std::endl;
-    std::cout << std::endl;
+    std::cout << "Commands: " << std::endl <<
+                 "insert: Insert items via name and sterilized format" << std::endl <<
+                 "load: Load all objects & time" << std::endl <<
+                 "display: Display current elements" << std::endl <<
+                 "test: Full test (clear & update for different counts)" << std::endl <<
+                 "reset: Remove all current objects" << std::endl <<
+                 "lookup: Lookup an entry based on name or key" << std::endl <<
+                 "remove: Remove an entry based on name or key" << std::endl <<
+                 "help: Get help on a command, or list commands" << std::endl <<
+                 "quit: Save & Quit" << std::endl << std::endl;
+
     while (true)
     {
-        std::cout << "Enter Mode: ";
-        char mode;
-        std::cin >> mode;
-        if (mode == 'q')
-            break;
-
-        switch (mode)
+        std::cout << "> ";
+        CommandParser parser;
+        try
         {
-            case 'i':
+            std::cin >> parser;
+        }
+        catch (std::logic_error& e)
+        {
+            std::cout << "Error while parsing command: " << e.what() << std::endl;
+        }
+        const std::string& mode = parser.TopCommand();
+
+        if (mode == "quit")
+            break;
+        else if (mode == "insert")
+        {
+            if (parser.Values().size() < 3)
             {
-                while (true)
-                {
-                    std::cout << "Enter dimension count followed by numbers (-1 to exit). ";
-                    int dim;
-                    std::cin >> dim;
-                    if (dim < 0)
-                        break;
-
-                    MathVector v(dim, 0);
-                    for (int i = 0; i < dim; i++)
-                        std::cin >> v[i];
-                    std::cout << "Vector is " << v << std::endl;
-                    std::cout << "Enter the name: ";
-                    std::string name;
-                    std::cin >> name;
-
-                    auto result = New->AddEntry(name, PackageEntryType::Variable, v.MoveIntoPointer());
-                    if (!result.has_value())
-                        std::cout << "Failed" << std::endl;
-                    else
-                        std::cout << "Key is " << *result << std::endl;
-                }
-
-                break;
+                std::cout << "Invalid amount of arguments. At least three values are expected" << std::endl;
+                continue;
             }
-            case 't':
+
+            std::string name = parser.Values()[0].Value;
+            std::stringstream sterilized;
+            for (auto iter = parser.Values().begin() + 1; iter != parser.Values().end(); iter++)
+                sterilized << *iter << ' ';
+
+            auto extracted = VariableType::Desterilize(sterilized);
+            if (!extracted)
             {
+                std::cerr << "Could not construct a variable from that sterilized string" << std::endl;
+                std::cerr.flush();
+                std::cout.flush();
+                continue;
+            }
+
+            auto result = New->AddEntry(name, PackageEntryType::Variable, std::move(*extracted));
+            if (!result.has_value())
+                std::cerr << "Failed to insert into package" << std::endl;
+            else
+                std::cout << "Key is " << *result << std::endl;
+
+            std::cerr.flush();
+        }
+        else if (mode == "load")
+        {
+            auto start = std::chrono::system_clock::now();
+            (void)New->LoadAllEntries();
+            auto duration = std::chrono::system_clock::now() - start;
+            std::cout << "\tLoad Time Duration is (ms) " << duration_cast<milliseconds>(duration).count() << " (mu-s:" << duration_cast<microseconds>(duration).count() << ')' << std::endl;
+        }
+        else if (mode == "display")
+        {
+            (void)New->LoadAllEntries();
+            New->DisplayContents(std::cout);
+        }
+        else if (mode == "test")
+        {
+            //This will clear the project, add cols elements, record the time to add them, unload the project, and then load it again.
+            std::vector<int> test_runs = {10, 100, 1'000, 10'000};
+            std::vector<std::unique_ptr<VariableType>> test_data;
+            test_data.emplace_back(new Scalar(4));
+            test_data.emplace_back(new MathVector(MathVector::FromList(3, 0)));
+            test_data.emplace_back(new Matrix(Matrix::FromList(3, 3, 1, 2, 3, 4, 5, 6, 7, 8, 9)));
+
+            for (int& cols : test_runs)
+            {
+                New->RemoveAllEntries();
                 auto start = std::chrono::system_clock::now();
-                std::cout << "Enter test base name: ";
-                std::string testname;
-                std::cin >> testname;
 
-                std::vector<VariableType*> tests = {
-                        new Scalar(4),
-                        new MathVector(3, 0),
-                        new Matrix(3, 3, 1, 2, 3, 4, 5, 6, 7, 8, 9)
-                };
-
-                for (unsigned i = 0; i < 100; i++)
+                for (unsigned i = 0; i < cols; i++)
                 {
                     unsigned j = 0;
-                    for (auto& val : tests)
+                    for (auto& val : test_data)
                     {
                         std::stringstream thisName;
-                        thisName << testname << i << j;
+                        thisName << cols << '\'' << i << '\'' << j;
                         if (!New->AddEntry(thisName.str(), Variable, val->Clone()))
                             std::cout << "Failed at " << i;
                         j++;
                     }
                 }
 
-                auto duration = std::chrono::system_clock::now() - start;
-                std::cout << "\tInsert Time Duration is (ms)" << std::chrono::duration_cast<std::chrono::milliseconds>(duration).count() << "(mu-s:" << std::chrono::duration_cast<std::chrono::microseconds>(duration).count() << ')' << std::endl;
-                break;
-            }
-            case 's':
-            {
-                auto start = std::chrono::system_clock::now();
+                auto time_for_adding = std::chrono::system_clock::now();
+                New->UnloadAllEntries();
+                auto time_for_unload = std::chrono::system_clock::now();
                 (void)New->LoadAllEntries();
-                auto duration = std::chrono::system_clock::now() - start;
-                std::cout << "\tLoad Time Duration is (ms) " << std::chrono::duration_cast<std::chrono::milliseconds>(duration).count() << " (mu-s:" << std::chrono::duration_cast<std::chrono::microseconds>(duration).count() << ')' << std::endl;
-                break;
+                auto time_for_load = std::chrono::system_clock::now();
+
+                std::cout << "N = " << cols << std::endl;
+                std::cout << "Results are:" << std::endl;
+
+                auto total = time_for_load - start;
+                auto adding = time_for_adding - start;
+                auto unloading = time_for_unload - time_for_adding;
+                auto loading = time_for_load - time_for_unload;
+
+                std::cout <<
+                          setw(9) << "Quantity"  << " | " << setw(7)                    << "Seconds"                         << " | " << setw(12)                     << "Milliseconds"                         << " | " << setw(12)                     << "Microseconds"                         << std::endl <<
+                          setw(9) << "--------"  << " | " << setw(7)                    << "-------"                         << " | " << setw(12)                     << "------------"                         << " | " << setw(12)                     << "------------"                         << std::endl <<
+                          setw(9) << "Total"     << " | " << setw(7) << setprecision(7) << duration_cast<seconds>(total)     << " | " << setw(12) << setprecision(12) << duration_cast<milliseconds>(total)     << " | " << setw(12) << setprecision(12) << duration_cast<microseconds>(total)     << std::endl <<
+                          setw(9) << "Adding"    << " | " << setw(7) << setprecision(7) << duration_cast<seconds>(adding)    << " | " << setw(12) << setprecision(12) << duration_cast<milliseconds>(adding)    << " | " << setw(12) << setprecision(12) << duration_cast<microseconds>(adding)    << std::endl <<
+                          setw(9) << "Unloading" << " | " << setw(7) << setprecision(7) << duration_cast<seconds>(unloading) << " | " << setw(12) << setprecision(12) << duration_cast<milliseconds>(unloading) << " | " << setw(12) << setprecision(12) << duration_cast<microseconds>(unloading) << std::endl <<
+                          setw(9) << "Loading"   << " | " << setw(7) << setprecision(7) << duration_cast<seconds>(loading)   << " | " << setw(12) << setprecision(12) << duration_cast<milliseconds>(loading)   << " | " << setw(12) << setprecision(12) << duration_cast<microseconds>(loading)   << std::endl;
+                std::cout << std::endl << std::endl;
             }
-            case 'd':
-            {
-                (void)New->LoadAllEntries();
-                New->DisplayContents(std::cout);
-                break;
-            }
-            case 'r':
-            {
-                New->RemoveAllEntries();
-                break;
-            }
-            case 'f':
-            {
-                //This will clear the project, add cols elements, record the time to add them, unload the project, and then load it again.
-                std::vector<int> test_runs = {10, 100, 1'000, 10'000};
-                std::vector<VariableType*> test_data = {
-                        new Scalar(4),
-                        new MathVector(3, 0),
-                        new Matrix(3, 3, 1, 2, 3, 4, 5, 6, 7, 8, 9)
-                };
 
-                for (int& cols : test_runs)
-                {
-                    New->RemoveAllEntries();
-                    auto start = std::chrono::system_clock::now();
-
-                    for (unsigned i = 0; i < cols; i++)
-                    {
-                        unsigned j = 0;
-                        for (auto& val : test_data)
-                        {
-                            std::stringstream thisName;
-                            thisName << cols << '\'' << i << '\'' << j;
-                            if (!New->AddEntry(thisName.str(), Variable, val->Clone()))
-                                std::cout << "Failed at " << i;
-                            j++;
-                        }
-                    }
-
-                    auto time_for_adding = std::chrono::system_clock::now();
-                    New->UnloadAllEntries();
-                    auto time_for_unload = std::chrono::system_clock::now();
-                    bool loadingResult = New->LoadAllEntries();
-                    auto time_for_load = std::chrono::system_clock::now();
-
-                    std::cout << "N = " << cols << std::endl;
-                    std::cout << "Results are:" << std::endl;
-
-                    auto total = time_for_load - start;
-                    auto adding = time_for_adding - start;
-                    auto unloading = time_for_unload - time_for_adding;
-                    auto loading = time_for_load - time_for_unload;
-
-                    std::cout <<
-                    setw(9) << "Quantity"  << " | " << setw(7)                    << "Seconds"                         << " | " << setw(12)                     << "Milliseconds"                         << " | " << setw(12)                     << "Microseconds"                         << std::endl <<
-                    setw(9) << "--------"  << " | " << setw(7)                    << "-------"                         << " | " << setw(12)                     << "------------"                         << " | " << setw(12)                     << "------------"                         << std::endl <<
-                    setw(9) << "Total"     << " | " << setw(7) << setprecision(7) << duration_cast<seconds>(total)     << " | " << setw(12) << setprecision(12) << duration_cast<milliseconds>(total)     << " | " << setw(12) << setprecision(12) << duration_cast<microseconds>(total)     << std::endl <<
-                    setw(9) << "Adding"    << " | " << setw(7) << setprecision(7) << duration_cast<seconds>(adding)    << " | " << setw(12) << setprecision(12) << duration_cast<milliseconds>(adding)    << " | " << setw(12) << setprecision(12) << duration_cast<microseconds>(adding)    << std::endl <<
-                    setw(9) << "Unloading" << " | " << setw(7) << setprecision(7) << duration_cast<seconds>(unloading) << " | " << setw(12) << setprecision(12) << duration_cast<milliseconds>(unloading) << " | " << setw(12) << setprecision(12) << duration_cast<microseconds>(unloading) << std::endl <<
-                    setw(9) << "Loading"   << " | " << setw(7) << setprecision(7) << duration_cast<seconds>(loading)   << " | " << setw(12) << setprecision(12) << duration_cast<milliseconds>(loading)   << " | " << setw(12) << setprecision(12) << duration_cast<microseconds>(loading)   << std::endl;
-                    std::cout << std::endl << std::endl;
-                }
-                break;
-            }
-            default:
-                std::cout << "Unknown option " << mode << std::endl;
-                break;
+            New->RemoveAllEntries();
         }
+        else if (mode == "reset")
+        {
+            New->RemoveAllEntries();
+            break;
+        }
+        else if (mode == "lookup")
+        {
+            std::cout << "Sorry, this is not implemented yet." << std::endl;
+        }
+        else if (mode == "remove")
+        {
+            std::cout << "Sorry, this is not implemented yet." << std::endl;
+        }
+        else if (mode == "help")
+        {
+            if (parser.Specifiers().empty() && parser.Values().empty())
+            {
+                std::cout << "help" << std::endl <<
+                             "help --list" << std::endl <<
+                             "help [command]" << std::endl;
+            }
+            else if (parser.Specifiers().size() == 1 && parser.Values().empty())
+            {
+                const auto& spec = parser.Specifiers()[0];
+                if (spec.Name == "list" && !spec.Value.has_value())
+                {
+                    std::cout << "Commands: " << std::endl <<
+                              "insert: Insert items via name and sterilized format" << std::endl <<
+                              "load: Load all objects & time" << std::endl <<
+                              "display: Display current elements" << std::endl <<
+                              "test: Full test (clear & update for different counts)" << std::endl <<
+                              "reset: Remove all current objects" << std::endl <<
+                              "lookup: Lookup an entry based on name or key" << std::endl <<
+                              "remove: Remove an entry based on name or key" << std::endl <<
+                              "help: Get help on a command, or list commands" << std::endl <<
+                              "quit: Save & Quit" << std::endl << std::endl;
+                }
+                else
+                    std::cout << "Unrecognized specifier '" << spec.Name << "', or there was a value supplied (none expected)" << std::endl;
+            }
+            else if (parser.Specifiers().empty() && parser.Values().size() == 1)
+            {
+                const auto& command = parser.Values()[0].Value;
+                if (command == "insert")
+                    std::cout << "insert [name] [sterilized name | SCA VEC MAT] {dim} {dim2} [numbers...]" << std::endl;
+                else if (command == "load")
+                    std::cout << "load" << std::endl;
+                else if (command == "display")
+                    std::cout << "display" << std::endl;
+                else if (command == "test")
+                    std::cout << "test" << std::endl;
+                else if (command == "reset")
+                    std::cout << "reset" << std::endl;
+                else if (command == "lookup")
+                    std::cout << "lookup [name]" << std::endl <<
+                                 "lookup --key [entryKey]" << std::endl;
+                else if (command == "remove")
+                    std::cout << "remove [name]" << std::endl <<
+                              "remove --key [entryKey]" << std::endl;
+                else if (command == "help")
+                    std::cout << "help" << std::endl <<
+                                 "help --list" << std::endl <<
+                                 "help [command]" << std::endl;
+                else if (command == "quit")
+                    std::cout << "quit" << std::endl;
+                else
+                    std::cout << "Unrecognized command name '" << command << '\'' << std::endl;
+            }
+            else //Too many
+                std::cout << "Too many values passed into the help command. Help expects one value or one specifier" << std::endl;
+        }
+        else
+            std::cout << "Unrecognized command: \'" << mode << "\'\n";
     }
     (void)New->Save();
-     */
-
-    CommandParser cm;
-
-    try
-    {
-        while (true)
-        {
-            std::cout << "Enter a Command Expression to be parsed: ";
-            std::cin >> cm;
-            std::cout << "Command was: " << cm << std::endl;
-        }
-    }
-    catch (std::logic_error& e)
-    {
-        std::cerr << "Caught: " << e.what() << std::endl;
-    }
 
     l << Info << "Exiting Jason, Exit Code 0" << EndLog;
     return 0;
