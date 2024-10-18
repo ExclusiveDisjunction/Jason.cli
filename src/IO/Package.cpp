@@ -62,7 +62,7 @@ std::vector<PackageEntry*>::iterator Package::GetEntry(unsigned long ID) noexcep
     });
 }
 
-Package* Package::OpenFromDirectory(std::filesystem::path& dir, unsigned long ID)
+std::unique_ptr<Package> Package::OpenFromDirectory(std::filesystem::path& dir, unsigned long ID)
 {
     /*
      * We look for the following things:
@@ -100,13 +100,15 @@ Package* Package::OpenFromDirectory(std::filesystem::path& dir, unsigned long ID
 
     return result;
 }
-Package* Package::OpenFromCompressed(std::filesystem::path& pack, std::filesystem::path& targetDir, unsigned long ID)
+std::unique_ptr<Package>
+Package::OpenFromCompressed(std::filesystem::path& pack, std::filesystem::path& targetDir, unsigned long ID)
 {
     throw std::logic_error("Not implemented yet.");
 
     return OpenFromDirectory(targetDir, ID);
 }
-Package* Package::NewPackage(const std::string& name, const std::filesystem::path& landingDirectory, unsigned long ID)
+std::unique_ptr<Package>
+Package::NewPackage(const std::string& name, const std::filesystem::path& landingDirectory, unsigned long ID)
 {
     if (!std::filesystem::exists(landingDirectory) || !std::filesystem::is_directory(landingDirectory) || name.empty())
         throw std::logic_error("Landing directory is not a directory, does not exist, or the name is empty.");
@@ -315,23 +317,19 @@ PackageEntry* Package::ReleaseEntry(unsigned long ID) noexcept
 
     return target;
 }
-std::optional<PackageEntryKey> Package::AddEntry(std::string name, PackageEntryType type, VariableType* data) noexcept
+std::optional<PackageEntryKey> Package::AddEntry(std::string name, PackageEntryType type, std::unique_ptr<VariableType>&& data) noexcept
 {
     if (type != PackageEntryType::Temporary && name.empty())
         return {};
 
-    PackageEntry* result = new PackageEntry(PackageEntryIndex(PackageEntryKey(this->packID, this->GetNextID()), type, std::move(name), 0),
-            this);
+    PackageEntry result(PackageEntryIndex(PackageEntryKey(this->packID, this->GetNextID()), type, std::move(name), 0), this);
 
-    if (!result->Data(data))
-    {
-        delete result;
+    if ( !result.Data(std::move(data)) )
         return {};
-    }
     else
-        this->entries.emplace_back(result);
+        this->entries.emplace_back( std::move(result) );
 
-    return result->GetIndex().Key();
+    return result.GetIndex().Key();
 }
 
 bool Package::DoesEntryExist(unsigned long ID) noexcept

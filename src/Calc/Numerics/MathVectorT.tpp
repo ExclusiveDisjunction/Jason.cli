@@ -6,14 +6,9 @@ template<std::convertible_to<double>... Args>
 MathVector MathVector::FromList(Args... Value) noexcept
 {
     auto ToFill = std::vector<double>({((double) Value)...});
-    size_t Dim = ToFill.size();
-    MathVector result(Dim, 0);
 
-    if (Dim != 0)
-    {
-        for (size_t i = 0; i < Dim; i++)
-            result[i] = ToFill[i];
-    }
+    MathVector result;
+    result.Data = ToFill;
 
     return result;
 }
@@ -40,8 +35,8 @@ MathVector& MathVector::operator*=(const T& in)
         throw OperatorException('*', this->GetTypeString(), "(Scalar)", "Cannot multiply an error vector.");
 
     auto fac = static_cast<double>(in);
-    for (unsigned i = 0; i < this->d && this->Point; i++)
-        this->Point[i] *= fac;
+    for (auto& elem : this->Data)
+        elem *= fac;
 
     return *this;
 }
@@ -52,8 +47,8 @@ MathVector& MathVector::operator/=(const T& in)
         throw OperatorException('*', this->GetTypeString(), "(Scalar)", "Cannot divide an error vector.");
 
     auto fac = static_cast<double>(in);
-    for (unsigned i = 0; i < this->d && this->Point; i++)
-        this->Point[i] /= fac;
+    for (auto& elem : this->Data)
+        elem /= fac;
 
     return *this;
 }
