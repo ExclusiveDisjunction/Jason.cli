@@ -19,32 +19,24 @@ class PackageEntry
 {
 private:
     std::optional<std::unique_ptr<VariableType>> data = {};
-    Package* parent = nullptr;
+    Package* parent;
     PackageEntryIndex index;
     bool modified = false;
 
 public:
     PackageEntry(PackageEntryIndex&& index, Package* parent);
     PackageEntry(const PackageEntry& obj) = delete;
+    PackageEntry(PackageEntry&& obj) = default;
     ~PackageEntry();
 
     friend class Package;
 
-    /*
-    [[nodiscard]] static PackageEntry* FromIndexTableLine(std::istream& in, Package* parent);
-    [[nodiscard]] static PackageEntry* FromIndexTableLine(const std::string& line, Package* parent);
-    [[nodiscard]] static PackageEntry* ExpandFromCompressed(std::istream& in, Package* parent, std::ostream& out);
-    [[nodiscard]] static PackageEntry* ExpandFromCompressed(const std::string& line, Package* parent, std::ostream& out);
-    */
-
     PackageEntry& operator=(const PackageEntry& obj) = delete;
-    PackageEntry& operator=(PackageEntry&& obj) noexcept = delete;
+    PackageEntry& operator=(PackageEntry&& obj) noexcept = default;
 
-    /// @breif Writes the header schematic of the Entry
-    [[nodiscard]] bool WriteIndex(std::ostream& out) const noexcept;
     /// @breif Writes the data of the Entry if it is loaded, fails if otherwise.
     [[nodiscard]] bool WriteData(std::ostream& out) const noexcept;
-    [[nodiscard]] bool DisplayData(std::ostream& out) noexcept;
+    [[nodiscard]] bool DisplayData(std::ostream& out) const noexcept;
     /// @brief  Writes the data of the Entry if it is loaded to the path at GetPath(), fails if otherwise. 
     [[nodiscard]] bool WriteData() const noexcept;
 
@@ -53,7 +45,7 @@ public:
     /// @brief Reads from the path located at GetPath(), only looking for the data. If the path could not be resolves, it attempts to create it. If it fails to create, it will return false, otherwise, data will be nullptr. 
     [[nodiscard]] bool Load() noexcept;
     /// @brief Removes the 'Data' item from memory without deleting the file.
-    [[nodiscard]] void Unload() noexcept;
+    void Unload() noexcept;
     /// @brief Deletes 'Data' from memory & the file system.
     bool Reset() noexcept;
 

@@ -20,6 +20,7 @@ public:
 
     virtual void Print(std::ostream& out) const noexcept = 0;
     [[nodiscard]] virtual ExpressionElementT ElementType() const noexcept = 0;
+    [[nodiscard]] virtual std::unique_ptr<ExpressionElement> Clone() const noexcept = 0;
 };
 
 inline std::ostream& operator<<(std::ostream& out, const ExpressionElement& e)

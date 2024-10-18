@@ -7,10 +7,12 @@
 
 #include "ExpressionElement.h"
 
+#include "../Calc/VariableType.h"
+
 #include <functional>
 #include <utility>
 
-using OperatorFunc = std::function<std::unique_ptr<VariableType*>(const VariableType&, const VariableType&)>;
+using OperatorFunc = std::function<std::unique_ptr<VariableType>(const VariableType&, const VariableType&)>;
 
 class Operator : public ExpressionElement
 {
@@ -21,13 +23,13 @@ private:
 
 public:
     Operator(char symbol, unsigned precedence, OperatorFunc eval);
-    Operator(const Operator& obj) = delete;
-    Operator(Operator&& obj) noexcept = delete;
+    Operator(const Operator& obj) = default;
+    Operator(Operator&& obj) noexcept = default;
 
-    Operator& operator=(const Operator& obj) = delete;
-    Operator& operator=(Operator&& obj) = delete;
+    Operator& operator=(const Operator& obj) = default;
+    Operator& operator=(Operator&& obj) = default;
 
-    [[nodiscard]] std::unique_ptr<VariableType*> Evaluate(const VariableType& a, const VariableType& b) const;
+    [[nodiscard]] std::unique_ptr<VariableType> Evaluate(const VariableType& a, const VariableType& b) const;
 
     [[nodiscard]] constexpr unsigned GetPrecedence() const noexcept;
 
@@ -40,6 +42,14 @@ public:
     bool operator>=(const Operator& obj) const noexcept;
 
     void Print(std::ostream& out) const noexcept override;
+    [[nodiscard]] std::unique_ptr<ExpressionElement> Clone() const noexcept override
+    {
+        return std::make_unique<Operator>(*this);
+    }
+    [[nodiscard]] ExpressionElementT ElementType() const noexcept override
+    {
+        return ExpressionElementT::Operator;
+    }
 };
 
 

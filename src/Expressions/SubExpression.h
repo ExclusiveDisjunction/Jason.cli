@@ -18,10 +18,10 @@ class ParsedSubExpression;
 
 enum SubExpressionType
 {
-    Numeric,
-    Variable,
-    Declaration,
-    Intermediate
+    NumericExpr,
+    VariableExpr,
+    DeclarationExpr,
+    IntermediateExpr
 };
 
 class SubExpression : public ExpressionElement
@@ -50,7 +50,7 @@ public:
 
     [[nodiscard]] SubExpressionType GetType() const noexcept override
     {
-        return SubExpressionType::Numeric;
+        return SubExpressionType::NumericExpr;
     }
     void Print(std::ostream& out) const noexcept override
     {
@@ -60,6 +60,11 @@ public:
     [[nodiscard]] const VariableType& GetValue(Session& host) const override
     {
         return Value;
+    }
+
+    [[nodiscard]] std::unique_ptr<ExpressionElement> Clone() const noexcept override
+    {
+        return std::make_unique<NumericExpr>(*this);
     }
 };
 /// @breif Holds a key to a package entry, but will do nothing after this object goes out of scope.
@@ -75,11 +80,16 @@ public:
 
     [[nodiscard]] SubExpressionType GetType() const noexcept override
     {
-        return SubExpressionType::Variable;
+        return SubExpressionType::VariableExpr;
     }
     void Print(std::ostream& out) const noexcept override;
 
     [[nodiscard]] const VariableType& GetValue(Session& host) const override;
+
+    [[nodiscard]] std::unique_ptr<ExpressionElement> Clone() const noexcept override
+    {
+        return std::make_unique<VariableExpr>(*this);
+    }
 };
 /// @breif Holds a key to a package entry, but will call to delete it after this object goes out of scope.
 /// @breif Note that once this object is copied, it will call to copy its object.
@@ -106,36 +116,46 @@ public:
 
     [[nodiscard]] SubExpressionType GetType() const noexcept override
     {
-        return SubExpressionType::Declaration;
+        return SubExpressionType::DeclarationExpr;
     }
     void Print(std::ostream& out) const noexcept override;
+
+    [[nodiscard]] std::unique_ptr<ExpressionElement> Clone() const noexcept override
+    {
+        return std::make_unique<DeclarationExpr>(*this);
+    }
 
     [[nodiscard]] const VariableType& GetValue(Session& host) const override;
 };
 class IntermediateExpr : public SubExpression
 {
 private:
-    std::stringstream Value;
+    std::string Value;
 
 public:
-    explicit IntermediateExpr(std::stringstream Value) : Value(std::move(Value)) { }
+    explicit IntermediateExpr(std::string Value) : Value(std::move(Value)) { }
 
     [[nodiscard]] SubExpressionType GetType() const noexcept override
     {
-        return SubExpressionType::Intermediate;
+        return SubExpressionType::IntermediateExpr;
     }
     void Print(std::ostream& out) const noexcept override
     {
-        out << Value.str();
+        out << Value;
     }
 
     [[nodiscard]] const VariableType& GetValue(Session& host) const override
     {
         throw std::logic_error("Invalid access");
     }
-    [[nodiscard]] std::stringstream& Access() noexcept
+    [[nodiscard]] const std::string& Access() const noexcept
     {
         return Value;
+    }
+
+    [[nodiscard]] std::unique_ptr<ExpressionElement> Clone() const noexcept override
+    {
+        return std::make_unique<IntermediateExpr>(*this);
     }
 };
 
@@ -164,7 +184,6 @@ public:
     {
         out << this->FormatMessage();
     }
-
 };
 
 struct ParsedSubExpression

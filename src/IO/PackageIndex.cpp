@@ -32,22 +32,19 @@ std::vector<PackageEntryIndex> PackageIndex::ReadIndex(unsigned long PackageID) 
 
     return index;
 }
-bool PackageIndex::Write(const std::vector<PackageEntry*>& entries) noexcept
+bool PackageIndex::Write(const std::vector<PackageEntry>& entries) noexcept
 {
     this->handle.file.close();
     this->handle.file.open(this->handle.path, std::ios::in | std::ios::out | std::ios::trunc);
 
     return Write(this->handle.file, entries);
 }
-bool PackageIndex::Write(std::ostream& out, const std::vector<PackageEntry*>& entries) noexcept
+bool PackageIndex::Write(std::ostream& out, const std::vector<PackageEntry>& entries) noexcept
 {
     out.seekp(0, std::ios::beg);
 
-    for (PackageEntry* obj : entries)
-    {
-        const PackageEntryIndex& index = obj->GetIndex();
-        out << index << '\n';
-    }
+    for (auto& obj : entries)
+        out << obj.GetIndex() << '\n';
 
     out.flush();
     return !out.bad();

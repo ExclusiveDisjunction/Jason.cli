@@ -23,9 +23,6 @@ PackageEntry::PackageEntry(PackageEntryIndex&& index, Package* parent) : index(s
 }
 PackageEntry::~PackageEntry()
 {
-    if (this->parent)
-        (void)this->parent->ReleaseEntry(this->index.Key().EntryID);
-
     (void)Unload();
 }
 
@@ -42,28 +39,15 @@ bool PackageEntry::WriteData(std::ostream& out) const noexcept
     out.flush();
     return !out.bad();
 }
-bool PackageEntry::DisplayData(std::ostream& out) noexcept
+bool PackageEntry::DisplayData(std::ostream& out) const noexcept
 {
     if (!this->data.has_value())
-    {
-        if (!this->Load())
-            return false;
-    }
-
-    if (!(*this->data))
+        out << "(Unloaded)";
+    else if (!(*this->data))
         out << "NULL";
     else
         (*this->data)->Print(out);
 
-    return !out.bad();
-}
-bool PackageEntry::WriteIndex(std::ostream& out) const noexcept
-{
-    if (!out)
-        return false;
-
-    out << this->index;
-    out.flush();
     return !out.bad();
 }
 bool PackageEntry::WriteData() const noexcept

@@ -9,7 +9,7 @@ Operator::Operator(char symbol, unsigned precedence, OperatorFunc eval) : symbol
 
 }
 
-[[nodiscard]] std::unique_ptr<VariableType*> Operator::Evaluate(const VariableType& a, const VariableType& b) const
+[[nodiscard]] std::unique_ptr<VariableType> Operator::Evaluate(const VariableType& a, const VariableType& b) const
 {
     return this->eval(a, b);
 }
