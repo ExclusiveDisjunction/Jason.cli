@@ -62,7 +62,7 @@ std::vector<PackageEntry>::iterator Package::GetEntry(unsigned long ID) noexcept
     });
 }
 
-std::optional<std::unique_ptr<Package>> Package::OpenFromDirectory(std::filesystem::path& dir, unsigned long ID)
+std::optional<std::unique_ptr<Package>> Package::OpenFromDirectory(std::filesystem::path& dir, unsigned long ID) noexcept
 {
     /*
      * We look for the following things:
@@ -75,19 +75,26 @@ std::optional<std::unique_ptr<Package>> Package::OpenFromDirectory(std::filesyst
 
     std::filesystem::path header_l(dir / "header"), index_l(dir / "index"), var_l(dir / "var");
 
-    FileHandle header_f(header_l), index_f(index_l);
-    if (!std::filesystem::exists(var_l))
-        throw std::logic_error("");
+    try
+    {
+        FileHandle header_f(header_l), index_f(index_l);
+        if (!std::filesystem::exists(var_l))
+            return {};
 
-    PackageHeader header(std::move(header_f), JASON_CURRENT_VERSION);
-    PackageIndex index(std::move(index_f));
+        PackageHeader header(std::move(header_f), JASON_CURRENT_VERSION);
+        PackageIndex index(std::move(index_f));
 
-    if (!header.Read())
-        throw std::logic_error("");
+        if (!header.Read())
+            return {};
 
-    std::unique_ptr<Package> result( new Package(dir, ID, dir.filename(), std::move(header), std::move(index)) );
-    result->IndexEntries();
-    return result;
+        std::unique_ptr<Package> result( new Package(dir, ID, dir.filename(), std::move(header), std::move(index)) );
+        result->IndexEntries();
+        return result;
+    }
+    catch (...)
+    {
+        return {};
+    }
 }
 std::optional<std::unique_ptr<Package>> Package::OpenFromCompressed(std::filesystem::path& pack, std::filesystem::path& targetDir, unsigned long ID)
 {
@@ -95,10 +102,10 @@ std::optional<std::unique_ptr<Package>> Package::OpenFromCompressed(std::filesys
 
     return OpenFromDirectory(targetDir, ID);
 }
-std::optional<std::unique_ptr<Package>> Package::NewPackage(const std::string& name, const std::filesystem::path& landingDirectory, unsigned long ID)
+std::optional<std::unique_ptr<Package>> Package::NewPackage(const std::string& name, const std::filesystem::path& landingDirectory, unsigned long ID) noexcept
 {
     if (!std::filesystem::exists(landingDirectory) || !std::filesystem::is_directory(landingDirectory) || name.empty())
-        throw std::logic_error("Landing directory is not a directory, does not exist, or the name is empty.");
+        return {}; //throw std::logic_error("Landing directory is not a directory, does not exist, or the name is empty.");
 
     std::filesystem::path path = landingDirectory / name;
     if (std::filesystem::exists(path)) //Already exists
@@ -126,7 +133,7 @@ std::optional<std::unique_ptr<Package>> Package::NewPackage(const std::string& n
     }
     catch (std::logic_error& e)
     {
-        throw std::logic_error("Could not make package because a sub-file could not be created.");
+        return {};
     }
 }
 

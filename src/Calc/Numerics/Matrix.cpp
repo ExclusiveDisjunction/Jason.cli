@@ -56,7 +56,9 @@ Matrix& Matrix::operator=(Matrix&& Other) noexcept
 
 void Matrix::Allocate(unsigned int NewRows, unsigned int NewColumns, double Value) noexcept
 {
-    if (rows == NewRows && cols == NewColumns) //Already that size, just set value
+    size_t currRows = Data.size(), currCols = currRows == 0 ? 0 : Data[0].size();
+
+    if (rows == NewRows && cols == NewColumns && rows == currRows && cols == currCols) //Already that size, just set value
     {
         for (auto& row : Data)
             for (auto& element : row)

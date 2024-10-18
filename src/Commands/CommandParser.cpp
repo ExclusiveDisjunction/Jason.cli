@@ -86,6 +86,12 @@ CommandParser CommandParser::Parse(std::istream& in)
         char first, second;
         std::streampos loc = wholeLine.tellg();
         wholeLine >> first >> second;
+        if (wholeLine.eof()) //We know that we are EOF, and only the first char is valid.
+        {
+            values.emplace_back(std::string(1, first));
+            break;
+        }
+
         wholeLine.seekg(loc); // Reset to front
 
         if (first == '-' && second == '-') //Specifier
