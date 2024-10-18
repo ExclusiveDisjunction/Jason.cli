@@ -16,7 +16,6 @@ private:
     static CommandType ThisType;
 
 public:
-    EvaluateCommand();
     explicit EvaluateCommand(Expression&& Expr);
     explicit EvaluateCommand(const Expression& Expr);
 
@@ -35,7 +34,6 @@ private:
     static CommandType ThisType;
 
 public:
-    StoreCommand() = default;
     StoreCommand(PackageEntryKey Target, Expression&& Expr);
 
     PackageEntryKey Target;

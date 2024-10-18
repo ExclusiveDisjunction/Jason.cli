@@ -13,7 +13,6 @@ CommandType EvaluateCommand::ThisType = CommandType(
         "Evaluate an expression, and store the result in ans"
         );
 
-EvaluateCommand::EvaluateCommand() = default;
 EvaluateCommand::EvaluateCommand(Expression&& Expr) : TargetExpression(std::move(Expr))
 {
 

@@ -61,17 +61,17 @@ public:
     Package& operator=(const Package& obj) = delete;
     Package& operator=(Package&& obj) noexcept = delete;
 
-    [[nodiscard]] static std::unique_ptr<Package> OpenFromDirectory(std::filesystem::path& dir, unsigned long ID);
-    [[nodiscard]] static std::unique_ptr<Package> OpenFromCompressed(std::filesystem::path& pack, std::filesystem::path& targetDir, unsigned long ID);
-    [[nodiscard]] static std::unique_ptr<Package> NewPackage(const std::string& name, const std::filesystem::path& landingDirectory, unsigned long ID);
+    [[nodiscard]] static std::optional<std::unique_ptr<Package>> OpenFromDirectory(std::filesystem::path& dir, unsigned long ID);
+    [[nodiscard]] static std::optional<std::unique_ptr<Package>> OpenFromCompressed(std::filesystem::path& pack, std::filesystem::path& targetDir, unsigned long ID);
+    [[nodiscard]] static std::optional<std::unique_ptr<Package>> NewPackage(const std::string& name, const std::filesystem::path& landingDirectory, unsigned long ID);
 
-    [[nodiscard]] const std::filesystem::path& Location() const noexcept;
-    [[nodiscard]] std::filesystem::path VarLocation() const noexcept;
-    [[nodiscard]] unsigned long GetID() const noexcept;
-    [[nodiscard]] const std::string& GetName() const noexcept;
-    [[nodiscard]] bool IsCompressed() const noexcept;
-    [[nodiscard]] const PackageHeader& Header() const noexcept;
-    [[nodiscard]] PackageHeader& Header() noexcept;
+    [[nodiscard]] [[maybe_unused]] const std::filesystem::path& Location() const noexcept;
+    [[nodiscard]] [[maybe_unused]] std::filesystem::path VarLocation() const noexcept;
+    [[nodiscard]] [[maybe_unused]] unsigned long GetID() const noexcept;
+    [[nodiscard]] [[maybe_unused]] const std::string& GetName() const noexcept;
+    [[nodiscard]] [[maybe_unused]] bool IsCompressed() const noexcept;
+    [[nodiscard]] [[maybe_unused]] const PackageHeader& Header() const noexcept;
+    [[nodiscard]] [[maybe_unused]] PackageHeader& Header() noexcept;
 
     [[nodiscard]] bool Compress(std::ostream& out) const noexcept;
     [[nodiscard]] bool Save() noexcept;
@@ -82,14 +82,13 @@ public:
     [[nodiscard]] PackageEntry& ResolveEntry(const std::string& name);
     [[nodiscard]] const PackageEntry& ResolveEntry(PackageEntryKey key) const;
     [[nodiscard]] PackageEntry& ResolveEntry(PackageEntryKey key);
-    [[nodiscard]] bool DoesEntryExist(unsigned long ID) noexcept;
 
     [[nodiscard]] bool LoadAllEntries() noexcept;
     void UnloadAllEntries() noexcept;
 
     [[nodiscard]] bool RemoveEntry(unsigned long ID) noexcept; //Removes from the internal list & deletes it.
     void RemoveAllEntries() noexcept;
-    [[nodiscard]] PackageEntry ReleaseEntry(unsigned long ID) noexcept; //Removes from the internal list, but does not delete it.
+    [[nodiscard]] std::optional<PackageEntry> ReleaseEntry(unsigned long ID) noexcept; //Removes from the internal list, but does not delete it.
     [[nodiscard]] std::optional<PackageEntryKey> AddEntry(std::string name, PackageEntryType type, std::unique_ptr<VariableType>&& data) noexcept;
 };
 

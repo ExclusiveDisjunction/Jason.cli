@@ -21,9 +21,8 @@ void testCalc()
         std::stringstream tempB;
         b.Sterilize(tempB);
 
-        auto* bFrom = Scalar::Desterilize(tempB.str());
-        cout << "b -> sterilized -> Scalar == b? (Expect yes) " << (b == *bFrom ? "yes" : "no") << endl;
-        delete bFrom;
+        auto bFrom = Scalar::Desterilize(tempB);
+        cout << "b -> sterilized -> Scalar == b? (Expect yes) " << (b == bFrom ? "yes" : "no") << endl;
 
         Scalar d = a + b;
         cout << "a + b == 5.5? (expect yes) " << (d == 3.4 + 2.1 ? "yes" : "no") << ", d = " << d << endl;
@@ -65,8 +64,7 @@ void testCalc()
 
     cout << endl << "Test Three: Matrix" << endl << endl;
     {
-        Matrix a(2, 2, 3.4, 1.6, 2.1, 0.9),
-                b = Matrix::Identity(2);
+        Matrix a = Matrix::FromList(2, 2, 3.4, 1.6, 2.1, 0.9), b = Matrix::Identity(2);
 
         cout << "a = \n" << a << "\nb = \n" << b << endl;
 
@@ -76,9 +74,9 @@ void testCalc()
         cout << "a * b = \n" << a * b << endl;
         cout << "a / 1.3 = \n" << a / 1.3 << endl;
 
-        Matrix d(3, 3, -1,    -4.23,  1.6,
-                 2.34, -1.93, -4,
-                 2,     0.55,  3);
+        Matrix d = Matrix::FromList(3, 3, -1,    -4.23,  1.6,
+                                           2.34, -1.93, -4,
+                                           2,     0.55,  3);
         cout << endl << "d = \n" << d << endl;
         cout << endl << "d = " << PrintMatrixOneLine(d) << endl;
     }

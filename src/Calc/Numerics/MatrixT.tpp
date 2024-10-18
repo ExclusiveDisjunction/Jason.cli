@@ -20,6 +20,8 @@ Matrix Matrix::FromList(unsigned Rows, unsigned Columns, args... vals)
             sCurr++;
         }
     }
+
+    return result;
 }
 
 template<typename T> requires IsScalarOrDouble<T>
