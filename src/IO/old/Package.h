@@ -66,7 +66,7 @@ public:
     bool UnloadEntry(unsigned long ID) noexcept;
     bool ResetEntry(unsigned long ID) noexcept;
     bool DropEntry(unsigned long ID) noexcept;
-    std::optional<PackageEntryKey> AddEntry(std::string name, PackageEntryType type, VariableType* data) noexcept;
+    std::optional<PackageEntryKey> AddEntry(std::string name, PackageEntryType type, std::unique_ptr<VariableType>&& data) noexcept;
 
     bool DoesEntryExist(unsigned long ID) noexcept;
     const VariableType& GetEntryValue(unsigned long ID);

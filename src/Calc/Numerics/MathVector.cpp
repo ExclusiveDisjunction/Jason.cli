@@ -117,11 +117,11 @@ void MathVector::Sterilize(std::ostream& out) const noexcept
     for (const auto& item : this->Data)
         out << ' ' << item;
 }
-[[nodiscard]] VariableTypes MathVector::GetType() const noexcept
+VariableTypes MathVector::GetType() const noexcept
 {
     return VariableTypes::VT_Vector;
 }
-[[nodiscard]] std::string MathVector::GetTypeString() const noexcept
+std::string MathVector::GetTypeString() const noexcept
 {
     std::stringstream ss;
     ss << "(Vector:";
@@ -142,7 +142,7 @@ void MathVector::Print(std::ostream& out) const noexcept
     out << '}';
 }
 
-[[maybe_unused]] [[nodiscard]] MathVector MathVector::CrossProduct(const MathVector& One, const MathVector& Two)
+MathVector MathVector::CrossProduct(const MathVector& One, const MathVector& Two)
 {
     if (Two.Dim() != One.Dim())
         throw OperatorException('X', One.GetTypeString(), Two.GetTypeString(), "Cannot cross vectors with different dimensions.");
@@ -164,7 +164,7 @@ void MathVector::Print(std::ostream& out) const noexcept
 
     return MathVector::FromList((A[1] * B[2]) - (A[2] * B[1]), (A[2] * B[0]) - (A[0] * B[2]), (A[0] * B[1]) - (A[1] * B[0])); //Uses the cross product equation.
 }
-[[maybe_unused]] [[nodiscard]] double MathVector::DotProduct(const MathVector& One, const MathVector& Two)
+double MathVector::DotProduct(const MathVector& One, const MathVector& Two)
 {
     if (One.Dim() != Two.Dim())
         throw std::logic_error("The dimensions of the two vectors do not match.");

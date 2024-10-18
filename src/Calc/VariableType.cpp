@@ -18,12 +18,12 @@ std::string VariableType::Sterilize() const noexcept
     return ss.str();
 }
 
-[[nodiscard]] std::optional<std::unique_ptr<VariableType>> VariableType::FromSterilized(const std::string& val) noexcept
+std::optional<std::unique_ptr<VariableType>> VariableType::Desterilize(const std::string& val) noexcept
 {
     std::stringstream ss(val);
-    return FromSterilized(ss);
+    return Desterilize(ss);
 }
-[[nodiscard]] std::optional<std::unique_ptr<VariableType>> VariableType::FromSterilized(std::istream& in) noexcept
+std::optional<std::unique_ptr<VariableType>> VariableType::Desterilize(std::istream& in) noexcept
 {
     std::string header;
     in >> header;
@@ -32,11 +32,11 @@ std::string VariableType::Sterilize() const noexcept
     try
     {
         if (header == "SCA")
-            return std::make_unique<Scalar>(in);
+            return std::make_unique<Scalar>( std::move(Scalar::Desterilize(in)) );
         else if (header == "VEC")
-            return std::make_unique<MathVector>(in);
+            return std::make_unique<MathVector>( std::move(MathVector::Desterilize(in)) );
         else if (header == "MAT")
-            return std::make_unique<Matrix>(in);
+            return std::make_unique<Matrix>( std::move(Matrix::Desterilize(in)) );
         else
             return {};
     }

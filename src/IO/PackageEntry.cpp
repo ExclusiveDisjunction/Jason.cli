@@ -105,14 +105,15 @@ bool PackageEntry::Load(std::istream& in) noexcept
         return false;
 
     in.seekg(0, std::ios::beg);
-    this->data = VariableType::FromSterilized(in);
+    this->data = VariableType::Desterilize(in);
     return this->data != nullptr;
 }
-bool PackageEntry::Unload() noexcept
+void PackageEntry::Unload() noexcept
 {
-    delete this->data.value_or(nullptr);
+    if (this->data.has_value())
+        this->data.value().reset();
+
     this->data = {};
-    return true;
 }
 bool PackageEntry::Reset() noexcept
 {
@@ -124,7 +125,8 @@ bool PackageEntry::Reset() noexcept
             return false;
     }
 
-    return Unload();
+    Unload();
+    return true;
 }
 
 const VariableType& PackageEntry::Data() const
@@ -136,12 +138,11 @@ const VariableType& PackageEntry::Data() const
 
     return *(*this->data);
 }
-bool PackageEntry::Data(VariableType* New) noexcept
+bool PackageEntry::Data(std::unique_ptr<VariableType>&& New) noexcept
 {
-    if (this->data.has_value())
-        delete (*this->data);
+    Unload();
 
-    this->data = New;
+    this->data = std::move(New);
     return WriteData();
 }
 

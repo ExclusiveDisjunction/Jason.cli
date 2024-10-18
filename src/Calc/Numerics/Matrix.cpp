@@ -160,7 +160,7 @@ void Matrix::Sterilize(std::ostream& out) const noexcept
         for (auto& entry : row)
             out << entry << ' ';
 }
-[[maybe_unused]] Matrix Matrix::Desterilize(std::istream& in)
+Matrix Matrix::Desterilize(std::istream& in)
 {
     std::string header;
     in >> header;
@@ -187,6 +187,8 @@ void Matrix::Sterilize(std::ostream& out) const noexcept
             }
         }
     }
+
+    return result;
 }
 std::string Matrix::GetTypeString() const noexcept
 {
@@ -684,25 +686,18 @@ Matrix& Matrix::operator*=(const Matrix& Two)
 
 std::ostream& operator<<(std::ostream& out, const MatrixSingleLinePrint& Obj)
 {
-    const auto& Target = Obj.Target;
+    out << '[';
 
-    if (!Target.IsValid())
-        out << "[ ]";
-    else
+    for (const auto& row : Obj.Target.Data)
     {
-        out << '[';
+        const double& last = row.back();
+        for (const auto& elem : row)
+            out << (elem == last ? " " : ", ") << elem;
 
-        for (const auto& row : Target.Data)
-        {
-            const double& last = row.back();
-            for (const auto& elem : row)
-                out << (elem == last ? " " : ", ") << elem;
-
-            out << ';';
-        }
-
-        out << ']';
+        out << ';';
     }
+
+    out << " ]";
 
     return out;
 }

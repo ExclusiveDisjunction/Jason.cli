@@ -46,7 +46,7 @@ public:
     Matrix& operator=(const Matrix& Other) noexcept;
     Matrix& operator=(Matrix&& Other) noexcept;
 
-    friend std::ostream& operator<<(std::ostream&, const class MatrixSingleLinePrint&);
+    friend std::ostream& operator<<(std::ostream&, const struct MatrixSingleLinePrint&);
 
     [[nodiscard]] unsigned int Rows() const { return Data.size(); }
     [[nodiscard]] unsigned int Columns() const { return Data.empty() ? 0 : Data[0].size(); }
@@ -67,9 +67,9 @@ public:
     [[nodiscard]] static Matrix Identity(unsigned int Rows, unsigned int Cols);
     [[nodiscard]] [[maybe_unused]] static Matrix RandomMatrix(unsigned int Rows, unsigned int Columns, bool Integers);
 
-    const std::vector<double>& operator[](unsigned int Row) const;
-    const double& Access(unsigned int i, unsigned int j) const;
-    double& Access(unsigned int i, unsigned int j);
+    [[nodiscard]] const std::vector<double>& operator[](unsigned int Row) const;
+    [[nodiscard]] const double& Access(unsigned int i, unsigned int j) const;
+    [[nodiscard]] double& Access(unsigned int i, unsigned int j);
 
     [[nodiscard]] Matrix Extract(unsigned int StartI, unsigned int StartJ, unsigned int RowCount, unsigned int ColumnCount);
 

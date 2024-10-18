@@ -18,12 +18,10 @@ class Package;
 class PackageEntry
 {
 private:
-    std::optional<VariableType*> data = {};
+    std::optional<std::unique_ptr<VariableType>> data = {};
     Package* parent = nullptr;
     PackageEntryIndex index;
     bool modified = false;
-
-    PackageEntry() : data(), parent(nullptr), index(), modified(false) {}
 
 public:
     PackageEntry(PackageEntryIndex&& index, Package* parent);
@@ -55,12 +53,12 @@ public:
     /// @brief Reads from the path located at GetPath(), only looking for the data. If the path could not be resolves, it attempts to create it. If it fails to create, it will return false, otherwise, data will be nullptr. 
     [[nodiscard]] bool Load() noexcept;
     /// @brief Removes the 'Data' item from memory without deleting the file.
-    [[nodiscard]] bool Unload() noexcept;
+    [[nodiscard]] void Unload() noexcept;
     /// @brief Deletes 'Data' from memory & the file system.
     bool Reset() noexcept;
 
     [[nodiscard]] const VariableType& Data() const;
-    bool Data(VariableType* New) noexcept;
+    bool Data(std::unique_ptr<VariableType> && New) noexcept;
 
     [[nodiscard]] std::optional<bool> HasData() const noexcept;
     [[nodiscard]] bool IsModified() const noexcept;

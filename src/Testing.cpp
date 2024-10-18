@@ -14,7 +14,7 @@ void testCalc()
     cout << "Test One: Scalars" << endl << endl;
     {
         Scalar a(3.4), b(2.1), c(-1.7);
-        cout << "Sterilized a: ";
+        cout << "Desterilize a: ";
         a.Sterilize(cout);
         cout << endl;
 

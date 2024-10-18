@@ -40,8 +40,8 @@ public:
     virtual bool operator==(const VariableType& obj) const noexcept = 0;
     virtual bool operator!=(const VariableType& obj) const noexcept = 0;
 
-    [[nodiscard]] static std::optional<std::unique_ptr<VariableType>> FromSterilized(const std::string& val) noexcept;
-    [[nodiscard]] static std::optional<std::unique_ptr<VariableType>> FromSterilized(std::istream& in) noexcept;
+    [[nodiscard]] static std::optional<std::unique_ptr<VariableType>> Desterilize(const std::string& val) noexcept;
+    [[nodiscard]] static std::optional<std::unique_ptr<VariableType>> Desterilize(std::istream& in) noexcept;
 };
 
 std::ostream& operator<<(std::ostream& out, const VariableType& Obj);
