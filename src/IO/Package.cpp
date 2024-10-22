@@ -112,12 +112,12 @@ std::optional<std::unique_ptr<Package>> Package::NewPackage(const std::string& n
         return OpenFromDirectory(path, ID);
 
     if (!std::filesystem::create_directory(path))
-        throw std::logic_error("The new directory could not be created.");
+        return {};
 
     std::filesystem::path header_p = path / "header", index_p = path / "index", entries_p = path / "var";
 
     if (!std::filesystem::create_directory(entries_p))
-        throw std::logic_error("Could not make the entries directory for the package.");
+        return {};
 
     try
     {

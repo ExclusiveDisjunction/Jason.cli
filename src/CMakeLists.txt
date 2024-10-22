@@ -6,7 +6,9 @@ add_subdirectory(Commands)
 
 add_library(src SHARED DateTime.cpp
         Log.cpp
-        Testing.cpp)
+        Testing.cpp
+        IOTester.h
+        IOTester.cpp)
 
 # PackageEntry.cpp is handled by topmost CMakeFile.
 
