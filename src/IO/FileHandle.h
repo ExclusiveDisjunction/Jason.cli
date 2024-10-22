@@ -16,6 +16,9 @@ public:
     FileHandle(FileHandle&& obj) noexcept;
     ~FileHandle();
 
+    FileHandle& operator=(const FileHandle& obj) noexcept = delete;
+    FileHandle& operator=(FileHandle&& obj) noexcept;
+
     void Close() noexcept;
 
     std::filesystem::path path;

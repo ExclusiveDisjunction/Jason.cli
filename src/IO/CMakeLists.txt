@@ -16,6 +16,10 @@ add_library(IO SHARED
         PackageEntryIndex.h
         PackageEntryIndex.cpp
         PackageIndex.cpp
-        PackageEntryKey.cpp)
+        PackageEntryKey.cpp
+        BinaryUnit.h
+        BinaryUnit.cpp
+        PackagePager.cpp
+        PackagePager.h)
 
 target_link_libraries(IO Calc)

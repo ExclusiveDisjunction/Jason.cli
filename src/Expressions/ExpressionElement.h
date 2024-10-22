@@ -6,6 +6,7 @@
 #define JASON_EXPRESSIONELEMENT_H
 
 #include <iostream>
+#include <memory>
 
 enum ExpressionElementT
 {

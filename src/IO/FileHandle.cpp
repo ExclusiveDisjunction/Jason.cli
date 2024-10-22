@@ -31,11 +31,20 @@ FileHandle::FileHandle(FileHandle&& obj) noexcept : path(std::move(obj.path)), f
 {
 
 }
-
 FileHandle::~FileHandle()
 {
     Close();
 }
+
+FileHandle& FileHandle::operator=(FileHandle&& obj) noexcept
+{
+    Close();
+
+    this->file = std::move(obj.file);
+    this->path = std::move(obj.path);
+    return *this;
+}
+
 
 void FileHandle::Close() noexcept
 {
