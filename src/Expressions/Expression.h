@@ -14,7 +14,7 @@
 class DelimitedExpression
 {
 private:
-    DelimitedExpression(std::vector<std::unique_ptr<ExpressionElement>> elements) : elements(std::move(elements)) { }
+    explicit DelimitedExpression(std::vector<std::unique_ptr<ExpressionElement>> elements);
 
     std::vector<std::unique_ptr<ExpressionElement>> elements;
 
