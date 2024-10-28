@@ -14,8 +14,8 @@ void IOTester() noexcept
     if (!std::filesystem::exists(landing))
         std::filesystem::create_directories(location);
 
-    std::unique_ptr<Package> New;
-    std::optional<std::unique_ptr<Package>> RawHandle = Package::OpenFromDirectory(location, 0);
+    std::shared_ptr<Package> New;
+    auto RawHandle = Package::OpenFromDirectory(location, 0);
     if (!RawHandle)
     {
         RawHandle = Package::NewPackage("usr", landing, 0);

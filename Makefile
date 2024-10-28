@@ -1,9 +1,9 @@
-build_dbg = ./build/debug
+build_dbg = ./build
 build_rls = ./build/release
 pub_dir = ./bin
 
 clean:
-	@rm -rf $(build_dbg) $(build_rls)
+	@rm -rf $(build_dbg)
 
 init:
 	@echo "Debug:"
@@ -16,7 +16,7 @@ build:
 	@cmake --build $(build_dbg) --target Jason -j 4
 
 build-r:
-	@cmake --build $(build_rls)  --target Jason -j 4
+	@cmake --build $(build_rls) --target Jason -j 4
 
 
 run:

@@ -62,7 +62,7 @@ std::vector<PackageEntry>::iterator Package::GetEntry(unsigned long ID) noexcept
     });
 }
 
-std::optional<std::unique_ptr<Package>> Package::OpenFromDirectory(std::filesystem::path& dir, unsigned long ID) noexcept
+std::optional<std::shared_ptr<Package>> Package::OpenFromDirectory(std::filesystem::path& dir, unsigned long ID) noexcept
 {
     /*
      * We look for the following things:
@@ -87,7 +87,7 @@ std::optional<std::unique_ptr<Package>> Package::OpenFromDirectory(std::filesyst
         if (!header.Read())
             return {};
 
-        std::unique_ptr<Package> result( new Package(dir, ID, dir.filename(), std::move(header), std::move(index)) );
+        std::shared_ptr<Package> result( new Package(dir, ID, dir.filename(), std::move(header), std::move(index)) );
         result->IndexEntries();
         return result;
     }
@@ -96,13 +96,13 @@ std::optional<std::unique_ptr<Package>> Package::OpenFromDirectory(std::filesyst
         return {};
     }
 }
-std::optional<std::unique_ptr<Package>> Package::OpenFromCompressed(std::filesystem::path& pack, std::filesystem::path& targetDir, unsigned long ID)
+std::optional<std::shared_ptr<Package>> Package::OpenFromCompressed(std::filesystem::path& pack, std::filesystem::path& targetDir, unsigned long ID)
 {
     throw std::logic_error("Not implemented yet.");
 
     return OpenFromDirectory(targetDir, ID);
 }
-std::optional<std::unique_ptr<Package>> Package::NewPackage(const std::string& name, const std::filesystem::path& landingDirectory, unsigned long ID) noexcept
+std::optional<std::shared_ptr<Package>> Package::NewPackage(const std::string& name, const std::filesystem::path& landingDirectory, unsigned long ID) noexcept
 {
     if (!std::filesystem::exists(landingDirectory) || !std::filesystem::is_directory(landingDirectory) || name.empty())
         return {}; //throw std::logic_error("Landing directory is not a directory, does not exist, or the name is empty.");
@@ -129,7 +129,7 @@ std::optional<std::unique_ptr<Package>> Package::NewPackage(const std::string& n
         if (!header.Write())
             throw std::logic_error("");
 
-        return std::unique_ptr<Package>( new Package(path, ID, name, std::move(header), std::move(index)) );
+        return std::shared_ptr<Package>( new Package(path, ID, name, std::move(header), std::move(index)) );
     }
     catch (std::logic_error& e)
     {
