@@ -15,10 +15,11 @@
 class Session
 {
 private:
+    std::filesystem::path location;
+    FileHandle header;
     std::vector<std::shared_ptr<Package>> packages;
     std::vector<UnloadedPackage> unloadedPackages;
     unsigned long currID;
-    bool initiated = false;
     
     using pack_lt = std::vector<std::shared_ptr<Package>>;
     using upack_lt = std::vector<UnloadedPackage>;
@@ -37,7 +38,7 @@ private:
     [[nodiscard]] cu_iter ResolveUnloadedPackage(unsigned long ID) const noexcept;
     [[nodiscard]] u_iter ResolveUnloadedPackage(unsigned long ID) noexcept;
 
-    Session();
+    Session(std::filesystem::path, FileHandle&& header);
 public:
     Session(const Session& obj) = delete;
     Session(Session&& obj) noexcept;
@@ -46,12 +47,10 @@ public:
     Session& operator=(const Session& obj) = delete;
     Session& operator=(Session&& obj) noexcept;
     
-    std::optional<std::unique_ptr<Session>> StartSession(std::filesystem::path host);
-    void Shutdown();
-    bool SaveAndClose();
+    [[nodiscard]] Result<std::unique_ptr<Session>, std::string> StartSession(std::filesystem::path host);
     [[nodiscard]] bool Save() const noexcept;
-
-    //[[nodiscard]] static std::string MakePackageName(const std::filesystem::path& target) noexcept;
+    [[nodiscard]] bool SaveAndClose();
+    void Shutdown();
     
     [[nodiscard]] std::optional<std::shared_ptr<Package>> GetPackage(const std::string& name) const noexcept;
     [[nodiscard]] std::optional<unsigned long> GetPackageID(const std::string& name) const noexcept;

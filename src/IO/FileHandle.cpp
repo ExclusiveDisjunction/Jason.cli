@@ -6,8 +6,36 @@
 #include <cstring>
 #include <sstream>
 
-FileHandle::FileHandle(std::filesystem::path path, std::ios::openmode flags) : path(std::move(path)), file()
+FileHandle::FileHandle(std::filesystem::path path, std::ios::openmode flags) : FileHandle()
 {
+    Open(std::move(path), flags);
+}
+FileHandle::FileHandle(FileHandle&& obj) noexcept : path(std::move(obj.path)), file(std::move(obj.file))
+{
+
+}
+FileHandle::~FileHandle()
+{
+    Close();
+}
+
+Result<FileHandle, std::string> FileHandle::TryOpen(std::filesystem::path path, std::ios::openmode flags)
+{
+    try
+    {
+        return FileHandle(std::move(path), flags);
+    }
+    catch(const std::exception& e)
+    {
+        return std::string(e.what());
+    }
+}
+
+void FileHandle::Open(std::filesystem::path path , std::ios::openmode flags)
+{
+    Close();
+
+    this->path = std::move(path);
     file.open(this->path, flags);
 
     if (!this->file)
@@ -25,15 +53,6 @@ FileHandle::FileHandle(std::filesystem::path path, std::ios::openmode flags) : p
     }
 
     this->file.seekg(0, std::ios::beg);
-}
-
-FileHandle::FileHandle(FileHandle&& obj) noexcept : path(std::move(obj.path)), file(std::move(obj.file))
-{
-
-}
-FileHandle::~FileHandle()
-{
-    Close();
 }
 
 FileHandle& FileHandle::operator=(FileHandle&& obj) noexcept

@@ -4,7 +4,7 @@
 
 #include "Session.h"
 
-#include "../Common.h"
+#include "../Core/Common.h"
 #include "UnloadedPackage.h"
 
 #include <filesystem>
@@ -13,12 +13,66 @@
 #include <sstream>
 #include <cstring>
 
-Session::Session() : packages(), unloadedPackages(), currID(0) {}
+Session::Session(std::filesystem::path location, FileHandle&& header) : packages(), unloadedPackages(), currID(0), location(std::move(location)), header(std::move(header)) 
+{
+
+}
+Session::Session(Session&& obj) noexcept : packages(std::move(obj.packages)), unloadedPackages(std::move(obj.unloadedPackages)), currID(std::exchange(obj.currID, 0)), location(std::move(obj.location)), header(std::move(obj.header))
+{
+
+}
 Session::~Session()
 {
     Shutdown();
 }
 
+Session& Session::operator=(Session&& obj) noexcept
+{
+    Shutdown();
+
+    packages = std::move(obj.packages);
+    unloadedPackages = std::move(obj.unloadedPackages);
+    location = std::move(obj.location);
+    currID = std::exchange(obj.currID, 0);
+    header = std::move(obj.header);
+
+    return *this;
+}
+
+Result<std::unique_ptr<Session>, std::string> Session::StartSession(std::filesystem::path host)
+{
+    //First we check to see if our session directories is ok.
+    std::filesystem::path headerP = host / "header";
+    if (!std::filesystem::exists(host) || !std::filesystem::exists(headerP))
+        return Result<std::unique_ptr<Session>, std::string>("The host directory or the header file does not exist");
+
+    Result<FileHandle, std::string> header = FileHandle::TryOpen(headerP);
+    if (header.IsErr())
+        return header.GetErrDirect();
+
+    std::unique_ptr<Session> resultPtr(
+        new Session(std::move(host), std::move(header.GetOkDirect()))
+    );
+
+    Session& result = *resultPtr;
+    for (const auto& dir : std::filesystem::directory_iterator{result.location})
+    {
+        if (dir.is_directory())
+        {
+            std::filesystem::path loc = dir.path();
+            auto PackResult = Package::OpenFromDirectory(std::move(loc), GetNextID());
+            if (PackResult.IsOk())
+            {
+                std::shared_ptr<Package>& pack = PackResult.GetOkDirect();
+                result.packages.emplace_back(std::move(pack));
+            }
+            else
+                return PackResult.GetErrDirect();
+        }
+    }
+
+    return resultPtr;
+}
 bool Session::Save() const noexcept
 {
     bool result = true;
@@ -49,39 +103,16 @@ void Session::Shutdown()
 
 std::optional<unsigned long> Session::GetPackageID(const std::string& name) const noexcept
 {
-
+    auto prevResult = GetPackage(name);
+    return prevResult ? prevResult.value()->GetID() : std::optional<unsigned long>();
 }
-std::optional<PackageEntryKey> Session::ResolveEntryKey(const std::string& name) const noexcept
+std::optional<std::shared_ptr<Package>> Session::GetPackage(const std::string& name) const noexcept
 {
-    auto loc = name.find("::");
-    std::string packName, entryName;
-    if (loc <= name.size())
-    {
-        packName = name.substr(0, loc);
-        entryName = name.substr(loc + 1);
-    }
-    else
-    {
-        packName = "usr";
-        entryName = name;
-    }
-
-    auto packIter = ResolvePackage(packName);
-    if (packIter != packages.end())
-    {
-        auto& unpacked = *packIter;
-        try
-        {
-            return unpacked->ResolveEntry(name).GetIndex().Key();
-        }
-        catch(...)
-        {
-            return {};
-        }
-        
-    }
-    else
+    auto iter = ResolvePackage(name);
+    if (iter == packages.end())
         return {};
+    else 
+        return  *iter;
 }
 
 bool Session::IsPackageLoaded(unsigned long ID) const noexcept
@@ -96,12 +127,12 @@ bool Session::LoadPackage(unsigned long ID) noexcept
 
     auto& target = *iter;
 
-    std::optional<std::shared_ptr<Package>> attempted = Package::OpenFromDirectory(target.target, target.PackID);
-    if (!attempted.has_value())
+    auto attempted = Package::OpenFromDirectory(target.target, target.PackID);
+    if (!attempted.IsErr())
         return false;
 
     unloadedPackages.erase(iter);
-    packages.emplace_back(std::move(attempted.value()));
+    packages.emplace_back(std::move(attempted.GetOkDirect()));
     return true;
 }
 bool Session::UnloadPackage(unsigned long ID) noexcept
@@ -173,4 +204,47 @@ Session::u_iter Session::ResolveUnloadedPackage(unsigned long ID) noexcept
         {
             return pack.PackID == ID;
         });
+}
+
+const PackageEntry& Session::ResolveEntry(const std::string& name) const
+{
+    auto loc = name.find("::");
+    std::string packName, entryName;
+    if (loc <= name.size())
+    {
+        packName = name.substr(0, loc);
+        entryName = name.substr(loc + 1);
+    }
+    else
+    {
+        packName = "usr";
+        entryName = name;
+    }
+
+    auto packIter = ResolvePackage(packName);
+    if (packIter != packages.end())
+    {
+        auto& unpacked = *packIter;
+        return unpacked->ResolveEntry(name);
+        
+    }
+    else
+        throw std::logic_error("The entry could not be found because the package '" + packName + "' does not exist in the session");
+}
+PackageEntry& Session::ResolveEntry(const std::string& name)
+{
+    return const_cast<PackageEntry&>(const_cast<const Session*>(this)->ResolveEntry(name));
+}
+std::optional<PackageEntryKey> Session::ResolveEntryKey(const std::string& name) const noexcept
+{
+    try
+    {
+        const auto& elem = ResolveEntry(name);
+        return elem.GetIndex().Key();
+    }
+    catch(...)
+    {
+        return {};
+    }
+    
 }

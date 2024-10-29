@@ -16,19 +16,19 @@ void IOTester() noexcept
 
     std::shared_ptr<Package> New;
     auto RawHandle = Package::OpenFromDirectory(location, 0);
-    if (!RawHandle)
+    if (RawHandle.IsErr())
     {
         RawHandle = Package::NewPackage("usr", landing, 0);
-        if (!RawHandle)
+        if (RawHandle.IsErr())
         {
-            std::cerr << "Could not load Jason project." << std::endl;
+            std::cerr << "Could not load Jason project because '" << RawHandle.GetErrDirect() << ".\n" ;
             return;
         }
         else
-            New = std::move(*RawHandle);
+            New = std::move(RawHandle.GetOkDirect());
     }
     else
-        New = std::move(*RawHandle);
+        New = std::move(RawHandle.GetOkDirect());
 
     std::cout << "Commands: " << std::endl <<
               "insert: Insert items via name and sterilized format" << std::endl <<

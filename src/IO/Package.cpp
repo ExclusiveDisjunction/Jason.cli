@@ -6,7 +6,7 @@
 
 #include "Package.h" 
 #include "PackageEntryIndex.h"
-#include "../Common.h"
+#include "../Core/Common.h"
 
 Package::Package(unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index) : packID(ID), name(std::move(name)), header(std::move(header)), index(std::move(index)), state(0)
 {
@@ -62,7 +62,7 @@ std::vector<PackageEntry>::iterator Package::GetEntry(unsigned long ID) noexcept
     });
 }
 
-std::optional<std::shared_ptr<Package>> Package::OpenFromDirectory(std::filesystem::path& dir, unsigned long ID) noexcept
+Result<std::shared_ptr<Package>, std::string> Package::OpenFromDirectory(const std::filesystem::path& dir, unsigned long ID) noexcept
 {
     /*
      * We look for the following things:
@@ -79,45 +79,43 @@ std::optional<std::shared_ptr<Package>> Package::OpenFromDirectory(std::filesyst
     {
         FileHandle header_f(header_l), index_f(index_l);
         if (!std::filesystem::exists(var_l))
-            return {};
+            return std::string("The variable folder does not exist");
 
         PackageHeader header(std::move(header_f), JASON_CURRENT_VERSION);
         PackageIndex index(std::move(index_f));
 
         if (!header.Read())
-            return {};
+            return std::string("The header could not be read");
 
         std::shared_ptr<Package> result( new Package(dir, ID, dir.filename(), std::move(header), std::move(index)) );
         result->IndexEntries();
         return result;
     }
-    catch (...)
+    catch (std::logic_error& e)
     {
-        return {};
+        return std::string(e.what());
     }
 }
-std::optional<std::shared_ptr<Package>> Package::OpenFromCompressed(std::filesystem::path& pack, std::filesystem::path& targetDir, unsigned long ID)
+Result<std::shared_ptr<Package>, std::string> Package::OpenFromCompressed(const std::filesystem::path& pack, const std::filesystem::path& targetDir, unsigned long ID)
 {
-    throw std::logic_error("Not implemented yet.");
-
-    return OpenFromDirectory(targetDir, ID);
+    return std::string("Not implemented yet.");
 }
-std::optional<std::shared_ptr<Package>> Package::NewPackage(const std::string& name, const std::filesystem::path& landingDirectory, unsigned long ID) noexcept
+Result<std::shared_ptr<Package>, std::string> Package::NewPackage(const std::string& name, const std::filesystem::path& landingDirectory, unsigned long ID) noexcept
 {
     if (!std::filesystem::exists(landingDirectory) || !std::filesystem::is_directory(landingDirectory) || name.empty())
-        return {}; //throw std::logic_error("Landing directory is not a directory, does not exist, or the name is empty.");
+        return std::string("Landing directory is not a directory, does not exist, or the name is empty");
 
     std::filesystem::path path = landingDirectory / name;
     if (std::filesystem::exists(path)) //Already exists
-        return OpenFromDirectory(path, ID);
+        return OpenFromDirectory(std::move(path), ID);
 
     if (!std::filesystem::create_directory(path))
-        return {};
+        return std::string("Unable to create directory");
 
     std::filesystem::path header_p = path / "header", index_p = path / "index", entries_p = path / "var";
 
     if (!std::filesystem::create_directory(entries_p))
-        return {};
+        return std::string("Unable to create entries directory");
 
     try
     {
@@ -129,11 +127,11 @@ std::optional<std::shared_ptr<Package>> Package::NewPackage(const std::string& n
         if (!header.Write())
             throw std::logic_error("");
 
-        return std::shared_ptr<Package>( new Package(path, ID, name, std::move(header), std::move(index)) );
+        return std::shared_ptr<Package>( new Package(path, ID, std::move(name), std::move(header), std::move(index)) );
     }
     catch (std::logic_error& e)
     {
-        return {};
+        return std::string(e.what());
     }
 }
 

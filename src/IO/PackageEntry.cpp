@@ -4,7 +4,7 @@
 
 #include "PackageEntry.h"
 #include "Package.h"
-#include "../Common.h"
+#include "../Core/Common.h"
 
 #include "PackageIndex.h"
 

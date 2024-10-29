@@ -1,5 +1,5 @@
 #include "CommandSpecifier.h"
-#include "../Common.h"
+#include "../Core/Common.h"
 
 #include <sstream>
 #include <algorithm>
