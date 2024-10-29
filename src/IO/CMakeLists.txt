@@ -25,3 +25,4 @@ add_library(IO SHARED
         #PackagePager.h
 
 target_link_libraries(IO Calc)
+target_link_libraries(IO Core)

@@ -38,19 +38,19 @@ private:
     [[nodiscard]] cu_iter ResolveUnloadedPackage(unsigned long ID) const noexcept;
     [[nodiscard]] u_iter ResolveUnloadedPackage(unsigned long ID) noexcept;
 
-    Session(std::filesystem::path, FileHandle&& header);
+    Session(std::filesystem::path, FileHandle&& header) noexcept;
 public:
     Session(const Session& obj) = delete;
     Session(Session&& obj) noexcept;
-    ~Session();
+    ~Session() noexcept;
 
     Session& operator=(const Session& obj) = delete;
     Session& operator=(Session&& obj) noexcept;
     
-    [[nodiscard]] Result<std::unique_ptr<Session>, std::string> StartSession(std::filesystem::path host);
+    [[nodiscard]] Result<std::unique_ptr<Session>, std::string> StartSession(std::filesystem::path host) noexcept;
     [[nodiscard]] bool Save() const noexcept;
-    [[nodiscard]] bool SaveAndClose();
-    void Shutdown();
+    [[nodiscard]] bool SaveAndClose() noexcept;
+    void Shutdown() noexcept;
     
     [[nodiscard]] std::optional<std::shared_ptr<Package>> GetPackage(const std::string& name) const noexcept;
     [[nodiscard]] std::optional<unsigned long> GetPackageID(const std::string& name) const noexcept;

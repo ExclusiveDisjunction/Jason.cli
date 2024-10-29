@@ -13,7 +13,7 @@
 #include <sstream>
 #include <cstring>
 
-Session::Session(std::filesystem::path location, FileHandle&& header) : packages(), unloadedPackages(), currID(0), location(std::move(location)), header(std::move(header)) 
+Session::Session(std::filesystem::path location, FileHandle&& header) noexcept : packages(), unloadedPackages(), currID(0), location(std::move(location)), header(std::move(header)) 
 {
 
 }
@@ -21,7 +21,7 @@ Session::Session(Session&& obj) noexcept : packages(std::move(obj.packages)), un
 {
 
 }
-Session::~Session()
+Session::~Session() noexcept
 {
     Shutdown();
 }
@@ -39,7 +39,7 @@ Session& Session::operator=(Session&& obj) noexcept
     return *this;
 }
 
-Result<std::unique_ptr<Session>, std::string> Session::StartSession(std::filesystem::path host)
+Result<std::unique_ptr<Session>, std::string> Session::StartSession(std::filesystem::path host) noexcept
 {
     //First we check to see if our session directories is ok.
     std::filesystem::path headerP = host / "header";
@@ -87,7 +87,7 @@ bool Session::Save() const noexcept
 
     return result;
 }
-bool Session::SaveAndClose()
+bool Session::SaveAndClose() noexcept
 {
     if (!Save())
         return false;
@@ -95,7 +95,7 @@ bool Session::SaveAndClose()
     Shutdown();
     return true;
 }
-void Session::Shutdown()
+void Session::Shutdown() noexcept
 {
     packages.clear();
     unloadedPackages.clear();
@@ -127,7 +127,7 @@ bool Session::LoadPackage(unsigned long ID) noexcept
 
     auto& target = *iter;
 
-    auto attempted = Package::OpenFromDirectory(target.target, target.PackID);
+    auto attempted = Package::OpenFromUnloaded(target);
     if (!attempted.IsErr())
         return false;
 
@@ -188,7 +188,7 @@ Session::cu_iter Session::ResolveUnloadedPackage(const std::string& name) const 
 {
     return std::find_if(this->unloadedPackages.begin(), this->unloadedPackages.end(), [&name](const UnloadedPackage& pack) -> bool
         {
-            return pack.name == name;
+            return pack.Name == name;
         });
 }
 Session::cu_iter Session::ResolveUnloadedPackage(unsigned long ID) const noexcept

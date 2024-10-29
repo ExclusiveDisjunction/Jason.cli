@@ -10,25 +10,8 @@
 #include <optional>
 
 #include "FileHandle.h"
-
-class Version
-{
-public:
-    Version() : Version(0, 0, 0) {}
-    Version(unsigned Major, unsigned Minor, unsigned Release) : Major(Major), Minor(Minor), Release(Release) {}
-
-    unsigned Major;
-    unsigned Minor;
-    unsigned Release;
-
-    bool operator==(const Version& obj) const noexcept;
-    bool operator!=(const Version& obj) const noexcept;
-};
-std::ostream& operator<<(std::ostream& out, const Version& obj) noexcept;
-std::istream& operator>>(std::istream& in, Version& obj);
-
-#define JASON_VERSION_1_0_0 (Version(1, 0, 0))
-#define JASON_CURRENT_VERSION JASON_VERSION_1_0_0
+#include "../Core/Result.h"
+#include "../Core/Version.h"
 
 class PackageHeader
 {
@@ -38,39 +21,40 @@ private:
     std::optional<std::string> author;
     bool readonly;
 
+    bool modified = false;
+
     template<typename T>
-    [[nodiscard]] bool SetValue(T& target, const T& New)
+    void SetValue(T& target, const T& New)
     {
         if (target != New)
         {
             target = New;
-            return Write();
+            modified = true;
         }
-        else
-            return true;
     }
-
+    
 public:
-    PackageHeader(FileHandle&& handle, Version ver, std::optional<std::string>&& author = {}, bool readonly = false);
-
-    void Close();
+    PackageHeader(FileHandle&& handle);
+    [[nodiscard]] static Result<PackageHeader, std::string> OpenHeader(FileHandle&& handle) noexcept;
 
     friend std::ostream& operator<<(std::ostream&, const PackageHeader&);
     friend std::istream& operator>>(std::istream&, PackageHeader&);
 
     [[nodiscard]] bool Write() noexcept;
+    [[nodiscard]] bool WriteIfModified() noexcept;
     [[nodiscard]] bool Read() noexcept;
+    void Close();
 
     [[nodiscard]] const std::filesystem::path& GetLocation() const noexcept;
 
     [[nodiscard]] const Version& GetVersion() const noexcept;
-    [[nodiscard]] bool SetVersion(Version New) noexcept;
+    void SetVersion(Version New) noexcept;
 
     [[nodiscard]] const std::optional<std::string>& GetAuthor() const noexcept;
-    [[nodiscard]] bool SetAuthor(std::optional<std::string> New) noexcept;
+    void SetAuthor(std::optional<std::string> New) noexcept;
 
     [[nodiscard]] bool IsReadOnly() const noexcept;
-    [[nodiscard]] bool SetReadOnly(bool New) noexcept;
+    void SetReadOnly(bool New) noexcept;
 };
 
 std::ostream& operator<<(std::ostream& out, const PackageHeader& obj);

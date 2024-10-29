@@ -5,8 +5,13 @@
 #include <optional>
 
 template <typename T, typename E>
-class Result {
+class Result 
+{
+private:
+    std::variant<T, E> data;
+
 public:
+    Result() : data(T()) {}
     Result(const T& value) : data(value) {}
     Result(T&& value) : data(std::move(value)) {}
     Result(const E& error) : data(error) {}
@@ -76,9 +81,9 @@ public:
         else
             return Result<NewT, E>(std::get<E>(data));
     }
-
-private:
-    std::variant<T, E> data;
 };
+
+template<typename E>
+using EmptyResult = Result<std::monostate, E>;
 
 #endif
