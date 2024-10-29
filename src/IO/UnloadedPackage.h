@@ -11,11 +11,12 @@
 class UnloadedPackage
 {
 public:
-    UnloadedPackage(std::filesystem::path target, unsigned long PackageID, std::string name);
+    UnloadedPackage(const class Package& obj) noexcept;
+    UnloadedPackage(std::filesystem::path target, unsigned long PackageID, std::string name) noexcept;
 
-    std::filesystem::path target;
+    std::filesystem::path Target;
     unsigned long PackID;
-    std::string name;
+    std::string Name;
 };
 
 #endif //JASON_UNLOADEDPACKAGE_H

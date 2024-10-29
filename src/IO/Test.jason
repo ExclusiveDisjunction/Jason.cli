@@ -1,8 +1,0 @@
-jason version=0.1.0 locked=t
-links
-link ../fluid.jason
-link ../thing.jason
-entry
-var x SCA 3.5
-env c SCA 300000000
-functions

@@ -3,9 +3,13 @@
 //
 
 #include "UnloadedPackage.h"
-#include "Session.h"
+#include "Package.h"
 
-UnloadedPackage::UnloadedPackage(std::filesystem::path target, unsigned long PackageID, std::string name) : target(std::move(target)), PackID(PackageID), name(std::move(name))
+UnloadedPackage::UnloadedPackage(const Package& obj) noexcept : Target(obj.Location()), PackID(obj.GetID()), Name(obj.GetName())
+{
+
+}
+UnloadedPackage::UnloadedPackage(std::filesystem::path target, unsigned long PackageID, std::string name) noexcept : Target(std::move(target)), PackID(PackageID), Name(std::move(name))
 {
 
 }

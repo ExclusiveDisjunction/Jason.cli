@@ -7,10 +7,21 @@
 #include <sstream>
 #include <algorithm>
 
-PackageHeader::PackageHeader(FileHandle&& handle, Version ver, std::optional<std::string>&& author, bool readonly) : handle(std::move(handle)), version(ver), author(std::move(author)), readonly(readonly)
+PackageHeader::PackageHeader(FileHandle&& handle) : handle(std::move(handle)), version(JASON_CURRENT_VERSION), author(), readonly(false), modified(false)
 {
-    if (!this->handle.file)
-        throw std::logic_error("File provided is invalid");
+
+}
+
+Result<PackageHeader, std::string> PackageHeader::OpenHeader(FileHandle&& handle) noexcept
+{
+    if (!handle.file)
+        return std::string("Could not open the file provided");
+
+    PackageHeader result(std::move(handle));
+    if (!result.Read())
+        return std::string("Could not parse header file");
+    else
+        return std::move(result);
 }
 
 const std::filesystem::path& PackageHeader::GetLocation() const noexcept
@@ -25,7 +36,16 @@ bool PackageHeader::Write() noexcept
 
     this->handle.file << *this;
     this->handle.file.flush();
+
+    modified = false;
     return this->handle.file.good();
+}
+bool PackageHeader::WriteIfModified() noexcept
+{
+    if (modified)
+        return Write();
+    else
+        return true;
 }
 bool PackageHeader::Read() noexcept
 {
@@ -37,27 +57,27 @@ const Version& PackageHeader::GetVersion() const noexcept
 {
     return this->version;
 }
-bool PackageHeader::SetVersion(Version New) noexcept
+void PackageHeader::SetVersion(Version New) noexcept
 {   
-    return SetValue(version, New);
+    SetValue(version, New);
 }
 
 const std::optional<std::string>& PackageHeader::GetAuthor() const noexcept
 {
     return this->author;
 }
-bool PackageHeader::SetAuthor(std::optional<std::string> New) noexcept
+void PackageHeader::SetAuthor(std::optional<std::string> New) noexcept
 {
-    return SetValue(author, New);
+    SetValue(author, New);
 }
 
 bool PackageHeader::IsReadOnly() const noexcept
 {
     return this->readonly;
 }
-bool PackageHeader::SetReadOnly(bool New) noexcept
+void PackageHeader::SetReadOnly(bool New) noexcept
 {
-    return SetValue(readonly, New);
+    SetValue(readonly, New);
 }
 
 void PackageHeader::Close()
@@ -75,6 +95,7 @@ std::ostream& operator<<(std::ostream& out, const PackageHeader& obj)
 }
 std::istream& operator>>(std::istream& in, PackageHeader& obj)
 {
+    obj.modified = false;
     obj.version = Version();
     obj.author = {};
     obj.readonly = false;
@@ -103,25 +124,4 @@ std::istream& operator>>(std::istream& in, PackageHeader& obj)
             obj.readonly = value == "t";
     }
     return in;
-}
-
-std::ostream& operator<<(std::ostream& out, const Version& obj) noexcept
-{
-    out << obj.Major << '.' << obj.Minor << '.' << obj.Release;
-    return out;
-}
-std::istream& operator>>(std::istream& in, Version& obj)
-{
-    char p; //Placeholder for the '.'. This way, the istream will split up the reading between the three parts. 
-    in >> obj.Major >> p >> obj.Minor >> p >> obj.Release;
-    return in;
-}
-
-bool Version::operator==(const Version& obj) const noexcept
-{
-    return this->Major == obj.Major && this->Minor == obj.Minor && this->Release == obj.Release;
-}
-bool Version::operator!=(const Version& obj) const noexcept
-{  
-    return this->Major != obj.Major || this->Minor != obj.Minor || this->Release != obj.Release;
 }

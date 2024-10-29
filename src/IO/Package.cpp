@@ -6,18 +6,21 @@
 
 #include "Package.h" 
 #include "PackageEntryIndex.h"
-#include "../Common.h"
+#include "UnloadedPackage.h"
+#include "../Core/Common.h"
+
+using namespace std::filesystem;
 
 Package::Package(unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index) : packID(ID), name(std::move(name)), header(std::move(header)), index(std::move(index)), state(0)
 {
 
 }
-Package::Package(std::filesystem::path location, unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index) : Package(ID, std::move(name), std::move(header), std::move(index))
+Package::Package(path location, unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index) : Package(ID, std::move(name), std::move(header), std::move(index))
 {
     this->location = std::move(location);
     this->compressedLocation = {};
 }
-Package::Package(std::filesystem::path uLocation, std::filesystem::path cLocation, unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index) : Package(ID, std::move(name), std::move(header), std::move(index))
+Package::Package(path uLocation, path cLocation, unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index) : Package(ID, std::move(name), std::move(header), std::move(index))
 {
     this->location = std::move(uLocation);
     this->compressedLocation = std::move(cLocation);
@@ -28,11 +31,11 @@ Package::~Package()
     Close();
 }
 
-void Package::IndexEntries()
+EmptyResult<std::string> Package::IndexEntries() noexcept
 {
     std::vector<PackageEntryIndex> indexes = this->index.ReadIndex(this->packID);
     if (indexes.empty())
-        return;
+        return {};
 
     for (PackageEntryIndex& obj : indexes)
     {
@@ -41,10 +44,12 @@ void Package::IndexEntries()
         PackageEntry& result = this->entries.emplace_back(std::move(obj), this);
         
         if (result.GetIndex().LoadImmediate() && !result.Load())
-            throw std::logic_error("For entry = " + this->name + "::" + result.GetIndex().Name() + ", the data could not be loaded and the Load Idemedatley flag was set");
+            return std::string("For entry = " + this->name + "::" + result.GetIndex().Name() + ", the data could not be loaded and the Load Idemedatley flag was set");
     }
     //We need to increment the currID, because right now it has the highest value of the current key.
     this->currID++;
+
+    return EmptyResult<std::string>();
 }
 
 std::vector<PackageEntry>::const_iterator Package::GetEntry(unsigned long ID) const noexcept
@@ -62,7 +67,7 @@ std::vector<PackageEntry>::iterator Package::GetEntry(unsigned long ID) noexcept
     });
 }
 
-std::optional<std::unique_ptr<Package>> Package::OpenFromDirectory(std::filesystem::path& dir, unsigned long ID) noexcept
+Result<std::shared_ptr<Package>, std::string> Package::OpenFromDirectory(const std::filesystem::path& dir, unsigned long ID) noexcept
 {
     /*
      * We look for the following things:
@@ -74,67 +79,64 @@ std::optional<std::unique_ptr<Package>> Package::OpenFromDirectory(std::filesyst
      */
 
     std::filesystem::path header_l(dir / "header"), index_l(dir / "index"), var_l(dir / "var");
+    Result<FileHandle, std::string> header_f = FileHandle::TryOpen(header_l), index_f = FileHandle::TryOpen(index_l);
+    if (header_f.IsErr())
+        return header_f.GetErrDirect();
+    if (index_f.IsErr())
+        return index_f.GetErrDirect();
+    if (!std::filesystem::exists(var_l))
+        return std::string("The variable folder does not exist");
 
-    try
-    {
-        FileHandle header_f(header_l), index_f(index_l);
-        if (!std::filesystem::exists(var_l))
-            return {};
+    Result<PackageHeader, std::string> header = PackageHeader::OpenHeader(std::move(header_f.GetOkDirect()));
+    PackageIndex index(std::move(index_f.GetOkDirect()));
+    if (header.GetErr())
+        return header.GetErrDirect();
 
-        PackageHeader header(std::move(header_f), JASON_CURRENT_VERSION);
-        PackageIndex index(std::move(index_f));
+    std::shared_ptr<Package> result( new Package(dir, ID, dir.filename(), std::move(header.GetOkDirect()), std::move(index)) );
 
-        if (!header.Read())
-            return {};
-
-        std::unique_ptr<Package> result( new Package(dir, ID, dir.filename(), std::move(header), std::move(index)) );
-        result->IndexEntries();
+    EmptyResult<std::string> indexStatus = result->IndexEntries();
+    if (indexStatus.IsErr())
+        return indexStatus.GetErrDirect();
+    else
         return result;
-    }
-    catch (...)
-    {
-        return {};
-    }
 }
-std::optional<std::unique_ptr<Package>> Package::OpenFromCompressed(std::filesystem::path& pack, std::filesystem::path& targetDir, unsigned long ID)
+Result<std::shared_ptr<Package>, std::string> Package::OpenFromCompressed(const std::filesystem::path& pack, const std::filesystem::path& targetDir, unsigned long ID) noexcept
 {
-    throw std::logic_error("Not implemented yet.");
-
-    return OpenFromDirectory(targetDir, ID);
+    return std::string("Not implemented yet.");
 }
-std::optional<std::unique_ptr<Package>> Package::NewPackage(const std::string& name, const std::filesystem::path& landingDirectory, unsigned long ID) noexcept
+Result<std::shared_ptr<Package>, std::string> Package::OpenFromUnloaded(const UnloadedPackage& obj) noexcept
+{
+    return OpenFromDirectory(obj.Target, obj.PackID);
+}
+Result<std::shared_ptr<Package>, std::string> Package::NewPackage(const std::string& name, const std::filesystem::path& landingDirectory, unsigned long ID) noexcept
 {
     if (!std::filesystem::exists(landingDirectory) || !std::filesystem::is_directory(landingDirectory) || name.empty())
-        return {}; //throw std::logic_error("Landing directory is not a directory, does not exist, or the name is empty.");
+        return std::string("Landing directory is not a directory, does not exist, or the name is empty");
 
     std::filesystem::path path = landingDirectory / name;
     if (std::filesystem::exists(path)) //Already exists
-        return OpenFromDirectory(path, ID);
+        return OpenFromDirectory(std::move(path), ID);
 
     if (!std::filesystem::create_directory(path))
-        return {};
+        return std::string("Unable to create directory");
 
     std::filesystem::path header_p = path / "header", index_p = path / "index", entries_p = path / "var";
 
     if (!std::filesystem::create_directory(entries_p))
-        return {};
+        return std::string("Unable to create entries directory");
 
-    try
-    {
-        FileHandle header_h(header_p, std::ios::trunc | std::ios::in | std::ios::out),
-                   index_h(index_p, std::ios::trunc | std::ios::in | std::ios::out);
+    Result<FileHandle, std::string> header_f = FileHandle::TryOpen(header_p), index_f = FileHandle::TryOpen(index_p);
+    if (header_f.IsErr())
+        return header_f.GetErrDirect();
+    if (index_f.IsErr())
+        return index_f.GetErrDirect();
 
-        PackageHeader header(std::move(header_h), JASON_CURRENT_VERSION);
-        PackageIndex index(std::move(index_h));
-        if (!header.Write())
-            throw std::logic_error("");
+    PackageHeader header(std::move(header_f.GetOkDirect()));
+    PackageIndex index(std::move(index_f.GetOkDirect()));
+    if (!header.Write())
+        return std::string("The header could not be written to the file system"); 
 
-        return std::unique_ptr<Package>( new Package(path, ID, name, std::move(header), std::move(index)) );
-    }
-    catch (std::logic_error& e)
-    {
-        return {};
-    }
+    return std::shared_ptr<Package>( new Package(path, ID, std::move(name), std::move(header), std::move(index)) );
 }
 
 const std::filesystem::path& Package::Location() const noexcept
@@ -168,20 +170,7 @@ PackageHeader& Package::Header() noexcept
 
 bool Package::Compress(std::ostream& out) const noexcept
 {
-    if (!out)
-        return false;
-
-    out << "jason\n";
-    out << this->header << '\n';
-    out << "index\n";
-    if (!PackageIndex::Write(out, this->entries))
-        return false;
-    out << "\ndata\n";
-
-    for (const auto& entry : this->entries)
-        out << entry.GetIndex().Key().EntryID << ' ' << entry << '\n';
-
-    return out.good();
+    return false; //Implement later
 }
 bool Package::Save() noexcept
 {
