@@ -11,7 +11,10 @@ private:
     std::variant<T, E> data;
 
 public:
-    Result() : data(T()) {}
+    Result() : data(T())
+    {
+        static_assert(std::is_default_constructible_v<T>, "Default constructor can only be used if T is default-constructible");
+    }
     Result(const T& value) : data(value) {}
     Result(T&& value) : data(std::move(value)) {}
     Result(const E& error) : data(error) {}
@@ -36,14 +39,11 @@ public:
     }
     const T& GetOkDirect() const
     {
-        if (!IsOk())
-            throw std::logic_error("Value was err, but expected ok");
-        
         return std::get<T>(data);
     }  
     T& GetOkDirect()
     {
-        return const_cast<T&>(const_cast<const Result<T, E>*>(this)->GetOkDirect());
+        return std::get<T>(data);
     } 
 
     std::optional<E> GetErr() const noexcept 
@@ -55,31 +55,28 @@ public:
     }
     const E& GetErrDirect() const
     {
-        if (!IsErr())
-            throw std::logic_error("Value was ok, but expected err");
-        
         return std::get<E>(data);
     }
     E& GetErrDirect()
     {
-        return const_cast<E&>(const_cast<const Result<T, E>*>(this)->GetErrDirect());
+        return std::get<E>(data);
     }
 
     template<typename NewE>
     Result<T, NewE> TransformOk(NewE eIfError = NewE())
     {
         if (!IsOk())
-            return Result<T, NewE>(eIfError);
+            return Result<T, NewE>(std::move(eIfError));
         else
-            return Result<T, NewE>(std::get<T>(data));
+            return Result<T, NewE>(std::move(std::get<T>(data)));
     }
     template<typename NewT>
     Result<NewT, E> TransformErr(NewT tIfOk = NewT())
     {
         if (!IsErr())
-            return Result<NewT, E>(tIfOk);
+            return Result<NewT, E>(std::move(tIfOk));
         else
-            return Result<NewT, E>(std::get<E>(data));
+            return Result<NewT, E>(std::move(std::get<E>(data)));
     }
 };
 
