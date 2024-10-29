@@ -49,7 +49,6 @@ void Unit::Convert(T& result) const
         throw std::logic_error("The type to convert must be the same size as the allocated block size");
 
     memcpy(&result, this->Data, blockSize);
-    return result;
 }
 template<typename T>
 std::vector<T> Unit::ConvertMany() const

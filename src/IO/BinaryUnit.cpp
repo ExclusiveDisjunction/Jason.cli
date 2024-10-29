@@ -5,6 +5,10 @@
 #include "BinaryUnit.h"
 
 Unit::Unit() : Data(nullptr), blockSize(0) {}
+Unit::Unit(char* Data, unsigned char Size, bool Copy) : Unit()
+{
+
+}
 Unit::Unit(const Unit& obj) noexcept
 {
     this->blockSize = obj.blockSize;
@@ -22,6 +26,20 @@ void Unit::Deallocate()
     delete[] Data;
     Data = nullptr;
     blockSize = 0;
+}
+void Unit::Allocate(char* data, unsigned char size, bool copy)
+{
+    if (!size || !data)
+        return;
+
+    this->blockSize = size;
+    if (copy)
+    {
+        this->Data = new char[size];
+        memcpy(this->Data, data, size);
+    }
+    else
+        this->Data = data;
 }
 
 Unit& Unit::operator=(const Unit& obj) noexcept
@@ -46,4 +64,13 @@ Unit& Unit::operator=(Unit&& obj) noexcept
     this->blockSize = std::exchange(obj.blockSize, 0);
     this->Data = std::exchange(obj.Data, nullptr);
     return *this;
+}
+
+const char* Unit::Expose() const noexcept
+{
+    return this->Data;
+}
+[[nodiscard]] unsigned char Unit::GetSize() const noexcept
+{
+    return this->blockSize;
 }
