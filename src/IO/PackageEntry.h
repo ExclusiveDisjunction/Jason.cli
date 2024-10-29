@@ -12,6 +12,7 @@
 #include "PackageEntryKey.h"
 #include "PackageEntryIndex.h"
 #include "../Calc/VariableType.h"
+#include "../Core/Result.h"
 
 class Package;
 
@@ -19,12 +20,12 @@ class PackageEntry
 {
 private:
     std::optional<std::unique_ptr<VariableType>> data = {};
-    Package* parent;
+    std::weak_ptr<Package> parent;
     PackageEntryIndex index;
     bool modified = false;
 
 public:
-    PackageEntry(PackageEntryIndex&& index, Package* parent);
+    PackageEntry(PackageEntryIndex&& index, std::weak_ptr<Package> parent);
     PackageEntry(const PackageEntry& obj) = delete;
     PackageEntry(PackageEntry&& obj) = default;
     ~PackageEntry();
@@ -41,16 +42,16 @@ public:
     [[nodiscard]] bool WriteData() const noexcept;
 
     /// @brief  Reads from a specified input stream, only looking for the data. 
-    [[nodiscard]] bool Load(std::istream& in) noexcept;
+    [[nodiscard]] EmptyResult<std::string> Load(std::istream& in) noexcept;
     /// @brief Reads from the path located at GetPath(), only looking for the data. If the path could not be resolves, it attempts to create it. If it fails to create, it will return false, otherwise, data will be nullptr. 
-    [[nodiscard]] bool Load() noexcept;
+    [[nodiscard]] EmptyResult<std::string> Load() noexcept;
     /// @brief Removes the 'Data' item from memory without deleting the file.
     void Unload() noexcept;
     /// @brief Deletes 'Data' from memory & the file system.
-    bool Reset() noexcept;
+    void Reset() noexcept;
 
     [[nodiscard]] const VariableType& Data() const;
-    bool Data(std::unique_ptr<VariableType> && New) noexcept;
+    void Data(std::unique_ptr<VariableType>&& New) noexcept;
 
     [[nodiscard]] std::optional<bool> HasData() const noexcept;
     [[nodiscard]] bool IsModified() const noexcept;

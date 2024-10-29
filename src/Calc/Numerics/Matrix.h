@@ -9,6 +9,8 @@
 #include "../StdCalc.h"
 #include "../VariableType.h"
 #include "../OperatorException.h"
+#include "../../Core/Result.h"
+
 #include <vector>
 
 class MATH_LIB MathVector;
@@ -59,7 +61,9 @@ public:
     void Sterilize(std::ostream& out) const noexcept override;
     void Print(std::ostream& out) const noexcept override;
 
-    [[nodiscard]] [[maybe_unused]] static Matrix Desterilize(std::istream& sterilized);
+    [[nodiscard]] static Result<Matrix, std::string> Desterilize(std::istream& in) noexcept;
+    [[nodiscard]] static Result<std::unique_ptr<Matrix>, std::string> DesterilizePtr(std::istream& in) noexcept;
+
     [[nodiscard]] std::string GetTypeString() const noexcept override;
 
     [[nodiscard]] static Matrix ErrorMatrix();

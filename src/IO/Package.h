@@ -13,10 +13,22 @@
 #include <filesystem>
 
 #include "PackageEntry.h"
-#include "PackageUtility.h"
 #include "FileHandle.h"
 #include "PackageHeader.h"
 #include "PackageIndex.h"
+
+struct PackageReference
+{
+public:
+    PackageReference(Package& Obj) : Target(Obj) {}
+    PackageReference(const PackageReference& obj) = delete;
+    PackageReference(PackageReference&& obj) noexcept = delete;
+
+    PackageReference& operator=(const PackageReference& obj) = delete;
+    PackageReference& operator=(PackageReference&& obj) = delete;
+
+    class Package& Target;
+};
 
 class Package
 {
@@ -41,6 +53,7 @@ private:
     std::string name;
     PackageHeader header;
     PackageIndex index;
+    std::shared_ptr<PackageReference> ref;
 
     std::vector<PackageEntry> entries;
 
@@ -55,6 +68,7 @@ public:
     Package(const Package& obj) = delete;
     Package(Package& obj) noexcept = delete;
     ~Package();
+    
 
     friend class Session;
 

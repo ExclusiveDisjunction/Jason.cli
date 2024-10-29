@@ -13,7 +13,7 @@
 #include <fstream>
 #include <sstream>
 
-PackageEntry::PackageEntry(PackageEntryIndex&& index, Package* parent) : index(std::move(index)), parent(parent), data()
+PackageEntry::PackageEntry(PackageEntryIndex&& index, std::weak_ptr<Package> parent) : index(std::move(index)), parent(std::move(parent)), data()
 {
     if (this->index.type != PackageEntryType::Temporary && this->index.name.empty())
         throw std::logic_error("Cannot construct a variable entry with no name, unless type is temporary.");
@@ -58,10 +58,10 @@ bool PackageEntry::WriteData() const noexcept
     return WriteData(out);
 }
 
-bool PackageEntry::Load() noexcept
+EmptyResult<std::string> PackageEntry::Load() noexcept
 {
     if (this->data)
-        return true;
+        return {};
 
     std::filesystem::path thisPath = this->GetPath();
     std::ifstream in(thisPath);
@@ -71,25 +71,31 @@ bool PackageEntry::Load() noexcept
         std::ofstream out(thisPath, std::ios::trunc);
         if (!out) //Failed to construct the path
         {
-            std::cerr << "When loading package entry '" << (this->parent ? this->parent->GetName() : "") << "::" << this->index.name << "', the located path could not be found." << std::endl;
-            return false;
+            std::stringstream errStr;
+            errStr << "When loading package entry '";
+            if (auto par = this->parent.lock()) 
+                errStr << par->GetName() << "::";
+            
+            errStr << this->index.name << "', the located path could not be found";
+            return errStr.str();
         }  
         
         out << "NULL";
         out.close();
         this->data = nullptr;
-        return true;
+        return {};
     }
     else
         return Load(in);
 }
-bool PackageEntry::Load(std::istream& in) noexcept 
+EmptyResult<std::string> PackageEntry::Load(std::istream& in) noexcept 
 {
     if (!in)
-        return false;
+        return std::string("The file handle provided is invalid");
 
     in.seekg(0, std::ios::beg);
     this->data = VariableType::Desterilize(in);
+    if 
     return this->data != nullptr;
 }
 void PackageEntry::Unload() noexcept

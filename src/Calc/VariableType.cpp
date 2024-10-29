@@ -31,8 +31,9 @@ std::optional<std::unique_ptr<VariableType>> VariableType::Desterilize(std::istr
 
     try
     {
+        Result<std::unique_ptr<VariableType>, std::string> result;
         if (header == "SCA")
-            return std::make_unique<Scalar>( std::move(Scalar::Desterilize(in)) );
+            result = Scalar::DesterilizePtr(in);
         else if (header == "VEC")
             return std::make_unique<MathVector>( std::move(MathVector::Desterilize(in)) );
         else if (header == "MAT")

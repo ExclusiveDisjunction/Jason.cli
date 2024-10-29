@@ -98,7 +98,7 @@ Matrix Matrix::Identity(unsigned int Rows, unsigned int Cols)
 
     return result;
 }
-[[maybe_unused]] Matrix Matrix::RandomMatrix(unsigned int Rows, unsigned int Columns, bool Integers)
+Matrix Matrix::RandomMatrix(unsigned int Rows, unsigned int Columns, bool Integers)
 {
     Matrix result(Rows, Columns);
     if (!result.IsValid())
@@ -162,12 +162,12 @@ void Matrix::Sterilize(std::ostream& out) const noexcept
         for (auto& entry : row)
             out << entry << ' ';
 }
-Matrix Matrix::Desterilize(std::istream& in)
+Result<Matrix, std::string> Matrix::Desterilize(std::istream& in) noexcept
 {
     std::string header;
     in >> header;
     if (header != "MAT" || !in)
-        throw std::logic_error("Cannot construct a matrix from this string.");
+        return std::string("Cannot construct a matrix from this stream");
 
     Matrix result;
 
@@ -183,7 +183,7 @@ Matrix Matrix::Desterilize(std::istream& in)
             for (auto& element : row)
             {
                 if (!in)
-                    throw std::logic_error("Format error: Not enough numbers to match the matrix dimensions");
+                    return std::string("Format error: Not enough numbers to match the matrix dimensions");
 
                 in >> element;
             }
@@ -191,6 +191,14 @@ Matrix Matrix::Desterilize(std::istream& in)
     }
 
     return result;
+}
+Result<std::unique_ptr<Matrix>, std::string> Matrix::DesterilizePtr(std::istream& in) noexcept
+{
+    Result<Matrix, std::string> result = Desterilize(in);
+    if (result.IsErr())
+        return result.GetErrDirect();
+    else 
+        return std::make_unique<Matrix>(std::move(result.GetOkDirect()));
 }
 std::string Matrix::GetTypeString() const noexcept
 {

@@ -85,12 +85,12 @@ double MathVector::Angle() const
     return atan(Magnitude());
 }
 
-MathVector MathVector::Desterilize(std::istream& in)
+Result<MathVector, std::string> MathVector::Desterilize(std::istream& in) noexcept
 {
     std::string header;
     in >> header;
     if (header != "VEC")
-        throw std::logic_error("Cannot construct vector from stream because the header is not the stream.");
+        return std::string("Cannot construct vector from stream because the header is not the stream");
 
     unsigned int d;
 
@@ -103,13 +103,21 @@ MathVector MathVector::Desterilize(std::istream& in)
         for (int i = 0; i < d; i++)
         {
             if (!in)
-                throw std::logic_error("There is not enough inputs to match the dimensions.");
+                return std::string("There is not enough inputs to match the dimensions.");
 
             in >> result.Data[i];
         }
 
         return result;
     }
+}
+Result<std::unique_ptr<MathVector>, std::string> MathVector::DesterilizePtr(std::istream& in) noexcept
+{
+    Result<MathVector, std::string> result = Desterilize(in);
+    if (result.IsErr())
+        return result.GetErrDirect();
+    else
+        return std::make_unique<MathVector>(std::move(result.GetOkDirect()));
 }
 void MathVector::Sterilize(std::ostream& out) const noexcept
 {

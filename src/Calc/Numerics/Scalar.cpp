@@ -6,7 +6,7 @@
 
 #include <iomanip>
 
-[[nodiscard]] VariableTypes Scalar::GetType() const noexcept
+VariableTypes Scalar::GetType() const noexcept
 {
     return VariableTypes::VT_Scalar;
 }
@@ -14,19 +14,27 @@ void Scalar::Sterilize(std::ostream& out) const noexcept
 {
     out << "SCA " << this->operator double();
 }
-Scalar Scalar::Desterilize(std::istream& in)
+Result<Scalar, std::string> Scalar::Desterilize(std::istream& in) noexcept
 {
     std::string header;
     std::streampos pos = in.tellg();
     in >> header;
     if (header != "SCA")
-        throw std::logic_error("Cannot construct a scalar from this object.");
+        return std::string("Cannot construct a scalar from this stream");
 
     Scalar result;
     in >> result.Data;
     return result;
 }
-[[nodiscard]] std::string Scalar::GetTypeString() const noexcept
+Result<std::unique_ptr<Scalar>, std::string> Scalar::DesterilizePtr(std::istream& in) noexcept
+{
+    Result<Scalar, std::string> result = Desterilize(in);
+    if (result.IsErr())
+        return result.GetErrDirect();
+    else
+        return std::make_unique<Scalar>(std::move(result.GetOkDirect()));
+}
+std::string Scalar::GetTypeString() const noexcept
 {
     return "(Scalar)";
 }
@@ -82,6 +90,11 @@ void Scalar::Print(std::ostream& out) const noexcept
 }
 std::istream& operator>>(std::istream& in, Scalar& obj)
 {
-    obj = Scalar::Desterilize(in);
+    auto result =  Scalar::Desterilize(in);
+    if (result.IsErr())
+        throw std::logic_error(result.GetErrDirect());
+    else
+        obj = std::move(result.GetOkDirect());
+        
     return in;
 }
