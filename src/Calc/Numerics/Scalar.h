@@ -8,9 +8,6 @@
 #include "Constraints.h"
 #include "../VariableType.h"
 #include "../OperatorException.h"
-#include "../../Core/Result.h"
-
-class MATH_LIB Scalar;
 
 class MATH_LIB Scalar : public VariableType
 {
@@ -27,8 +24,8 @@ public:
 
     [[nodiscard]] std::unique_ptr<VariableType> Clone() const noexcept override;
 
-    [[nodiscard]] static Result<Scalar, std::string> Desterilize(std::istream& in);
-    [[nodiscard]] static Result<std::unique_ptr<Scalar>, std::string> DesterilizePtr(std::istream& in);
+    [[nodiscard]] static Scalar Desterilize(std::istream& in);
+    [[nodiscard]] static std::unique_ptr<Scalar> DesterilizePtr(std::istream& in);
 
     template<typename T> requires IsScalarOrDouble<T>
     Scalar operator+(const T& in) const noexcept;

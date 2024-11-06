@@ -6,7 +6,6 @@ add_library(IO SHARED
         PackageEntry.cpp
         PackageEntry.h
         PackageEntryKey.h
-        PackageUtility.h
         FileHandle.cpp
         FileHandle.h
         UnloadedPackage.h

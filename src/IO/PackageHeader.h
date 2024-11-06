@@ -10,7 +10,6 @@
 #include <optional>
 
 #include "FileHandle.h"
-#include "../Core/Result.h"
 #include "../Core/Version.h"
 
 class PackageHeader
@@ -35,7 +34,6 @@ private:
     
 public:
     PackageHeader(FileHandle&& handle);
-    [[nodiscard]] static Result<PackageHeader, std::string> OpenHeader(FileHandle&& handle) noexcept;
 
     friend std::ostream& operator<<(std::ostream&, const PackageHeader&);
     friend std::istream& operator>>(std::istream&, PackageHeader&);

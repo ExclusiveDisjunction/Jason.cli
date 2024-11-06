@@ -8,8 +8,6 @@
 #include <filesystem>
 #include <fstream>
 
-#include "../Core/Result.h"
-
 struct FileHandle
 {
 public:
@@ -18,8 +16,6 @@ public:
     FileHandle(const FileHandle& obj) = delete;
     FileHandle(FileHandle&& obj) noexcept;
     ~FileHandle();
-
-    [[nodiscard]] static Result<FileHandle, std::string> TryOpen(std::filesystem::path path, std::ios::openmode flags = (std::ios::out | std::ios::in));
 
     FileHandle& operator=(const FileHandle& obj) noexcept = delete;
     FileHandle& operator=(FileHandle&& obj) noexcept;

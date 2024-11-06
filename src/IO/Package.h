@@ -57,7 +57,7 @@ private:
 
     std::vector<PackageEntry> entries;
 
-    [[nodiscard]] EmptyResult<std::string> IndexEntries() noexcept;
+    void IndexEntries();
 
     [[nodiscard]] std::vector<PackageEntry>::const_iterator GetEntry(unsigned long ID) const noexcept;
     [[nodiscard]] std::vector<PackageEntry>::iterator GetEntry(unsigned long ID) noexcept;
@@ -75,10 +75,10 @@ public:
     Package& operator=(const Package& obj) = delete;
     Package& operator=(Package&& obj) noexcept = delete;
 
-    [[nodiscard]] static Result<std::shared_ptr<Package>, std::string> OpenFromDirectory(const std::filesystem::path& dir, unsigned long ID) noexcept;
-    [[nodiscard]] static Result<std::shared_ptr<Package>, std::string> OpenFromCompressed(const std::filesystem::path& pack, const std::filesystem::path& targetDir, unsigned long ID) noexcept;
-    [[nodiscard]] static Result<std::shared_ptr<Package>, std::string> OpenFromUnloaded(const class UnloadedPackage& obj) noexcept;
-    [[nodiscard]] static Result<std::shared_ptr<Package>, std::string> NewPackage(const std::string& name, const std::filesystem::path& landingDirectory, unsigned long ID) noexcept;
+    [[nodiscard]] static std::shared_ptr<Package> OpenFromDirectory(const std::filesystem::path& dir, unsigned long ID);
+    [[nodiscard]] static std::shared_ptr<Package> OpenFromCompressed(const std::filesystem::path& pack, const std::filesystem::path& targetDir, unsigned long ID);
+    [[nodiscard]] static std::shared_ptr<Package> OpenFromUnloaded(const class UnloadedPackage& obj);
+    [[nodiscard]] static std::shared_ptr<Package> NewPackage(const std::string& name, const std::filesystem::path& landingDirectory, unsigned long ID);
 
     [[nodiscard]] [[maybe_unused]] const std::filesystem::path& Location() const noexcept;
     [[nodiscard]] [[maybe_unused]] std::filesystem::path VarLocation() const noexcept;

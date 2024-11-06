@@ -29,18 +29,18 @@ ParsedSubExpression ParsedSubExpression::FromError(InvalidExpr&& expr) noexcept
 
 bool NumericExpr::IsNumericalString(std::istream& in) noexcept
 {
-
+    throw std::logic_error("not implemented");
 }
 bool VariableExpr::IsVariableString(std::istream& in) noexcept
 {
-
+    throw std::logic_error("not implemented");
 }
 std::optional<DeclarationExpr::DeclarationSchema> DeclarationExpr::IsDeclarationExpr(std::istream& in) noexcept
 {
-
+    throw std::logic_error("not implemented");
 }
 
 ParsedSubExpression SubExpression::Parse(std::istream& in, const Session& session) noexcept
-{
-
+{   
+    throw std::logic_error("not implemented");
 }

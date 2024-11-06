@@ -14,25 +14,21 @@ void Scalar::Sterilize(std::ostream& out) const noexcept
 {
     out << "SCA " << this->operator double();
 }
-Result<Scalar, std::string> Scalar::Desterilize(std::istream& in) noexcept
+Scalar Scalar::Desterilize(std::istream& in)
 {
     std::string header;
     std::streampos pos = in.tellg();
     in >> header;
     if (header != "SCA")
-        return std::string("Cannot construct a scalar from this stream");
+        throw std::logic_error("Cannot construct a scalar from this stream");
 
     Scalar result;
     in >> result.Data;
     return result;
 }
-Result<std::unique_ptr<Scalar>, std::string> Scalar::DesterilizePtr(std::istream& in) noexcept
+std::unique_ptr<Scalar> Scalar::DesterilizePtr(std::istream& in)
 {
-    Result<Scalar, std::string> result = Desterilize(in);
-    if (result.IsErr())
-        return result.GetErrDirect();
-    else
-        return std::make_unique<Scalar>(std::move(result.GetOkDirect()));
+    return std::make_unique<Scalar>(std::move(Desterilize(in)));
 }
 std::string Scalar::GetTypeString() const noexcept
 {
@@ -90,11 +86,6 @@ void Scalar::Print(std::ostream& out) const noexcept
 }
 std::istream& operator>>(std::istream& in, Scalar& obj)
 {
-    auto result =  Scalar::Desterilize(in);
-    if (result.IsErr())
-        throw std::logic_error(result.GetErrDirect());
-    else
-        obj = std::move(result.GetOkDirect());
-        
+    obj = Scalar::Desterilize(in);
     return in;
 }

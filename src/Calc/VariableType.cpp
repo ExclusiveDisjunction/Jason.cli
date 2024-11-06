@@ -18,33 +18,25 @@ std::string VariableType::Sterilize() const noexcept
     return ss.str();
 }
 
-std::optional<std::unique_ptr<VariableType>> VariableType::Desterilize(const std::string& val) noexcept
+std::unique_ptr<VariableType> VariableType::Desterilize(const std::string& val)
 {
     std::stringstream ss(val);
     return Desterilize(ss);
 }
-std::optional<std::unique_ptr<VariableType>> VariableType::Desterilize(std::istream& in) noexcept
+std::unique_ptr<VariableType> VariableType::Desterilize(std::istream& in)
 {
     std::string header;
     in >> header;
     in.seekg(std::ios::beg);
 
-    try
-    {
-        Result<std::unique_ptr<VariableType>, std::string> result;
-        if (header == "SCA")
-            result = Scalar::DesterilizePtr(in);
-        else if (header == "VEC")
-            return std::make_unique<MathVector>( std::move(MathVector::Desterilize(in)) );
-        else if (header == "MAT")
-            return std::make_unique<Matrix>( std::move(Matrix::Desterilize(in)) );
-        else
-            return {};
-    }
-    catch (...)
-    {
-        return {};
-    }
+    if (header == "SCA")
+        return Scalar::DesterilizePtr(in);
+    else if (header == "VEC")
+        return MathVector::DesterilizePtr(in);
+    else if (header == "MAT")
+        return Matrix::DesterilizePtr(in);
+    else
+        throw std::logic_error("Unrecongized header");
 }
 
 std::unique_ptr<VariableType> VariableType::ApplyOperation(const VariableType& One, const VariableType& Two, char oper)

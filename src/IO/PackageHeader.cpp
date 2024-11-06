@@ -12,18 +12,6 @@ PackageHeader::PackageHeader(FileHandle&& handle) : handle(std::move(handle)), v
 
 }
 
-Result<PackageHeader, std::string> PackageHeader::OpenHeader(FileHandle&& handle) noexcept
-{
-    if (!handle.file)
-        return std::string("Could not open the file provided");
-
-    PackageHeader result(std::move(handle));
-    if (!result.Read())
-        return std::string("Could not parse header file");
-    else
-        return std::move(result);
-}
-
 const std::filesystem::path& PackageHeader::GetLocation() const noexcept
 {
     return handle.path;

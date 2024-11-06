@@ -8,7 +8,6 @@
 #include <optional>
 #include <filesystem>
 
-#include "PackageUtility.h"
 #include "Package.h"
 #include "UnloadedPackage.h"
 
@@ -47,7 +46,7 @@ public:
     Session& operator=(const Session& obj) = delete;
     Session& operator=(Session&& obj) noexcept;
     
-    [[nodiscard]] Result<std::unique_ptr<Session>, std::string> StartSession(std::filesystem::path host) noexcept;
+    [[nodiscard]] std::unique_ptr<Session> StartSession(std::filesystem::path host);
     [[nodiscard]] bool Save() const noexcept;
     [[nodiscard]] bool SaveAndClose() noexcept;
     void Shutdown() noexcept;

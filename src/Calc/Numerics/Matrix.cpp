@@ -162,12 +162,12 @@ void Matrix::Sterilize(std::ostream& out) const noexcept
         for (auto& entry : row)
             out << entry << ' ';
 }
-Result<Matrix, std::string> Matrix::Desterilize(std::istream& in) noexcept
+Matrix Matrix::Desterilize(std::istream& in)
 {
     std::string header;
     in >> header;
     if (header != "MAT" || !in)
-        return std::string("Cannot construct a matrix from this stream");
+        throw std::logic_error("Cannot construct a matrix from this stream");
 
     Matrix result;
 
@@ -183,7 +183,7 @@ Result<Matrix, std::string> Matrix::Desterilize(std::istream& in) noexcept
             for (auto& element : row)
             {
                 if (!in)
-                    return std::string("Format error: Not enough numbers to match the matrix dimensions");
+                    throw std::logic_error("Format error: Not enough numbers to match the matrix dimensions");
 
                 in >> element;
             }
@@ -192,13 +192,9 @@ Result<Matrix, std::string> Matrix::Desterilize(std::istream& in) noexcept
 
     return result;
 }
-Result<std::unique_ptr<Matrix>, std::string> Matrix::DesterilizePtr(std::istream& in) noexcept
+std::unique_ptr<Matrix> Matrix::DesterilizePtr(std::istream& in)
 {
-    Result<Matrix, std::string> result = Desterilize(in);
-    if (result.IsErr())
-        return result.GetErrDirect();
-    else 
-        return std::make_unique<Matrix>(std::move(result.GetOkDirect()));
+    return std::make_unique<Matrix>(std::move(Matrix::Desterilize(in)));
 }
 std::string Matrix::GetTypeString() const noexcept
 {

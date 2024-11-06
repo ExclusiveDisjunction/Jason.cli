@@ -9,7 +9,6 @@
 #include "../StdCalc.h"
 #include "../VariableType.h"
 #include "../OperatorException.h"
-#include "../../Core/Result.h"
 
 #include <iostream>
 #include <vector>
@@ -37,8 +36,8 @@ public:
     [[nodiscard]] std::string GetTypeString() const noexcept override;
     void Print(std::ostream& out) const noexcept override;
 
-    [[nodiscard]] static Result<MathVector, std::string> Desterilize(std::istream& in) noexcept;
-    [[nodiscard]] static Result<std::unique_ptr<MathVector>, std::string> DesterilizePtr(std::istream& in) noexcept;
+    [[nodiscard]] static MathVector Desterilize(std::istream& in);
+    [[nodiscard]] static std::unique_ptr<MathVector> DesterilizePtr(std::istream& in);
 
     MathVector& operator=(const MathVector &Obj) noexcept;
     MathVector& operator=(MathVector &&Obj) noexcept;

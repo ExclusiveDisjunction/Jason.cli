@@ -13,7 +13,7 @@
 #include <fstream>
 #include <sstream>
 
-PackageEntry::PackageEntry(PackageEntryIndex&& index, std::weak_ptr<Package> parent) : index(std::move(index)), parent(std::move(parent)), data()
+PackageEntry::PackageEntry(PackageEntryIndex&& index, std::weak_ptr<PackageReference> parent) : index(std::move(index)), parent(std::move(parent)), data()
 {
     if (this->index.type != PackageEntryType::Temporary && this->index.name.empty())
         throw std::logic_error("Cannot construct a variable entry with no name, unless type is temporary.");
@@ -58,10 +58,10 @@ bool PackageEntry::WriteData() const noexcept
     return WriteData(out);
 }
 
-EmptyResult<std::string> PackageEntry::Load() noexcept
+void PackageEntry::Load()
 {
     if (this->data)
-        return {};
+        return;
 
     std::filesystem::path thisPath = this->GetPath();
     std::ifstream in(thisPath);
@@ -74,29 +74,39 @@ EmptyResult<std::string> PackageEntry::Load() noexcept
             std::stringstream errStr;
             errStr << "When loading package entry '";
             if (auto par = this->parent.lock()) 
-                errStr << par->GetName() << "::";
+                errStr << par->Target.GetName() << "::";
             
             errStr << this->index.name << "', the located path could not be found";
-            return errStr.str();
+            throw std::logic_error(errStr.str());
         }  
         
         out << "NULL";
         out.close();
         this->data = nullptr;
-        return {};
     }
     else
-        return Load(in);
+        Load(in);
 }
-EmptyResult<std::string> PackageEntry::Load(std::istream& in) noexcept 
+void PackageEntry::Load(std::istream& in)
 {
     if (!in)
-        return std::string("The file handle provided is invalid");
+        throw std::logic_error("The file handle provided is invalid");
 
     in.seekg(0, std::ios::beg);
-    this->data = VariableType::Desterilize(in);
-    if 
-    return this->data != nullptr;
+    this->data = std::move(VariableType::Desterilize(in));
+}
+bool PackageEntry::LoadNoThrow(std::string& message) noexcept
+{ 
+    try 
+    {
+        Load();
+        return true;
+    }
+    catch (const std::logic_error& e)
+    {
+        message = e.what();
+        return false;
+    }
 }
 void PackageEntry::Unload() noexcept
 {
@@ -105,18 +115,15 @@ void PackageEntry::Unload() noexcept
 
     this->data = {};
 }
-bool PackageEntry::Reset() noexcept
+void PackageEntry::Reset() noexcept
 {
-    if (this->parent)
+    if (!parent.expired())
     {
         std::filesystem::path thisPath = this->GetPath();
         std::ofstream out(thisPath, std::ios::trunc);
-        if (!out)
-            return false;
     }
 
     Unload();
-    return true;
 }
 
 const VariableType& PackageEntry::Data() const
@@ -156,10 +163,11 @@ void PackageEntry::IsReadOnly(bool New) noexcept
 
 std::filesystem::path PackageEntry::GetPath() const
 {
-    if (!this->parent)
+    if (parent.expired())
         throw std::logic_error("Could not locate parent's path.");
 
-    return this->parent->VarLocation() / std::to_string(this->index.Key().EntryID);
+    auto par = parent.lock();
+    return par->Target.VarLocation() / std::to_string(this->index.Key().EntryID);
 }
 const PackageEntryIndex& PackageEntry::GetIndex() const noexcept
 {

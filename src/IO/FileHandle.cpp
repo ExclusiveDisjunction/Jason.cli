@@ -19,18 +19,6 @@ FileHandle::~FileHandle()
     Close();
 }
 
-Result<FileHandle, std::string> FileHandle::TryOpen(std::filesystem::path path, std::ios::openmode flags)
-{
-    try
-    {
-        return FileHandle(std::move(path), flags);
-    }
-    catch(const std::exception& e)
-    {
-        return std::string(e.what());
-    }
-}
-
 void FileHandle::Open(std::filesystem::path path , std::ios::openmode flags)
 {
     Close();

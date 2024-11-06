@@ -39,19 +39,17 @@ Session& Session::operator=(Session&& obj) noexcept
     return *this;
 }
 
-Result<std::unique_ptr<Session>, std::string> Session::StartSession(std::filesystem::path host) noexcept
+std::unique_ptr<Session> Session::StartSession(std::filesystem::path host) 
 {
     //First we check to see if our session directories is ok.
     std::filesystem::path headerP = host / "header";
     if (!std::filesystem::exists(host) || !std::filesystem::exists(headerP))
-        return Result<std::unique_ptr<Session>, std::string>("The host directory or the header file does not exist");
+        throw std::logic_error("The host directory or the header file does not exist");
 
-    Result<FileHandle, std::string> header = FileHandle::TryOpen(headerP);
-    if (header.IsErr())
-        return header.GetErrDirect();
+    FileHandle header(headerP);
 
     std::unique_ptr<Session> resultPtr(
-        new Session(std::move(host), std::move(header.GetOkDirect()))
+        new Session(std::move(host), std::move(header))
     );
 
     Session& result = *resultPtr;
@@ -61,13 +59,12 @@ Result<std::unique_ptr<Session>, std::string> Session::StartSession(std::filesys
         {
             std::filesystem::path loc = dir.path();
             auto PackResult = Package::OpenFromDirectory(std::move(loc), GetNextID());
-            if (PackResult.IsOk())
-            {
-                std::shared_ptr<Package>& pack = PackResult.GetOkDirect();
-                result.packages.emplace_back(std::move(pack));
-            }
-            else
-                return PackResult.GetErrDirect();
+
+            result.packages.emplace_back( 
+                std::move(
+                    Package::OpenFromDirectory(std::move(loc), GetNextID())
+                )
+            );
         }
     }
 
@@ -127,12 +124,20 @@ bool Session::LoadPackage(unsigned long ID) noexcept
 
     auto& target = *iter;
 
-    auto attempted = Package::OpenFromUnloaded(target);
-    if (!attempted.IsErr())
+    try 
+    {
+        packages.emplace_back( 
+            std::move(
+                Package::OpenFromUnloaded(target)
+            )
+        );
+        unloadedPackages.erase(iter);
+    }
+    catch (...)
+    {
         return false;
+    }
 
-    unloadedPackages.erase(iter);
-    packages.emplace_back(std::move(attempted.GetOkDirect()));
     return true;
 }
 bool Session::UnloadPackage(unsigned long ID) noexcept

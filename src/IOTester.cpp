@@ -15,20 +15,23 @@ void IOTester() noexcept
         std::filesystem::create_directories(location);
 
     std::shared_ptr<Package> New;
-    auto RawHandle = Package::OpenFromDirectory(location, 0);
-    if (RawHandle.IsErr())
+
+    try 
     {
-        RawHandle = Package::NewPackage("usr", landing, 0);
-        if (RawHandle.IsErr())
+        New = Package::OpenFromDirectory(location, 0);
+    }
+    catch (std::logic_error& e)
+    {
+        try 
         {
-            std::cerr << "Could not load Jason project because '" << RawHandle.GetErrDirect() << ".\n" ;
+            New = Package::NewPackage("usr", landing, 0);
+        }
+        catch (std::logic_error& e)
+        {
+            std::cerr << "Could not load Jason package because '" << e.what() << "'\n";
             return;
         }
-        else
-            New = std::move(RawHandle.GetOkDirect());
     }
-    else
-        New = std::move(RawHandle.GetOkDirect());
 
     std::cout << "Commands: " << std::endl <<
               "insert: Insert items via name and sterilized format" << std::endl <<
@@ -70,16 +73,21 @@ void IOTester() noexcept
             for (auto iter = parser.Values().begin() + 1; iter != parser.Values().end(); iter++)
                 sterilized << *iter << ' ';
 
-            auto extracted = VariableType::Desterilize(sterilized);
-            if (!extracted)
+            std::unique_ptr<VariableType> extracted;
+            
+            try 
             {
-                std::cerr << "Could not construct a variable from that sterilized string" << std::endl;
+                extracted = VariableType::Desterilize(sterilized);
+            } 
+            catch (std::logic_error& e)
+            {
+                std::cerr << "Could not construct a variable from that sterilized string because of '" << e.what() << "'" << std::endl;
                 std::cerr.flush();
                 std::cout.flush();
                 continue;
             }
 
-            auto result = New->AddEntry(name, PackageEntryType::Variable, std::move(*extracted));
+            auto result = New->AddEntry(name, PackageEntryType::Variable, std::move(extracted));
             if (!result.has_value())
                 std::cerr << "Failed to insert into package" << std::endl;
             else
