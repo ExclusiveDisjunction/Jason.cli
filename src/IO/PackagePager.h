@@ -6,8 +6,8 @@
 #define JASON_PACKAGEPAGER_H
 
 #include "FileHandle.h"
-#include "BinaryUnit.h"
-//#include "PackageEntryIndex.h"
+#include "PackageEntryIndex.h"
+#include "../Core/BinaryUnit.h"
 
 #include <vector>
 #include <optional>
@@ -16,7 +16,7 @@ class PackagePager
 {
 private:
     FileHandle handle;
-    std::optional<std::vector<unsigned>> binding;
+    std::optional<std::vector<unsigned int>*> binding;
     std::optional<unsigned long> boundPageIndex;
     std::pair<unsigned, unsigned> location;
     std::unordered_map<unsigned, bool> knownPages;
@@ -46,11 +46,9 @@ public:
     bool WriteUnits(const std::vector<Unit>& units);
     bool WipeAll();
 
-    //bool Allocate(unsigned pages, const PackageEntryIndex& index);
-    bool Allocate(unsigned pages, std::vector<unsigned>& Pages);
+    bool Allocate(unsigned pages, PackageEntryIndex& index);
 
-    //void Bind(const PackageEntryIndex& index);
-    void Bind(std::vector<unsigned> pages);
+    void Bind(PackageEntryIndex& index);
     void Reset();
     void Close();
     void Flush();

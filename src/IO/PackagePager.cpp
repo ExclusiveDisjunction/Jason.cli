@@ -57,10 +57,12 @@ bool PackagePager::IsBound() const noexcept
     return binding.has_value() && boundPageIndex.has_value();
 }
 
-bool PackagePager::Allocate(unsigned int pages, std::vector<unsigned int>& Pages)
+bool PackagePager::Allocate(unsigned int pages, PackageEntryIndex& tPages)
 {
     if (IsBound())
         return false;
+
+    std::vector<unsigned int>& Pages = tPages.pages;
     
     if (Pages.size() == pages)
         return true;
@@ -137,7 +139,7 @@ bool PackagePager::AdvancePage()
         return false;
 
     auto& index = boundPageIndex.value();
-    auto& list = binding.value();
+    auto& list = *binding.value();
     index++;
 
     if (index > list.size()) //Out of range
@@ -177,7 +179,7 @@ std::vector<Unit> PackagePager::ReadAllUnits()
 
     MoveRelative(0u);
     std::vector<Unit> result;
-    unsigned size = binding.value().size() * pageSize;
+    unsigned size = (*binding.value()).size() * pageSize;
     result.resize(size);
 
     unsigned i = 0;
@@ -234,10 +236,10 @@ bool PackagePager::WipeAll()
     return MoveRelative(0);
 }
 
-void PackagePager::Bind(std::vector<unsigned> pages)
+void PackagePager::Bind(PackageEntryIndex& pages)
 {
     Reset();
-    binding = pages;
+    binding = &pages.pages;
     boundPageIndex = 0;
     MoveRelative(0);
 }
@@ -267,7 +269,7 @@ bool PackagePager::MoveRelative(unsigned unitPosition)
     unitPosition -= pageLoc * pageSize;
 
     //We are moving from the first unit in the bound element.
-    auto& pages = *binding;
+    auto& pages = *(*binding);
     if (pageLoc > pages.size())
         return false;
     

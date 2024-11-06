@@ -56,14 +56,13 @@ public:
 
     [[nodiscard]] std::unique_ptr<VariableType> Clone() const noexcept override;
 
+    [[nodiscard]] std::vector<Unit> ToBinary() const noexcept override;
+    [[nodiscard]] static Matrix FromBinary(const std::vector<Unit>& in);
+    [[nodiscard]] static std::unique_ptr<Matrix> FromBinaryPtr(const std::vector<Unit>& in);
+
     [[nodiscard]] VariableTypes GetType() const noexcept override;
-    void Sterilize(std::ostream& out) const noexcept override;
-    void Print(std::ostream& out) const noexcept override;
-
-    [[nodiscard]] static Matrix Desterilize(std::istream& in);
-    [[nodiscard]] static std::unique_ptr<Matrix> DesterilizePtr(std::istream& in);
-
     [[nodiscard]] std::string GetTypeString() const noexcept override;
+    void Print(std::ostream& out) const noexcept override;
 
     [[nodiscard]] static Matrix ErrorMatrix();
     [[nodiscard]] static Matrix Identity(unsigned int Size);
@@ -80,10 +79,9 @@ public:
     void RowAdd(unsigned int OrigRow, double Fac, unsigned int TargetRow);
 
     [[maybe_unused]] [[nodiscard]] double Determinant() const;
-
     [[maybe_unused]] [[nodiscard]] Matrix Invert() const;
-    void TransposeInplace();
     [[maybe_unused]] [[nodiscard]] Matrix Transpose() const;
+    void TransposeInplace();
 
     void RowEchelonForm();
     void ReducedRowEchelonForm();
@@ -118,7 +116,7 @@ public:
 struct MatrixSingleLinePrint {
     const Matrix& Target;
 };
-[[maybe_unused]] [[nodiscard]] inline MatrixSingleLinePrint PrintMatrixOneLine(const Matrix& obj) noexcept
+inline MatrixSingleLinePrint PrintMatrixOneLine(const Matrix& obj) noexcept
 {
     return MatrixSingleLinePrint { obj };
 }

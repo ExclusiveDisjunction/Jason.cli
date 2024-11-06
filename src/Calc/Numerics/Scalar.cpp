@@ -10,25 +10,23 @@ VariableTypes Scalar::GetType() const noexcept
 {
     return VariableTypes::VT_Scalar;
 }
-void Scalar::Sterilize(std::ostream& out) const noexcept
-{
-    out << "SCA " << this->operator double();
-}
-Scalar Scalar::Desterilize(std::istream& in)
-{
-    std::string header;
-    std::streampos pos = in.tellg();
-    in >> header;
-    if (header != "SCA")
-        throw std::logic_error("Cannot construct a scalar from this stream");
 
-    Scalar result;
-    in >> result.Data;
-    return result;
-}
-std::unique_ptr<Scalar> Scalar::DesterilizePtr(std::istream& in)
+std::vector<Unit> Scalar::ToBinary() const noexcept
 {
-    return std::make_unique<Scalar>(std::move(Desterilize(in)));
+    return std::vector<Unit>({
+        Unit(this->Data)
+    });
+}
+Scalar Scalar::FromBinary(const std::vector<Unit>& in)
+{
+    if (in.empty())
+        throw std::logic_error("No data was provided");
+
+    return Scalar(in[0].Convert<double>());
+}
+std::unique_ptr<Scalar> Scalar::FromBinaryPtr(const std::vector<Unit>& in)
+{
+    return std::make_unique<Scalar>(std::move(FromBinary(in)));
 }
 std::string Scalar::GetTypeString() const noexcept
 {
@@ -40,7 +38,7 @@ std::unique_ptr<VariableType> Scalar::Clone() const noexcept
     return std::make_unique<Scalar>(*this);
 }
 
-[[nodiscard]] long long Scalar::ToLongNoRound() const
+long long Scalar::ToLongNoRound() const
 {
     long long Trunc = ToLongTrunc();
     double diff = static_cast<double>(Trunc) - this->Data;
@@ -51,7 +49,7 @@ std::unique_ptr<VariableType> Scalar::Clone() const noexcept
     else
         return Trunc;
 }
-[[nodiscard]] long long Scalar::ToLongTrunc() const noexcept
+long long Scalar::ToLongTrunc() const noexcept
 {
     return static_cast<long long>(this->Data);
 }
@@ -83,9 +81,4 @@ bool Scalar::operator!=(double obj) const noexcept
 void Scalar::Print(std::ostream& out) const noexcept
 {
     out << this->Data;
-}
-std::istream& operator>>(std::istream& in, Scalar& obj)
-{
-    obj = Scalar::Desterilize(in);
-    return in;
 }

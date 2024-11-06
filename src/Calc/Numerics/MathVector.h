@@ -32,12 +32,12 @@ public:
 
     [[nodiscard]] std::unique_ptr<VariableType> Clone() const noexcept override;
 
-    void Sterilize(std::ostream& out) const noexcept override;
+    [[nodiscard]] std::vector<Unit> ToBinary() const noexcept override;
+    [[nodiscard]] static MathVector FromBinary(const std::vector<Unit>& in);
+    [[nodiscard]] static std::unique_ptr<MathVector> FromBinaryPtr(const std::vector<Unit>& in);
+
     [[nodiscard]] std::string GetTypeString() const noexcept override;
     void Print(std::ostream& out) const noexcept override;
-
-    [[nodiscard]] static MathVector Desterilize(std::istream& in);
-    [[nodiscard]] static std::unique_ptr<MathVector> DesterilizePtr(std::istream& in);
 
     MathVector& operator=(const MathVector &Obj) noexcept;
     MathVector& operator=(MathVector &&Obj) noexcept;

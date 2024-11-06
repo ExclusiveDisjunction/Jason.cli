@@ -4,3 +4,5 @@ add_library(Calc SHARED StdCalc.cpp
     Numerics/Matrix.cpp
     Numerics/MathVector.cpp
 )
+
+target_link_libraries(Calc Core)

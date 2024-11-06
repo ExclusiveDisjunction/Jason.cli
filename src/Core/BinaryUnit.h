@@ -10,6 +10,9 @@
 #include <memory.h>
 #include <stdexcept>
 
+template <typename T, typename U>
+concept is_different_v = !std::is_same_v<T, U>;
+
 class Unit
 {
 private:
@@ -36,6 +39,10 @@ public:
 
     Unit& operator=(const Unit& obj) noexcept;
     Unit& operator=(Unit&& obj) noexcept;
+    template<typename T> requires is_different_v<T, Unit>
+    Unit& operator=(const T& obj) noexcept;
+    template<typename T> requires is_different_v<T, Unit>
+    Unit& operator=(const std::vector<T>& items);
 
     template<typename T>
     [[nodiscard]] T Convert() const;

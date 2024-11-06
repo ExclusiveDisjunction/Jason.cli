@@ -28,18 +28,20 @@ private:
     PackageEntryKey key;
     PackageEntryType type = PackageEntryType::Variable;
     std::string name;
+    std::vector<unsigned int> pages;
     unsigned char state = 0;
 
     void IsModified(bool New) noexcept;
 public:
     PackageEntryIndex() = default;
-    PackageEntryIndex(PackageEntryKey key, PackageEntryType type, std::string name, unsigned char state) noexcept;
+    PackageEntryIndex(PackageEntryKey key, PackageEntryType type, std::string name, unsigned char state, std::vector<unsigned int>) noexcept;
     explicit PackageEntryIndex(std::istream& in);
     PackageEntryIndex(const PackageEntryIndex& obj) noexcept = default;
     PackageEntryIndex(PackageEntryIndex&& obj) noexcept = default;
 
     friend class PackageIndex;
     friend class PackageEntry;
+    friend class PackagePager;
     friend std::ostream& operator<<(std::ostream&, const PackageEntryIndex&) noexcept;
     friend std::istream& operator>>(std::istream&, PackageEntryIndex&);
 

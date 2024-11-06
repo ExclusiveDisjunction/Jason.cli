@@ -34,6 +34,19 @@ void Unit::Allocate(const std::vector<T>& obj)
         memcpy(this->Data + i, &obj[j], sizeof(T));
 }
 
+template<typename T> requires is_different_v<T, Unit>
+Unit& Unit::operator=(const T& obj) noexcept
+{
+    this->Allocate(obj);
+    return *this;
+}
+template<typename T> requires is_different_v<T, Unit>
+Unit& Unit::operator=(const std::vector<T>& items)
+{
+    this->Allocate(items);
+    return *this;
+}
+
 template<typename T>
 T Unit::Convert() const
 {

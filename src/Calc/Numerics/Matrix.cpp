@@ -155,46 +155,52 @@ VariableTypes Matrix::GetType() const noexcept
 {
     return VariableTypes::VT_Matrix;
 }
-void Matrix::Sterilize(std::ostream& out) const noexcept
+
+std::vector<Unit> Matrix::ToBinary() const noexcept
 {
-    out << "MAT " << this->rows << ' ' << this->cols << ' ';
-    for (auto& row : Data)
-        for (auto& entry : row)
-            out << entry << ' ';
-}
-Matrix Matrix::Desterilize(std::istream& in)
-{
-    std::string header;
-    in >> header;
-    if (header != "MAT" || !in)
-        throw std::logic_error("Cannot construct a matrix from this stream");
+    std::vector<Unit> result;
+    result.resize(this->rows * this->cols + 2);
+    result[0] = this->rows;
+    result[1] = this->cols;
 
-    Matrix result;
-
-    unsigned int rows, cols;
-    in >> rows;
-    in >> cols;
-
-    result.Allocate(rows, cols);
-    if (result.IsValid())
+    auto curr = result.begin() + 1,  end = result.end();
+    for (const auto& row : this->Data)
     {
-        for (auto& row : result.Data)
+        for (const auto& element : row)
         {
-            for (auto& element : row)
-            {
-                if (!in)
-                    throw std::logic_error("Format error: Not enough numbers to match the matrix dimensions");
-
-                in >> element;
-            }
+            *curr = element;
+            curr++;
         }
     }
 
     return result;
 }
-std::unique_ptr<Matrix> Matrix::DesterilizePtr(std::istream& in)
+Matrix Matrix::FromBinary(const std::vector<Unit>& in)
 {
-    return std::make_unique<Matrix>(std::move(Matrix::Desterilize(in)));
+    if (in.size() < 2)
+        throw std::logic_error("No data provided");
+    
+    unsigned int rows = in[0].Convert<unsigned int>(), cols = in[1].Convert<unsigned int>();
+    if (in.size() < rows * cols + 2)
+        throw std::logic_error("Not enough data provided.");
+
+    Matrix result(rows, cols);
+    auto curr = in.begin() + 1, end = in.end();
+    unsigned i = 0;
+    for (auto& row : result.Data)
+    {
+        for (auto& element : row) 
+        {
+            element = curr->Convert<double>();
+            curr++;
+        }
+    }
+
+    return result;
+}
+std::unique_ptr<Matrix> Matrix::FromBinaryPtr(const std::vector<Unit>& in)
+{
+    return std::make_unique<Matrix>(std::move(Matrix::FromBinary(in)));
 }
 std::string Matrix::GetTypeString() const noexcept
 {

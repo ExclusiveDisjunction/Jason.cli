@@ -11,32 +11,19 @@
 
 #include "OperatorException.h"
 
-std::string VariableType::Sterilize() const noexcept
+std::unique_ptr<VariableType> VariableType::FromBinary(const std::vector<Unit>& data, VariableTypes targetType)
 {
-    std::stringstream ss;
-    Sterilize(ss);
-    return ss.str();
-}
-
-std::unique_ptr<VariableType> VariableType::Desterilize(const std::string& val)
-{
-    std::stringstream ss(val);
-    return Desterilize(ss);
-}
-std::unique_ptr<VariableType> VariableType::Desterilize(std::istream& in)
-{
-    std::string header;
-    in >> header;
-    in.seekg(std::ios::beg);
-
-    if (header == "SCA")
-        return Scalar::DesterilizePtr(in);
-    else if (header == "VEC")
-        return MathVector::DesterilizePtr(in);
-    else if (header == "MAT")
-        return Matrix::DesterilizePtr(in);
-    else
-        throw std::logic_error("Unrecongized header");
+    switch (targetType)
+    {
+    case VT_Scalar:
+        return Scalar::FromBinaryPtr(data);
+    case VT_Vector:
+        return MathVector::FromBinaryPtr(data);
+    case VT_Matrix:
+        return Matrix::FromBinaryPtr(data);
+    default:
+        return std::unique_ptr<VariableType>();
+    }
 }
 
 std::unique_ptr<VariableType> VariableType::ApplyOperation(const VariableType& One, const VariableType& Two, char oper)

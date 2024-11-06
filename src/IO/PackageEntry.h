@@ -22,7 +22,13 @@ private:
     std::optional<std::unique_ptr<VariableType>> data = {};
     std::weak_ptr<PackageReference> parent;
     PackageEntryIndex index;
-    bool modified = false;
+    bool thisModified = false;
+
+    void SetModified(bool New) noexcept
+    {
+        this->thisModified = New;
+        this->index.IsModified(New);
+    }
 
 public:
     PackageEntry(PackageEntryIndex&& index, std::weak_ptr<PackageReference> parent);
@@ -36,10 +42,10 @@ public:
     PackageEntry& operator=(PackageEntry&& obj) noexcept = default;
 
     /// @breif Writes the data of the Entry if it is loaded, fails if otherwise.
-    [[nodiscard]] bool WriteData(std::ostream& out) const noexcept;
+    [[nodiscard]] bool WriteData(PackagePager& pager) noexcept;
     [[nodiscard]] bool DisplayData(std::ostream& out) const noexcept;
     /// @brief  Writes the data of the Entry if it is loaded to the path at GetPath(), fails if otherwise. 
-    [[nodiscard]] bool WriteData() const noexcept;
+    [[nodiscard]] bool WriteData() noexcept;
 
     /// @brief  Reads from a specified input stream, only looking for the data. 
     void Load(std::istream& in);
@@ -63,8 +69,6 @@ public:
     [[nodiscard]] std::filesystem::path GetPath() const;
     [[nodiscard]] const PackageEntryIndex& GetIndex() const noexcept;
 };
-
-std::ostream& operator<<(std::ostream& out, const PackageEntry& obj) noexcept;
 
 
 #endif //JASON_PACKAGEENTRY_H

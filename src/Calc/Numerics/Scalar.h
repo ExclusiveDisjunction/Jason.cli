@@ -20,12 +20,11 @@ public:
 
     [[nodiscard]] VariableTypes GetType() const noexcept override;
     [[nodiscard]] std::string GetTypeString() const noexcept override;
-    void Sterilize(std::ostream& out) const noexcept override;
+    [[nodiscard]] std::vector<Unit> ToBinary() const noexcept override;
+    [[nodiscard]] static Scalar FromBinary(const std::vector<Unit>& in);
+    [[nodiscard]] static std::unique_ptr<Scalar> FromBinaryPtr(const std::vector<Unit>& in);
 
     [[nodiscard]] std::unique_ptr<VariableType> Clone() const noexcept override;
-
-    [[nodiscard]] static Scalar Desterilize(std::istream& in);
-    [[nodiscard]] static std::unique_ptr<Scalar> DesterilizePtr(std::istream& in);
 
     template<typename T> requires IsScalarOrDouble<T>
     Scalar operator+(const T& in) const noexcept;
@@ -63,8 +62,6 @@ public:
         return this->Data;
     }
 };
-
-std::istream& operator>>(std::istream& in, Scalar& obj);
 
 #include "ScalarT.tpp"
 

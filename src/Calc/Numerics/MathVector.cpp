@@ -85,41 +85,45 @@ double MathVector::Angle() const
     return atan(Magnitude());
 }
 
-MathVector MathVector::Desterilize(std::istream& in)
+std::vector<Unit> MathVector::ToBinary() const noexcept
 {
-    std::string header;
-    in >> header;
-    if (header != "VEC")
-        throw std::logic_error("Cannot construct vector from stream because the header is not the stream");
+    std::vector<Unit> result;
+    result.resize(this->Dim() + 1);
+    result[0] = this->Dim();
 
-    unsigned int d;
-
-    in >> d;
-    if (d == 0) //'Error' vector
-        return MathVector();
-    else
-    {
-        MathVector result(d);
-        for (int i = 0; i < d; i++)
-        {
-            if (!in)
-                throw std::logic_error("There is not enough inputs to match the dimensions.");
-
-            in >> result.Data[i];
-        }
-
-        return result;
-    }
-}
-std::unique_ptr<MathVector> MathVector::DesterilizePtr(std::istream& in) 
-{
-    return std::make_unique<MathVector>(std::move(MathVector::Desterilize(in)));
-}
-void MathVector::Sterilize(std::ostream& out) const noexcept
-{
-    out << "VEC " << this->Dim();
+    auto curr = result.begin() + 1,  end = result.end();
     for (const auto& item : this->Data)
-        out << ' ' << item;
+    {
+        *curr = item;
+        curr++;
+    }
+
+    return result;
+}
+MathVector MathVector::FromBinary(const std::vector<Unit>& in)
+{
+    if (in.empty())
+        throw std::logic_error("No data provided");
+    
+    unsigned int dim = in[0].Convert<unsigned int>();
+    if (in.size() < dim + 1)
+        throw std::logic_error("Not enough data provided.");
+
+    MathVector result(dim);
+    auto curr = in.begin() + 1, end = in.end();
+    unsigned i = 0;
+    while (curr != end)
+    {
+        result[i] = curr->Convert<double>();
+        i++;
+        curr++;
+    }
+
+    return result;
+}
+std::unique_ptr<MathVector> MathVector::FromBinaryPtr(const std::vector<Unit>& in) 
+{
+    return std::make_unique<MathVector>(std::move(MathVector::FromBinary(in)));
 }
 VariableTypes MathVector::GetType() const noexcept
 {

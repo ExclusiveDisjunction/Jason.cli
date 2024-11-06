@@ -26,18 +26,18 @@ PackageEntry::~PackageEntry()
     (void)Unload();
 }
 
-bool PackageEntry::WriteData(std::ostream& out) const noexcept
+bool PackageEntry::WriteData(PackagePager& pager) noexcept
 {
-    if (!out || !this->data)
-        return false;
+    pager.Bind(this->index);
+    if (!this->data)
+        return true;
 
     if (*this->data)
-        (*this->data)->Sterilize(out);
-    else
-        out << "NULL";
+    {
+        
+    }
 
-    out.flush();
-    return !out.bad();
+    pager.Reset();
 }
 bool PackageEntry::DisplayData(std::ostream& out) const noexcept
 {
@@ -50,12 +50,21 @@ bool PackageEntry::DisplayData(std::ostream& out) const noexcept
 
     return !out.bad();
 }
-bool PackageEntry::WriteData() const noexcept
+bool PackageEntry::WriteData() noexcept
 {
-    std::filesystem::path thisPath = this->GetPath();
-    std::ofstream out(thisPath, std::ios::trunc);
+    if (!IsModified())
+        return true;
 
-    return WriteData(out);
+    if (auto package = parent.lock())
+    {
+        PackagePager& pager = package->Target.Pager();
+        if (!WriteData(pager))
+            return false;
+        
+        this->SetModified(false);
+    }
+    else 
+        return false;
 }
 
 void PackageEntry::Load()
@@ -149,7 +158,7 @@ std::optional<bool> PackageEntry::HasData() const noexcept
 }
 bool PackageEntry::IsModified() const noexcept
 {
-    return this->modified || this->index.IsModified();
+    return this->thisModified || this->index.IsModified();
 }
 
 void PackageEntry::LoadImmediate(bool New) noexcept 
@@ -172,10 +181,4 @@ std::filesystem::path PackageEntry::GetPath() const
 const PackageEntryIndex& PackageEntry::GetIndex() const noexcept
 {
     return this->index;
-}
-
-std::ostream& operator<<(std::ostream& out, const PackageEntry& obj) noexcept
-{
-    (void)obj.WriteData(out);
-    return out;
 }

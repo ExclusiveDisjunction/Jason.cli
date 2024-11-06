@@ -5,4 +5,6 @@ add_library(Core SHARED DateTime.cpp
     Log.h
     Log.cpp
     Version.h
-    Version.cpp)
+    Version.cpp
+    BinaryUnit.h
+    BinaryUnit.cpp)

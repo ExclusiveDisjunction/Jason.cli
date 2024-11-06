@@ -16,6 +16,7 @@
 #include "FileHandle.h"
 #include "PackageHeader.h"
 #include "PackageIndex.h"
+#include "PackagePager.h"
 
 struct PackageReference
 {
@@ -87,6 +88,7 @@ public:
     [[nodiscard]] [[maybe_unused]] bool IsCompressed() const noexcept;
     [[nodiscard]] [[maybe_unused]] const PackageHeader& Header() const noexcept;
     [[nodiscard]] [[maybe_unused]] PackageHeader& Header() noexcept;
+    [[nodiscard]] [[maybe_unused]] PackagePager& Pager() noexcept;
 
     [[nodiscard]] bool Compress(std::ostream& out) const noexcept;
     [[nodiscard]] bool Save() noexcept;
