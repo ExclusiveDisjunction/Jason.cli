@@ -6,6 +6,7 @@
 #include <string>
 
 #include "PackageEntryKey.h"
+#include "../Calc/VariableType.h"
 
 enum PackageEntryType
 {
@@ -27,6 +28,7 @@ private:
 
     PackageEntryKey key;
     PackageEntryType type = PackageEntryType::Variable;
+    VariableTypes data_type = VariableTypes::VT_None;
     std::string name;
     std::vector<unsigned int> pages;
     unsigned char state = 0;
@@ -34,7 +36,7 @@ private:
     void IsModified(bool New) noexcept;
 public:
     PackageEntryIndex() = default;
-    PackageEntryIndex(PackageEntryKey key, PackageEntryType type, std::string name, unsigned char state, std::vector<unsigned int>) noexcept;
+    PackageEntryIndex(PackageEntryKey key, PackageEntryType type, std::string name, unsigned char state, std::vector<unsigned int> pages) noexcept;
     explicit PackageEntryIndex(std::istream& in);
     PackageEntryIndex(const PackageEntryIndex& obj) noexcept = default;
     PackageEntryIndex(PackageEntryIndex&& obj) noexcept = default;

@@ -85,10 +85,14 @@ double MathVector::Angle() const
     return atan(Magnitude());
 }
 
+size_t MathVector::RequiredUnits() const noexcept 
+{
+    return 1 + this->Data.size();
+}
 std::vector<Unit> MathVector::ToBinary() const noexcept
 {
     std::vector<Unit> result;
-    result.resize(this->Dim() + 1);
+    result.resize(this->RequiredUnits());
     result[0] = this->Dim();
 
     auto curr = result.begin() + 1,  end = result.end();

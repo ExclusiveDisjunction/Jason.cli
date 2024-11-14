@@ -20,6 +20,7 @@ public:
 
     [[nodiscard]] VariableTypes GetType() const noexcept override;
     [[nodiscard]] std::string GetTypeString() const noexcept override;
+    [[nodiscard]] size_t RequiredUnits() const noexcept override;
     [[nodiscard]] std::vector<Unit> ToBinary() const noexcept override;
     [[nodiscard]] static Scalar FromBinary(const std::vector<Unit>& in);
     [[nodiscard]] static std::unique_ptr<Scalar> FromBinaryPtr(const std::vector<Unit>& in);

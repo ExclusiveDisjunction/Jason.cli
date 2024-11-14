@@ -40,9 +40,9 @@ private:
         Compressed = 1
     };
 
-    Package(unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index);
-    Package(std::filesystem::path location, unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index);
-    Package(std::filesystem::path uLocation, std::filesystem::path cLocation, unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index);
+    Package(unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index, PackagePager&& pager);
+    Package(std::filesystem::path location, unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index, PackagePager&& pager);
+    Package(std::filesystem::path uLocation, std::filesystem::path cLocation, unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index, PackagePager&& pager);
 
     std::filesystem::path location;
     std::optional<std::filesystem::path> compressedLocation;
@@ -54,6 +54,7 @@ private:
     std::string name;
     PackageHeader header;
     PackageIndex index;
+    PackagePager pager;
     std::shared_ptr<PackageReference> ref;
 
     std::vector<PackageEntry> entries;
@@ -69,7 +70,6 @@ public:
     Package(const Package& obj) = delete;
     Package(Package& obj) noexcept = delete;
     ~Package();
-    
 
     friend class Session;
 

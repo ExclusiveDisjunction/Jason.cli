@@ -15,6 +15,7 @@
 
 class PackageReference;
 class Package;
+class PackagePager;
 
 class PackageEntry
 {
@@ -42,13 +43,13 @@ public:
     PackageEntry& operator=(PackageEntry&& obj) noexcept = default;
 
     /// @breif Writes the data of the Entry if it is loaded, fails if otherwise.
-    [[nodiscard]] bool WriteData(PackagePager& pager) noexcept;
+    [[nodiscard]] bool WriteData(class PackagePager& pager) noexcept;
     [[nodiscard]] bool DisplayData(std::ostream& out) const noexcept;
     /// @brief  Writes the data of the Entry if it is loaded to the path at GetPath(), fails if otherwise. 
     [[nodiscard]] bool WriteData() noexcept;
 
     /// @brief  Reads from a specified input stream, only looking for the data. 
-    void Load(std::istream& in);
+    void Load(class PackagePager& in);
     /// @brief Reads from the path located at GetPath(), only looking for the data. If the path could not be resolves, it attempts to create it. If it fails to create, it will return false, otherwise, data will be nullptr. 
     void Load();
     [[nodiscard]] bool LoadNoThrow(std::string& errorMessage) noexcept;

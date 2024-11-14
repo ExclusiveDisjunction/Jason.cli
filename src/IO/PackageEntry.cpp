@@ -4,6 +4,7 @@
 
 #include "PackageEntry.h"
 #include "Package.h"
+#include "PackagePager.h"
 #include "../Core/Common.h"
 
 #include "PackageIndex.h"
@@ -29,15 +30,27 @@ PackageEntry::~PackageEntry()
 bool PackageEntry::WriteData(PackagePager& pager) noexcept
 {
     pager.Bind(this->index);
-    if (!this->data)
-        return true;
-
-    if (*this->data)
+    bool result = false;
+    if (this->data)
     {
-        
+        VariableType* obj = this->data->get();
+        if (this->index.pages.size() != obj->RequiredPages(pager.PageSize()))
+        {
+            if (!pager.Allocate(obj->RequiredPages(pager.PageSize()), this->index))
+                return false;
+        }
+
+        if (obj)
+        {
+            pager.MoveRelative(0);
+            result = pager.WriteUnits(obj->ToBinary());
+        }
+        else 
+            result = pager.WipeAll();
     }
 
     pager.Reset();
+    return result;
 }
 bool PackageEntry::DisplayData(std::ostream& out) const noexcept
 {
@@ -62,6 +75,8 @@ bool PackageEntry::WriteData() noexcept
             return false;
         
         this->SetModified(false);
+        
+        return true;
     }
     else 
         return false;
@@ -72,37 +87,23 @@ void PackageEntry::Load()
     if (this->data)
         return;
 
-    std::filesystem::path thisPath = this->GetPath();
-    std::ifstream in(thisPath);
-    if (!in) //Could not load at path
+    if (auto par = this->parent.lock())
     {
-        in.close();
-        std::ofstream out(thisPath, std::ios::trunc);
-        if (!out) //Failed to construct the path
-        {
-            std::stringstream errStr;
-            errStr << "When loading package entry '";
-            if (auto par = this->parent.lock()) 
-                errStr << par->Target.GetName() << "::";
-            
-            errStr << this->index.name << "', the located path could not be found";
-            throw std::logic_error(errStr.str());
-        }  
-        
-        out << "NULL";
-        out.close();
-        this->data = nullptr;
+        Package& host = par->Target;
+        Load(host.Pager());
     }
     else
-        Load(in);
+        throw std::logic_error("The parent package could not be resolved for loading");
 }
-void PackageEntry::Load(std::istream& in)
+void PackageEntry::Load(PackagePager& in)
 {
-    if (!in)
-        throw std::logic_error("The file handle provided is invalid");
+    in.Bind(this->index);
 
-    in.seekg(0, std::ios::beg);
-    this->data = std::move(VariableType::Desterilize(in));
+    std::vector<Unit> allUnits = in.ReadAllUnits();
+    if (allUnits.empty() || this->index.data_type == VT_None)
+        this->data = nullptr;
+    else 
+        this->data = VariableType::FromBinary(allUnits, this->index.data_type);
 }
 bool PackageEntry::LoadNoThrow(std::string& message) noexcept
 { 
@@ -149,6 +150,8 @@ bool PackageEntry::Data(std::unique_ptr<VariableType>&& New) noexcept
     Unload();
 
     this->data = std::move(New);
+    this->index.data_type = !New ? VT_None : New->GetType();
+    
     return WriteData();
 }
 

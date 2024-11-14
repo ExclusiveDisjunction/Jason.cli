@@ -11,16 +11,16 @@
 
 using namespace std::filesystem;
 
-Package::Package(unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index) : packID(ID), name(std::move(name)), header(std::move(header)), index(std::move(index)), state(0), ref(new PackageReference(*this))
+Package::Package(unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index, PackagePager&& pager) : packID(ID), name(std::move(name)), header(std::move(header)), index(std::move(index)), state(0), ref(new PackageReference(*this)), pager(std::move(pager))
 {
 
 }
-Package::Package(path location, unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index) : Package(ID, std::move(name), std::move(header), std::move(index))
+Package::Package(path location, unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index, PackagePager&& pager) : Package(ID, std::move(name), std::move(header), std::move(index), std::move(pager))
 {
     this->location = std::move(location);
     this->compressedLocation = {};
 }
-Package::Package(path uLocation, path cLocation, unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index) : Package(ID, std::move(name), std::move(header), std::move(index))
+Package::Package(path uLocation, path cLocation, unsigned long ID, std::string name, PackageHeader&& header, PackageIndex&& index, PackagePager&& pager) : Package(ID, std::move(name), std::move(header), std::move(index), std::move(pager))
 {
     this->location = std::move(uLocation);
     this->compressedLocation = std::move(cLocation);
@@ -77,15 +77,14 @@ std::shared_ptr<Package> Package::OpenFromDirectory(const std::filesystem::path&
      * Then we load the header, then index.
      */
 
-    std::filesystem::path header_l(dir / "header"), index_l(dir / "index"), var_l(dir / "var");
-    FileHandle header_f(header_l), index_f(index_l);
-    if (!std::filesystem::exists(var_l))
-        throw std::logic_error("The variable folder does not exist");
+    std::filesystem::path header_l(dir / "header"), index_l(dir / "index"), pager_l(dir / "var");
+    FileHandle header_f(header_l), index_f(index_l), pager_f(pager_l);
 
     PackageHeader header(std::move(header_f));
     PackageIndex index(std::move(index_f));
+    PackagePager pager(std::move(pager_f), sizeof(double), 11);
 
-    std::shared_ptr<Package> result( new Package(dir, ID, dir.filename(), std::move(header), std::move(index)) );
+    std::shared_ptr<Package> result( new Package(dir, ID, dir.filename(), std::move(header), std::move(index), std::move(pager) ));
     result->IndexEntries();
     
     return result;
@@ -110,19 +109,18 @@ std::shared_ptr<Package> Package::NewPackage(const std::string& name, const std:
     if (!std::filesystem::create_directory(path))
         throw std::logic_error("Unable to create directory");
 
-    std::filesystem::path header_p = path / "header", index_p = path / "index", entries_p = path / "var";
+    std::filesystem::path header_p = path / "header", index_p = path / "index", pager_p = path / "var";
 
-    if (!std::filesystem::create_directory(entries_p))
-        throw std::logic_error("Unable to create entries directory");
-
-    FileHandle header_f(header_p), index_f(index_p);
+    auto flags = std::ios::in | std::ios::out | std::ios::trunc;
+    FileHandle header_f(header_p, flags), index_f(index_p, flags), pager_f(pager_p, flags);
 
     PackageHeader header(std::move(header_f));
     PackageIndex index(std::move(index_f));
+    PackagePager pager(std::move(pager_f), sizeof(double), 11);
     if (!header.Write())
         throw std::logic_error("The header could not be written to the file system"); 
 
-    return std::shared_ptr<Package>( new Package(path, ID, std::move(name), std::move(header), std::move(index)) );
+    return std::shared_ptr<Package>( new Package(path, ID, std::move(name), std::move(header), std::move(index), std::move(pager)) );
 }
 
 const std::filesystem::path& Package::Location() const noexcept
@@ -272,13 +270,26 @@ std::optional<PackageEntryKey> Package::AddEntry(std::string elementName, Packag
     if (type != PackageEntryType::Temporary && name.empty())
         return {};
 
+    std::vector<unsigned int> pages;
+    if (data)
+        pages = this->pager.Allocate(
+            static_cast<unsigned int>(
+                ceilf(
+                    data->RequiredUnits() / static_cast<float>(this->pager.PageSize())
+                    )
+                )
+            );
+    else 
+        pages = this->pager.Allocate(1);
+    
+
     PackageEntry result(
         PackageEntryIndex(
-                PackageEntryKey(this->packID, 
-                                this->GetNextID()),
-                                type, 
-                                std::move(elementName), 
-                                0),
+                PackageEntryKey(this->packID, this->GetNextID()),
+                type, 
+                std::move(elementName), 
+                0,
+                pages),
         std::weak_ptr<PackageReference>(ref));
 
     if ( !result.Data(std::move(data)) )

@@ -3,16 +3,11 @@
 //
 
 #include "PackagePager.h"
+#include "PackageEntry.h"
 
-PackagePager::PackagePager(std::filesystem::path location, unsigned char UnitSize, unsigned PageSize, const std::vector<std::vector<unsigned>>& objs) : handle(std::move(location), std::ios::out | std::ios::in | std::ios::binary), binding(), location(std::make_pair(0u, 0u)), unitSize(UnitSize), pageSize(PageSize)
+PackagePager::PackagePager(FileHandle&& location, unsigned char UnitSize, unsigned PageSize) : handle(std::move(location)), binding(), location(std::make_pair(0u, 0u)), unitSize(UnitSize), pageSize(PageSize)
 {
     handle.file.seekg(0, std::ios::beg);
-    
-    for (auto& list : objs)
-    {
-        for (auto& item : list)
-            knownPages[item] = true;
-    }
 }
 PackagePager::PackagePager(PackagePager&& obj) noexcept : handle(std::move(obj.handle)), binding(std::move(obj.binding)), location(std::move(obj.location)), unitSize(std::exchange(obj.unitSize, 0)), pageSize(std::exchange(obj.pageSize, 0))
 {
@@ -25,6 +20,20 @@ PackagePager::~PackagePager()
     location = std::make_pair(0u, 0u);
     unitSize = 0;
     pageSize = 0;
+}
+
+void PackagePager::ReviewKnownElements(const std::vector<PackageEntry>& obj)
+{
+    if (this->IsBound())
+        this->Reset();
+
+    this->knownPages.clear();
+    
+    for (const auto& element : obj)
+    {
+        for (const auto& index : element.GetIndex().pages)
+            knownPages[index] = true;
+    }
 }
 
 PackagePager& PackagePager::operator=(PackagePager&& obj) noexcept
@@ -106,6 +115,32 @@ bool PackagePager::Allocate(unsigned int pages, PackageEntryIndex& tPages)
     }
 
     return true;
+}
+std::vector<unsigned int> PackagePager::Allocate(unsigned int pages)
+{
+    if (this->IsBound() || !this->handle.file)
+        return {};
+
+    this->handle.file.seekg(0, std::ios::end);
+    //Get the last page
+    auto lastPage = std::max_element(this->knownPages.begin(), this->knownPages.end(), [](const auto& a, const auto& b) -> bool {
+        return a < b;
+    });
+
+    unsigned int curr = lastPage->first + 1;
+    std::vector<unsigned int> result;
+    for (unsigned i = 0; i < pages; i++, curr++)
+        result.push_back(curr);
+
+    this->binding = &result;
+    boundPageIndex = 0;
+    bool couldWipe = this->WipeAll();
+
+    Reset();
+    if (!couldWipe)
+        return {};
+    else
+        return result;
 }
 
 Unit PackagePager::ReadUnit()

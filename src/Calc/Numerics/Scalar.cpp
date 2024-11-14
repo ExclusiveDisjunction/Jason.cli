@@ -11,6 +11,10 @@ VariableTypes Scalar::GetType() const noexcept
     return VariableTypes::VT_Scalar;
 }
 
+size_t Scalar::RequiredUnits() const noexcept 
+{
+    return 1;
+}
 std::vector<Unit> Scalar::ToBinary() const noexcept
 {
     return std::vector<Unit>({

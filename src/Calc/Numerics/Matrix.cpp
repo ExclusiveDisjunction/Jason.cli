@@ -156,10 +156,14 @@ VariableTypes Matrix::GetType() const noexcept
     return VariableTypes::VT_Matrix;
 }
 
+size_t Matrix::RequiredUnits() const noexcept
+{
+    return 2 + rows * cols;
+}
 std::vector<Unit> Matrix::ToBinary() const noexcept
 {
     std::vector<Unit> result;
-    result.resize(this->rows * this->cols + 2);
+    result.resize(this->RequiredUnits());
     result[0] = this->rows;
     result[1] = this->cols;
 

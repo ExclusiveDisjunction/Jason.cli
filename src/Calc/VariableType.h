@@ -20,7 +20,8 @@ enum VariableTypes
 {
     VT_Scalar,
     VT_Vector,
-    VT_Matrix
+    VT_Matrix,
+    VT_None,
 };
 
 class MATH_LIB VariableType
@@ -33,6 +34,8 @@ public:
 
     [[nodiscard]] virtual std::vector<Unit> ToBinary() const noexcept = 0;
     [[nodiscard]] static std::unique_ptr<VariableType> FromBinary(const std::vector<Unit>& data, VariableTypes targetType);
+    [[nodiscard]] virtual size_t RequiredUnits() const noexcept = 0;
+    [[nodiscard]] size_t RequiredPages(unsigned PageSize) const noexcept;
     [[nodiscard]] virtual std::string GetTypeString() const noexcept = 0; //Displays (None), (Scalar), (Vector:D), (Matrix:mxn)
 
     virtual void Print(std::ostream& out) const noexcept = 0; //Pretty prints

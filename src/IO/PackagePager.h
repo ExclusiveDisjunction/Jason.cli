@@ -27,10 +27,12 @@ private:
     unsigned pageSize;
 
 public:
-    PackagePager(std::filesystem::path location, unsigned char UnitSize, unsigned PageSize, const std::vector<std::vector<unsigned>>& allocatedElements);
+    PackagePager(FileHandle&& location, unsigned char UnitSize, unsigned PageSize);
     PackagePager(const PackagePager& obj) = delete;
     PackagePager(PackagePager&& obj) noexcept;
     ~PackagePager();
+
+    void ReviewKnownElements(const std::vector<class PackageEntry>& allocatedElements);
 
     PackagePager& operator=(const PackagePager& obj) = delete;
     PackagePager& operator=(PackagePager&& obj) noexcept;
@@ -46,7 +48,15 @@ public:
     bool WriteUnits(const std::vector<Unit>& units);
     bool WipeAll();
 
+    /// @brief Allocate a specified number of pages, resizing the pages stored in the index.
+    /// @param pages The number of pages needed
+    /// @param index The handle to the index 
+    /// @return True if the specified number of pages requested were satified
     bool Allocate(unsigned pages, PackageEntryIndex& index);
+    /// @brief Allocate a specified number of vectors at the end of the file
+    /// @param pages The number of pages to request
+    /// @return An empty vector if it failed, or a list of page indexes otherwise
+    std::vector<unsigned int> Allocate(unsigned pages);
 
     void Bind(PackageEntryIndex& index);
     void Reset();

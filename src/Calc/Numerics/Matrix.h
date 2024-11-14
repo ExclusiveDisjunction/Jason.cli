@@ -56,6 +56,7 @@ public:
 
     [[nodiscard]] std::unique_ptr<VariableType> Clone() const noexcept override;
 
+    [[nodiscard]] size_t RequiredUnits() const noexcept override;
     [[nodiscard]] std::vector<Unit> ToBinary() const noexcept override;
     [[nodiscard]] static Matrix FromBinary(const std::vector<Unit>& in);
     [[nodiscard]] static std::unique_ptr<Matrix> FromBinaryPtr(const std::vector<Unit>& in);
