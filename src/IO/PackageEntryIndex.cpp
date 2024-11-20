@@ -1,6 +1,6 @@
 #include "PackageEntryIndex.h"
 
-PackageEntryIndex::PackageEntryIndex(PackageEntryKey key, PackageEntryType type, std::string name, unsigned char state, std::vector<unsigned int> pages) noexcept : key(key), type(type), name(std::move(name)), state(state), pages(std::move(pages))
+PackageEntryIndex::PackageEntryIndex(PackageEntryKey key, PackageEntryType type, std::string name, unsigned char state, VariableTypes data_type, std::vector<unsigned int> pages) noexcept : key(key), type(type), name(std::move(name)), state(state), data_type(data_type), pages(std::move(pages))
 {
 
 }
@@ -60,10 +60,11 @@ void PackageEntryIndex::Name(const std::string& New) noexcept
 
 std::ostream& operator<<(std::ostream& out, const PackageEntryIndex& obj) noexcept
 {
-    // ID NAME TYPE LOAD_IMM(0, 1) READ_ONLY(0, 1) PAGE_LEN PAGES...
+    // ID NAME TYPE DATA_TYPE LOAD_IMM(0, 1) READ_ONLY(0, 1) PAGE_LEN PAGES...
     out << obj.key.EntryID << ' ' 
         << obj.name << ' '
         << (obj.type == Variable ? "var" : obj.type == Environment ? "env" : "tmp") << ' ' 
+        << obj.data_type << ' '
         << (bool)(obj.state & PackageEntryIndex::load_imm) << ' ' 
         << (bool)(obj.state & PackageEntryIndex::readonly) << ' '
         << obj.pages.size() << ' ';
@@ -81,7 +82,7 @@ std::istream& operator>>(std::istream& in, PackageEntryIndex& obj)
     std::string typeRaw;
     bool load = false, read = false;
     unsigned pageLen = 0;
-    in >> obj.key.EntryID >> obj.name >> typeRaw >> load >> read >> pageLen;
+    in >> obj.key.EntryID >> obj.name >> typeRaw >> obj.data_type >>  load >> read >> pageLen;
 
     //Parse type
     if (typeRaw == "var")

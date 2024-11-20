@@ -62,30 +62,18 @@ void IOTester() noexcept
             break;
         else if (mode == "insert")
         {
-            if (parser.Values().size() < 3)
+            if (parser.Values().size() < 2)
             {
-                std::cout << "Invalid amount of arguments. At least three values are expected" << std::endl;
+                std::cout << "Invalid amount of arguments. At least two values are expected" << std::endl;
                 continue;
             }
 
             std::string name = parser.Values()[0].Value;
-            std::stringstream sterilized;
-            for (auto iter = parser.Values().begin() + 1; iter != parser.Values().end(); iter++)
-                sterilized << *iter << ' ';
+            std::stringstream sterilized(parser.Values()[1].Value);
+            double value;
+            sterilized >> value;
 
-            std::unique_ptr<VariableType> extracted;
-            
-            try 
-            {
-                extracted = VariableType::Desterilize(sterilized);
-            } 
-            catch (std::logic_error& e)
-            {
-                std::cerr << "Could not construct a variable from that sterilized string because of '" << e.what() << "'" << std::endl;
-                std::cerr.flush();
-                std::cout.flush();
-                continue;
-            }
+            std::unique_ptr<VariableType> extracted = std::make_unique<Scalar>(value);
 
             auto result = New->AddEntry(name, PackageEntryType::Variable, std::move(extracted));
             if (!result.has_value())
@@ -201,7 +189,7 @@ void IOTester() noexcept
             {
                 const auto& command = parser.Values()[0].Value;
                 if (command == "insert")
-                    std::cout << "insert [name] [sterilized name | SCA VEC MAT] {dim} {dim2} [numbers...]" << std::endl;
+                    std::cout << "insert [name] [value]" << std::endl;
                 else if (command == "load")
                     std::cout << "load" << std::endl;
                 else if (command == "display")

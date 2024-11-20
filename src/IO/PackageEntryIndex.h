@@ -36,7 +36,7 @@ private:
     void IsModified(bool New) noexcept;
 public:
     PackageEntryIndex() = default;
-    PackageEntryIndex(PackageEntryKey key, PackageEntryType type, std::string name, unsigned char state, std::vector<unsigned int> pages) noexcept;
+    PackageEntryIndex(PackageEntryKey key, PackageEntryType type, std::string name, unsigned char state, VariableTypes data_type, std::vector<unsigned int> pages) noexcept;
     explicit PackageEntryIndex(std::istream& in);
     PackageEntryIndex(const PackageEntryIndex& obj) noexcept = default;
     PackageEntryIndex(PackageEntryIndex&& obj) noexcept = default;

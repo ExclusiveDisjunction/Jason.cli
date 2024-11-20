@@ -18,11 +18,13 @@ class MATH_LIB VariableType;
 
 enum VariableTypes
 {
-    VT_Scalar,
-    VT_Vector,
-    VT_Matrix,
-    VT_None,
+    VT_Scalar = 1,
+    VT_Vector = 2,
+    VT_Matrix = 3,
+    VT_None = 0,
 };
+std::ostream& operator<<(std::ostream& out, const VariableTypes& obj);
+std::istream& operator>>(std::istream& in, VariableTypes& obj);
 
 class MATH_LIB VariableType
 {

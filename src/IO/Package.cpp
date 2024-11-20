@@ -151,6 +151,10 @@ PackageHeader& Package::Header() noexcept
 {
     return const_cast<PackageHeader&>(const_cast<const Package*>(this)->Header());
 }
+PackagePager& Package::Pager() noexcept 
+{
+    return this->pager;
+}
 
 bool Package::Compress(std::ostream& out) const noexcept
 {
@@ -159,7 +163,14 @@ bool Package::Compress(std::ostream& out) const noexcept
 bool Package::Save() noexcept
 {
     //Header auto-saves
-    //Entries auto-saves
+    bool result = true;
+    
+    for (auto& entry : this->entries)
+    {
+        if (entry.IsModified())
+            result &= entry.WriteData()
+    }
+
     if (!this->index.Write(this->entries))
         return false;
 
@@ -281,7 +292,6 @@ std::optional<PackageEntryKey> Package::AddEntry(std::string elementName, Packag
             );
     else 
         pages = this->pager.Allocate(1);
-    
 
     PackageEntry result(
         PackageEntryIndex(
@@ -289,13 +299,17 @@ std::optional<PackageEntryKey> Package::AddEntry(std::string elementName, Packag
                 type, 
                 std::move(elementName), 
                 0,
+                (!data ? VT_None : data->GetType()),
                 pages),
         std::weak_ptr<PackageReference>(ref));
 
     if ( !result.Data(std::move(data)) )
         return {};
     else
+    {
+        result.SetModified(true); //So that it will be saved
         this->entries.emplace_back( std::move(result) );
+    }
 
     return result.GetIndex().Key();
 }

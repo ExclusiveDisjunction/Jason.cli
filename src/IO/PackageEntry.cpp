@@ -151,8 +151,7 @@ bool PackageEntry::Data(std::unique_ptr<VariableType>&& New) noexcept
 
     this->data = std::move(New);
     this->index.data_type = !New ? VT_None : New->GetType();
-    
-    return WriteData();
+    this->SetModified(true);
 }
 
 std::optional<bool> PackageEntry::HasData() const noexcept

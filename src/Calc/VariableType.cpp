@@ -205,3 +205,16 @@ std::ostream& operator<<(std::ostream& out, const VariableType& obj)
     obj.Print(out);
     return out;
 }
+
+std::ostream& operator<<(std::ostream& out, const VariableTypes& obj)
+{
+    return (out << static_cast<unsigned>(obj));
+}
+std::istream& operator>>(std::istream& in, VariableTypes& obj)
+{
+    int val;
+    in >> val;
+
+    obj = static_cast<VariableTypes>(val);
+    return in;
+}

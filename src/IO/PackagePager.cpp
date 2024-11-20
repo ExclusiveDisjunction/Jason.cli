@@ -127,7 +127,12 @@ std::vector<unsigned int> PackagePager::Allocate(unsigned int pages)
         return a < b;
     });
 
-    unsigned int curr = lastPage->first + 1;
+    unsigned int curr = 0;
+    if (lastPage == this->knownPages.end())
+        curr = 0;
+    else
+        curr = lastPage->first + 1;
+        
     std::vector<unsigned int> result;
     for (unsigned i = 0; i < pages; i++, curr++)
         result.push_back(curr);
