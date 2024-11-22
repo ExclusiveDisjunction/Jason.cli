@@ -15,7 +15,10 @@ Unit::Unit(const Unit& obj) noexcept
     this->Data = new char[blockSize];
     memcpy(obj.Data, this->Data, blockSize);
 }
-Unit::Unit(Unit&& obj) noexcept : Data(std::exchange(obj.Data, nullptr)), blockSize(std::exchange(obj.blockSize, 0)) {}
+Unit::Unit(Unit&& obj) noexcept : Data(std::exchange(obj.Data, nullptr)), blockSize(std::exchange(obj.blockSize, 0)) 
+{
+    
+}
 Unit::~Unit()
 {
     Deallocate();

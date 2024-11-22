@@ -81,8 +81,11 @@ std::shared_ptr<Package> Package::OpenFromDirectory(const std::filesystem::path&
     FileHandle header_f(header_l), index_f(index_l), pager_f(pager_l);
 
     PackageHeader header(std::move(header_f));
+    if (!header.Read())
+        throw std::logic_error("Could not read header");
+
     PackageIndex index(std::move(index_f));
-    PackagePager pager(std::move(pager_f), sizeof(double), 11);
+    PackagePager pager(std::move(pager_f), sizeof(double), header.PageSize());
 
     std::shared_ptr<Package> result( new Package(dir, ID, dir.filename(), std::move(header), std::move(index), std::move(pager) ));
     result->IndexEntries();
@@ -116,7 +119,7 @@ std::shared_ptr<Package> Package::NewPackage(const std::string& name, const std:
 
     PackageHeader header(std::move(header_f));
     PackageIndex index(std::move(index_f));
-    PackagePager pager(std::move(pager_f), sizeof(double), 11);
+    PackagePager pager(std::move(pager_f), sizeof(double), header.PageSize());
     if (!header.Write())
         throw std::logic_error("The header could not be written to the file system"); 
 
@@ -168,11 +171,10 @@ bool Package::Save() noexcept
     for (auto& entry : this->entries)
     {
         if (entry.IsModified())
-            result &= entry.WriteData()
+            result &= entry.WriteData();
     }
 
-    if (!this->index.Write(this->entries))
-        return false;
+    result &= this->index.Write(this->entries);
 
     if (this->IsCompressed())
     {
@@ -183,7 +185,10 @@ bool Package::Save() noexcept
         return this->Compress(outFile);
     }
 
-    return true;
+    this->pager.Reset();
+    this->pager.Flush();
+
+    return result;
 }
 void Package::Close() noexcept
 {
@@ -256,13 +261,11 @@ bool Package::RemoveEntry(unsigned long ID) noexcept
 }
 void Package::RemoveAllEntries() noexcept
 {
-    std::filesystem::remove_all(this->VarLocation());
-    std::filesystem::create_directory(this->VarLocation());
+    this->pager.TruncateFile();
+    this->index.TruncateFile();
 
     this->currID = 0;
     this->entries.clear();
-
-    (void)this->index.Write(this->entries);
 }
 std::optional<PackageEntry> Package::ReleaseEntry(unsigned long ID) noexcept
 {  
@@ -303,13 +306,8 @@ std::optional<PackageEntryKey> Package::AddEntry(std::string elementName, Packag
                 pages),
         std::weak_ptr<PackageReference>(ref));
 
-    if ( !result.Data(std::move(data)) )
-        return {};
-    else
-    {
-        result.SetModified(true); //So that it will be saved
-        this->entries.emplace_back( std::move(result) );
-    }
+    result.Data(std::move(data));
+    this->entries.emplace_back( std::move(result) );
 
     return result.GetIndex().Key();
 }

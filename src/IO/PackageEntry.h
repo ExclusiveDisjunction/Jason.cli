@@ -25,11 +25,7 @@ private:
     PackageEntryIndex index;
     bool thisModified = false;
 
-    void SetModified(bool New) noexcept
-    {
-        this->thisModified = New;
-        this->index.IsModified(New);
-    }
+    void SetModified(bool New) noexcept;
 
 public:
     PackageEntry(PackageEntryIndex&& index, std::weak_ptr<PackageReference> parent);
@@ -53,14 +49,15 @@ public:
     /// @brief Reads from the path located at GetPath(), only looking for the data. If the path could not be resolves, it attempts to create it. If it fails to create, it will return false, otherwise, data will be nullptr. 
     void Load();
     [[nodiscard]] bool LoadNoThrow(std::string& errorMessage) noexcept;
-    /// @brief Removes the 'Data' item from memory without deleting the file.
-    void Unload() noexcept;
+    /// @brief Saves if modified, and then unloads from memory
+    bool Unload() noexcept;
     /// @brief Deletes 'Data' from memory & the file system.
     void Reset() noexcept;
 
     [[nodiscard]] const VariableType& Data() const;
-    [[nodiscard]] bool Data(std::unique_ptr<VariableType>&& New) noexcept;
+    void Data(std::unique_ptr<VariableType>&& New) noexcept;
 
+    [[nodiscard]] bool IsLoaded() const noexcept;
     [[nodiscard]] std::optional<bool> HasData() const noexcept;
     [[nodiscard]] bool IsModified() const noexcept;
 

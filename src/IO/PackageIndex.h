@@ -25,6 +25,7 @@ public:
     static bool Write(std::ostream& out, const std::vector<PackageEntry>& entries) noexcept;
 
     void Close();
+    void TruncateFile();
 };
 
 #endif

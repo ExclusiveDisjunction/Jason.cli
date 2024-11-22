@@ -122,6 +122,7 @@ void IOTester() noexcept
                     }
                 }
 
+                (void)New->Save();
                 auto time_for_adding = std::chrono::system_clock::now();
                 New->UnloadAllEntries();
                 auto time_for_unload = std::chrono::system_clock::now();
@@ -216,6 +217,8 @@ void IOTester() noexcept
             else //Too many
                 std::cout << "Too many values passed into the help command. Help expects one value or one specifier" << std::endl;
         }
+        else if (mode.empty())
+            continue;
         else
             std::cout << "Unrecognized command: \'" << mode << "\'\n";
     }

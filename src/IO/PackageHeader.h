@@ -19,6 +19,7 @@ private:
     Version version;
     std::optional<std::string> author;
     bool readonly;
+    unsigned page_size;
 
     bool modified = false;
 
@@ -31,6 +32,8 @@ private:
             modified = true;
         }
     }
+
+    void PageSize(unsigned New) noexcept; //This is up here because we do not want users to be able to set it whenever
     
 public:
     PackageHeader(FileHandle&& handle);
@@ -53,6 +56,8 @@ public:
 
     [[nodiscard]] bool IsReadOnly() const noexcept;
     void SetReadOnly(bool New) noexcept;
+
+    [[nodiscard]] unsigned PageSize() const noexcept;
 };
 
 std::ostream& operator<<(std::ostream& out, const PackageHeader& obj);

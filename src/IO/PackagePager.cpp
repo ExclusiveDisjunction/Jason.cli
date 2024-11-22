@@ -182,7 +182,7 @@ bool PackagePager::AdvancePage()
     auto& list = *binding.value();
     index++;
 
-    if (index > list.size()) //Out of range
+    if (index >= list.size()) //Out of range
     {
         boundEof = true;
         MoveAbsolute(0, 0);
@@ -299,11 +299,29 @@ void PackagePager::Flush()
 {
     handle.file.flush();
 }
+void PackagePager::TruncateFile()
+{
+    std::filesystem::path this_path = this->handle.path;
+    this->Close();
+
+    try
+    {
+        this->handle.Open(this_path, std::ios::in | std::ios::out | std::ios::trunc);
+        MoveAbsolute(0, 0);
+    }
+    catch (...)
+    {
+        //Do nothing?
+    }
+}
 
 bool PackagePager::MoveRelative(unsigned unitPosition)
 {
     if (!IsBound())
         return false;
+
+    if (boundPageIndex == unitPosition)
+        return true; //Already there
 
     unsigned pageLoc = unitPosition / pageSize;
     unitPosition -= pageLoc * pageSize;
@@ -322,6 +340,9 @@ bool PackagePager::MoveAbsolute(unsigned pagePosition, unsigned unitPosition)
 }
 bool PackagePager::MoveAbsolute(std::pair<unsigned, unsigned> loc)
 {
+    if (location == loc)
+        return true; //Already there
+
     std::streamoff truePos = (loc.first * pageSize + loc.second) * unitSize;
     handle.file.seekg(truePos);
 

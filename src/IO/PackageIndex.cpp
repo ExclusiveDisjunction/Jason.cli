@@ -54,3 +54,18 @@ void PackageIndex::Close()
 {
     this->handle.Close();
 }
+void PackageIndex::TruncateFile()
+{
+    std::filesystem::path this_path = this->handle.path;
+    this->Close();
+
+    try
+    {
+        this->handle.Open(this_path, std::ios::in | std::ios::out | std::ios::trunc);
+    }
+    catch (...)
+    {
+        //TODO: Add logging.
+    }
+    
+}

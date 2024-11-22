@@ -65,7 +65,7 @@ bool PackageEntry::DisplayData(std::ostream& out) const noexcept
 }
 bool PackageEntry::WriteData() noexcept
 {
-    if (!IsModified())
+    if (!IsModified() || !this->IsLoaded())
         return true;
 
     if (auto package = parent.lock())
@@ -118,12 +118,16 @@ bool PackageEntry::LoadNoThrow(std::string& message) noexcept
         return false;
     }
 }
-void PackageEntry::Unload() noexcept
+bool PackageEntry::Unload() noexcept
 {
+    if (!this->WriteData())
+        return false;
+
     if (this->data.has_value())
         this->data.value().reset();
 
     this->data = {};
+    return true;
 }
 void PackageEntry::Reset() noexcept
 {
@@ -145,15 +149,19 @@ const VariableType& PackageEntry::Data() const
 
     return *(*this->data);
 }
-bool PackageEntry::Data(std::unique_ptr<VariableType>&& New) noexcept
+void PackageEntry::Data(std::unique_ptr<VariableType>&& New) noexcept
 {
     Unload();
 
     this->data = std::move(New);
-    this->index.data_type = !New ? VT_None : New->GetType();
+    this->index.data_type = !this->data ? VT_None : (*this->data)->GetType();
     this->SetModified(true);
 }
 
+bool PackageEntry::IsLoaded() const noexcept
+{
+    return this->data.has_value();
+}
 std::optional<bool> PackageEntry::HasData() const noexcept
 {
     return !this->data ? std::optional<bool>() : *this->data != nullptr;
@@ -161,6 +169,11 @@ std::optional<bool> PackageEntry::HasData() const noexcept
 bool PackageEntry::IsModified() const noexcept
 {
     return this->thisModified || this->index.IsModified();
+}
+void PackageEntry::SetModified(bool New) noexcept
+{
+    this->thisModified = New;
+    this->index.IsModified(New);
 }
 
 void PackageEntry::LoadImmediate(bool New) noexcept 

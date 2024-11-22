@@ -7,7 +7,7 @@
 #include <sstream>
 #include <algorithm>
 
-PackageHeader::PackageHeader(FileHandle&& handle) : handle(std::move(handle)), version(JASON_CURRENT_VERSION), author(), readonly(false), modified(false)
+PackageHeader::PackageHeader(FileHandle&& handle) : handle(std::move(handle)), version(JASON_CURRENT_VERSION), author(), readonly(false), modified(false), page_size(4)
 {
 
 }
@@ -68,6 +68,15 @@ void PackageHeader::SetReadOnly(bool New) noexcept
     SetValue(readonly, New);
 }
 
+unsigned PackageHeader::PageSize() const noexcept
+{
+    return this->page_size;
+}
+void PackageHeader::PageSize(unsigned New) noexcept
+{
+    SetValue(this->page_size, New);
+}
+
 void PackageHeader::Close()
 {
     this->handle.Close();
@@ -77,7 +86,8 @@ std::ostream& operator<<(std::ostream& out, const PackageHeader& obj)
 {
     out << "version=" << obj.version << '\n' <<
            (obj.author.has_value() ? "author=" + *obj.author + '\n' : std::string()) << 
-           "readonly=" << (obj.readonly ? 't' : 'f');
+           "readonly=" << (obj.readonly ? 't' : 'f') << '\n' <<
+           "pagesize=" << obj.page_size;
 
     return out;
 }
@@ -87,6 +97,7 @@ std::istream& operator>>(std::istream& in, PackageHeader& obj)
     obj.version = Version();
     obj.author = {};
     obj.readonly = false;
+    obj.page_size = 4;
 
     std::string line;
     while (!in.eof())
@@ -110,6 +121,11 @@ std::istream& operator>>(std::istream& in, PackageHeader& obj)
             obj.author = value;
         else if (name == "readonly")
             obj.readonly = value == "t";
+        else if (name == "pagesize")
+        {
+            std::stringstream num_str(value);
+            num_str >> obj.page_size;
+        }
     }
     return in;
 }
