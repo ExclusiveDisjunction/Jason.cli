@@ -135,7 +135,10 @@ std::vector<unsigned int> PackagePager::Allocate(unsigned int pages)
         
     std::vector<unsigned int> result;
     for (unsigned i = 0; i < pages; i++, curr++)
+    {
         result.push_back(curr);
+        this->knownPages[curr] = true;
+    }
 
     this->binding = &result;
     boundPageIndex = 0;
@@ -319,9 +322,6 @@ bool PackagePager::MoveRelative(unsigned unitPosition)
 {
     if (!IsBound())
         return false;
-
-    if (boundPageIndex == unitPosition)
-        return true; //Already there
 
     unsigned pageLoc = unitPosition / pageSize;
     unitPosition -= pageLoc * pageSize;
