@@ -5,35 +5,73 @@
 #include "PackagePager.h"
 #include "PackageEntry.h"
 
-PackagePager::PackagePager(FileHandle&& location, unsigned char UnitSize, unsigned PageSize) : handle(std::move(location)), binding(), location(std::make_pair(0u, 0u)), unitSize(UnitSize), pageSize(PageSize)
+PackagePager::PackagePager(FileHandle&& location, FileHandle&& index_loc, unsigned char unit_size) : handle(std::move(location)), index(std::move(index_loc)), binding(), abs_location(0), unit_size(unit_size)
 {
     handle.file.seekg(0, std::ios::beg);
 }
-PackagePager::PackagePager(PackagePager&& obj) noexcept : handle(std::move(obj.handle)), binding(std::move(obj.binding)), location(std::move(obj.location)), unitSize(std::exchange(obj.unitSize, 0)), pageSize(std::exchange(obj.pageSize, 0))
+PackagePager::PackagePager(PackagePager&& obj) noexcept : handle(std::move(obj.handle)), index(std::move(obj.index)), binding(std::move(obj.binding)), abs_location(std::exchange(obj.abs_location, 0)), unit_size(std::exchange(obj.unit_size, 0)), locations(std::move(obj.locations)), open_pages(std::move(obj.open_pages))
 {
 
 }
 PackagePager::~PackagePager()
 {
-    handle.Close();
-    binding = {};
-    location = std::make_pair(0u, 0u);
-    unitSize = 0;
-    pageSize = 0;
+    this->Close();
 }
 
-void PackagePager::ReviewKnownElements(const std::vector<PackageEntry>& obj)
+bool PackagePager::ReadIndex() 
 {
     if (this->IsBound())
-        this->Reset();
+        return false;
+}
 
-    this->knownPages.clear();
-    
-    for (const auto& element : obj)
+std::vector<unsigned> PackagePager::RequestUnits(unsigned units)
+{
+    std::vector<unsigned> result;
+    while (!open_pages.empty() && units > 0) 
     {
-        for (const auto& index : element.GetIndex().pages)
-            knownPages[index] = true;
+        result.push_back(open_pages.top());
+        open_pages.pop();
+        units--;
     }
+
+    if (units == 0) 
+    {
+        //We still have more to satisfy
+        
+        //We need to get the last unit position, and then add one to it.
+        unsigned last_pos = 0;
+        for (const auto& [key, locs] : locations)
+        {
+            if (locs.empty())
+                continue;
+
+            last_pos = std::max(
+                last_pos,
+                *std::max_element(locs.begin(), locs.end())
+            );
+        }
+
+        if (!locations.empty()) //If we have nothing, we dont increment to the end, because we are already at the end (last_pos = 0)
+            last_pos++;
+        
+
+        this->handle.file.seekp(0, std::ios::end);
+        unsigned block_size = units * unit_size;
+        char* chunk = new char[block_size]; 
+        memset(chunk, 0, block_size * sizeof(char));
+
+        this->handle.file.write(chunk, block_size);
+
+        for (unsigned i = 0; i < units; i++)
+            result.push_back(last_pos++);
+
+        delete[] chunk;
+
+        if (this->handle.file.bad())
+            return {}; //Error
+    }
+
+    return result;
 }
 
 PackagePager& PackagePager::operator=(PackagePager&& obj) noexcept
@@ -42,218 +80,149 @@ PackagePager& PackagePager::operator=(PackagePager&& obj) noexcept
 
     this->handle = std::move(obj.handle);
     this->binding = std::move(obj.binding);
-    this->location = std::move(obj.location);
-    this->unitSize = std::exchange(obj.unitSize, 0);
-    this->pageSize = std::exchange(obj.pageSize, 0);
+    this->unit_size = std::exchange(obj.unit_size, 0);
+    this->abs_location = std::exchange(obj.abs_location, 0);
+    this->locations = std::move(obj.locations);
+    this->open_pages = std::move(obj.open_pages);
     return *this;
 }
 
 unsigned char PackagePager::UnitSize() const noexcept
 {
-    return this->unitSize;
-}
-unsigned PackagePager::PageSize() const noexcept
-{
-    return this->pageSize;   
+    return this->unit_size;
 }
 
-bool PackagePager::EndOfFile() const noexcept
+bool PackagePager::IsEOF() const noexcept
 {
-    return handle.file.eof() || boundEof;
+    return handle.file.eof() || (!this->binding.has_value() || this->binding->eof);
 }
 bool PackagePager::IsBound() const noexcept
 {
-    return binding.has_value() && boundPageIndex.has_value();
+    return binding.has_value();
 }
 
-bool PackagePager::Allocate(unsigned int pages, PackageEntryIndex& tPages)
+bool PackagePager::Allocate(unsigned int units, PackageEntryKey key)
 {
-    if (IsBound())
+    std::vector<unsigned>& curr_alloc = this->locations[key];
+
+    std::vector<unsigned> removed_units; //The units that were removed, to add to open_pages
+
+    if (curr_alloc.size() == units) 
+        return true;
+    else if (units == 0)
+        removed_units = std::move(curr_alloc); //The curr_alloc will hold no more data.
+    else if (curr_alloc.size() < units) //Adding units
+    {
+        unsigned to_add = units - curr_alloc.size();
+        std::vector<unsigned> new_units = this->RequestUnits(to_add);
+        if (new_units.size() != to_add)
+            return false; //Request failed
+
+        for (const auto& unit : new_units)
+            curr_alloc.push_back(unit);
+    }
+    else if (curr_alloc.size() > units) //Remove units 
+    {
+        unsigned to_remove = curr_alloc.size() - units;
+        for (auto curr = curr_alloc.rbegin(); to_remove > 0 && curr != curr_alloc.rend(); to_remove--)
+            removed_units.push_back(*curr);
+        
+        curr_alloc.resize(units);
+    }
+
+    for (const auto& unit : removed_units)
+        this->open_pages.push(unit);
+
+    
+
+    return true;
+}
+bool PackagePager::AllocateOnBound(unsigned units)
+{
+    if (!IsBound())
         return false;
 
-    std::vector<unsigned int>& Pages = tPages.pages;
+    PackagePagerBinding bind(std::move(*binding));
+    bool result = this->Allocate(units, bind.key);
     
-    if (Pages.size() == pages)
-        return true;
+    this->binding = std::move(bind);
+    return this->MoveRelative(this->binding->offset) && result;
+}
+bool PackagePager::Register(PackageEntryKey key)
+{
+    if (!this->locations.contains(key))
+    {
+        std::vector<unsigned> requested = RequestUnits(1);
+        if (requested.empty()) //Failed to request a page
+            return false;
 
-    if (pages == 0)
-    {
-        for (const auto& index: Pages)
-            knownPages[index] = false;
-        Pages.clear();
-    }
-    else if (pages < Pages.size()) //We need to shrink
-    {
-        unsigned amount = Pages.size() - pages;
-        std::vector<unsigned int> NewPages = std::vector<unsigned int>(Pages.begin(), Pages.begin() + amount),
-                ToRemove = std::vector<unsigned int>(Pages.begin() + amount, Pages.end());
-        
-        Pages = NewPages;
-        
-        for (const auto& index : NewPages)
-            knownPages[index] = false;
-    }
-    else //Greater
-    {
-        //Move to end
-        this->handle.file.seekg(0, std::ios::end);
-        unsigned page = this->handle.file.tellg() / (unitSize * pageSize);
-        page++;
-        
-        unsigned amount = pages - Pages.size();
-        unsigned blockSize = unitSize * pageSize;
-        char * chars = new char[blockSize];
-        memset(chars, 0, blockSize);
-        for (unsigned i = 0; i < amount; i++, page++)
-        {
-            knownPages[page] = true;
-            Pages.emplace_back(page);
-            handle.file.write(chars, blockSize);
-        }
-
-        delete[] chars;
+        this->locations[key] = requested;
     }
 
     return true;
 }
-std::vector<unsigned int> PackagePager::Allocate(unsigned int pages)
-{
-    if (this->IsBound() || !this->handle.file)
-        return {};
-
-    this->handle.file.seekg(0, std::ios::end);
-    //Get the last page
-    auto lastPage = std::max_element(this->knownPages.begin(), this->knownPages.end(), [](const auto& a, const auto& b) -> bool {
-        return a < b;
-    });
-
-    unsigned int curr = 0;
-    if (lastPage == this->knownPages.end())
-        curr = 0;
-    else
-        curr = lastPage->first + 1;
-        
-    std::vector<unsigned int> result;
-    for (unsigned i = 0; i < pages; i++, curr++)
-    {
-        result.push_back(curr);
-        this->knownPages[curr] = true;
-    }
-
-    this->binding = &result;
-    boundPageIndex = 0;
-    bool couldWipe = this->WipeAll();
-
-    Reset();
-    if (!couldWipe)
-        return {};
-    else
-        return result;
-}
 
 Unit PackagePager::ReadUnit()
 {
-    if (!IsBound() || EndOfFile())
-        throw std::logic_error("Invalid operation: The reader is not bound, or is EOF.");
+    if (!IsBound())
+        throw std::logic_error("reader is not bound");
+    if (IsEOF())
+        throw std::logic_error("end of file");
 
-    char* data = new char[unitSize];
-    this->handle.file.read(data, unitSize);
+    char* data = new char[unit_size];
+    memset(data, 0, sizeof(char) * unit_size);
 
-    //Now we need to check our location
+    this->handle.file.read(data, unit_size);
     if (!Advance())
-        throw std::logic_error("Could not advance");
+        throw std::logic_error("could not advance to the next unit");
 
-    return { data, unitSize, false };
+    return { data, unit_size, false };
 }
 bool PackagePager::Advance()
 {
-    if (!IsBound() || EndOfFile())
+    if (!IsBound() || IsEOF())
         return false;
 
-    location.second++;
-    if (location.second / pageSize > 0) // We have moved to the next page
-        return AdvancePage();
-    else
-        return true;
-}
-bool PackagePager::AdvancePage()
-{
-    if (!IsBound() || EndOfFile())
-        return false;
+    binding->offset++;
+    if (binding->offset > locations[binding->key].size()) //We have reached EOF
+        binding->eof = true; //Note that it is ok that we advance, but we set the EOF flag. This function should only fail if the move relative failed, or the reader is not bound or in EOF.
+    else 
+        return MoveRelative(binding->offset);
 
-    auto& index = boundPageIndex.value();
-    auto& list = *binding.value();
-    index++;
-
-    if (index >= list.size()) //Out of range
-    {
-        boundEof = true;
-        MoveAbsolute(0, 0);
-    }
-    else
-    {
-        unsigned nextPage = list[index];
-        MoveAbsolute(nextPage, 0);
-    }
-
-    return !boundEof;
+    return true;
 }
 std::vector<Unit> PackagePager::ReadUnits(unsigned int Units)
 {
+    if (Units == 0)
+        return {};
+
     std::vector<Unit> result;
     result.resize(Units);
 
-    try
-    {
-        for (unsigned i = 0; i < Units; i++)
-            result[i] = std::move(ReadUnit());
-
-        return result;
-    }
-    catch (...)
-    {
-        return {};
-    }
-}
-std::vector<Unit> PackagePager::ReadAllUnits()
-{
-    if (!IsBound() || EndOfFile())
-        throw std::logic_error("No information can be found.");
-
-    MoveRelative(0u);
-    std::vector<Unit> result;
-    unsigned size = (*binding.value()).size() * pageSize;
-    result.resize(size);
-
-    unsigned i = 0;
-    //The approach is to read page by page, selecting an array out of the stream one at a time.
-    do
-    {
-        auto thisSize = unitSize * pageSize;
-        char* thisPage = new char[thisSize];
-        memset(thisPage, 0, thisSize);
-        handle.file.read(thisPage, thisSize);
-
-        for (unsigned j = 0; j < pageSize && i < size; i++, j++)
-            result[i].Allocate(thisPage + (j * unitSize), unitSize, true);
-
-        delete[] thisPage;
-    } while (AdvancePage());
+    for (unsigned i = 0; i < Units; i++)
+        result[i] = std::move(ReadUnit());
 
     return result;
 }
+std::vector<Unit> PackagePager::ReadAllUnits()
+{
+    if (IsBound() && locations[binding->key].size() == 0) //empty list
+        return {};
+
+    return ReadUnits(locations[binding->key].size());
+}
 bool PackagePager::WriteUnits(const std::vector<Unit>& units)
 {
-    if (!IsBound() || EndOfFile())
+    if (!IsBound() || IsEOF())
         return false;
 
     auto curr = units.begin(), end = units.end();
     do
     {
-        if (curr->GetSize() != unitSize)
+        if (curr->GetSize() != unit_size)
             return false;
 
-        handle.file.write(curr->Expose(), unitSize);
+        handle.file.write(curr->Expose(), unit_size);
         curr++;
     } while (Advance() && curr != end);
 
@@ -262,36 +231,34 @@ bool PackagePager::WriteUnits(const std::vector<Unit>& units)
 bool PackagePager::WipeAll()
 {
     if (!MoveRelative(0))
-        return false;
+        throw std::logic_error("not currently bound or element has no pages allocated to it");
 
-    if (!IsBound() || EndOfFile())
-        return false;
-
-    char* sequence = new char[unitSize];
-    memset(sequence, 0, unitSize);
+    Unit zero_unit(unit_size);
 
     do
     {
-        handle.file.write(sequence, unitSize);
+        handle.file.write(zero_unit.Expose(), unit_size);
     } while (Advance());
 
-    delete[] sequence;
     return MoveRelative(0);
 }
 
-void PackagePager::Bind(PackageEntryIndex& pages)
+bool PackagePager::Bind(PackageEntryKey key)
 {
-    Reset();
-    binding = &pages.pages;
-    boundPageIndex = 0;
-    MoveRelative(0);
+    if (!this->locations.contains(key))
+    {
+        if (!Register(key))
+            return false;
+    }
+
+
+    binding = PackagePagerBinding(key, 0);
+    return MoveRelative(0);
 }
 void PackagePager::Reset()
 {
     binding = {};
-    boundPageIndex = {};
-    boundEof = false;
-    (void)MoveAbsolute(0, 0);
+    (void)MoveAbsolute(0);
 }
 void PackagePager::Close()
 {
@@ -310,7 +277,7 @@ void PackagePager::TruncateFile()
     try
     {
         this->handle.Open(this_path, std::ios::in | std::ios::out | std::ios::trunc);
-        MoveAbsolute(0, 0);
+        MoveAbsolute(0);
     }
     catch (...)
     {
@@ -323,50 +290,44 @@ bool PackagePager::MoveRelative(unsigned unitPosition)
     if (!IsBound())
         return false;
 
-    unsigned pageLoc = unitPosition / pageSize;
-    unitPosition -= pageLoc * pageSize;
-
-    //We are moving from the first unit in the bound element.
-    auto& pages = *(*binding);
-    if (pageLoc > pages.size())
+    const std::vector<unsigned>& curr_alloc = this->locations[binding->key];
+    if (unitPosition > curr_alloc.size())
         return false;
-    
-    boundPageIndex = pageLoc;
-    return MoveAbsolute(pages[pageLoc], unitPosition);
-}
-bool PackagePager::MoveAbsolute(unsigned pagePosition, unsigned unitPosition)
-{
-    return MoveAbsolute(std::make_pair(pagePosition, unitPosition));
-}
-bool PackagePager::MoveAbsolute(std::pair<unsigned, unsigned> loc)
-{
-    if (location == loc)
-        return true; //Already there
 
-    std::streamoff truePos = (loc.first * pageSize + loc.second) * unitSize;
+    unsigned unit_loc = curr_alloc[unitPosition];
+    return MoveAbsolute(unit_loc);
+}
+bool PackagePager::MoveAbsolute(unsigned loc)
+{
+    std::streamoff truePos = loc * unit_size;
+    if (truePos == handle.file.tellg())
+    {
+        abs_location = loc; //Ensure that we update our internal counts
+        return true; //Already there in the file
+    }
+
     handle.file.seekg(truePos);
+
+    abs_location = loc;
 
     if (handle.file.bad() || handle.file.eof()) //EOF
     {
-        location = std::make_pair<unsigned, unsigned>(0, 0);
-        if (boundPageIndex)
-            boundPageIndex = 0; //Reset this if we fail
+        if (binding.has_value())
+            binding->eof = true;
+        
         return false;
     }
-    else
-    {
-        location = loc;
-        return true;
-    }
+
+    return true;
 }
-unsigned PackagePager::GetRelativePosition()
+std::optional<unsigned> PackagePager::GetRelativePosition() const noexcept
 {
-    if (!IsBound() || EndOfFile())
-        return UINT_MAX;
+    if (!IsBound() || IsEOF())
+        return {};
     
-    return boundPageIndex.value() * pageSize + location.second;
+    return binding->offset;
 }
-std::pair<unsigned, unsigned> PackagePager::GetAbsolutePosition()
+unsigned PackagePager::GetAbsolutePosition() const noexcept
 {
-    return location;
+    return abs_location;
 }

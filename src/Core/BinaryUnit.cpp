@@ -5,9 +5,23 @@
 #include "BinaryUnit.h"
 
 Unit::Unit() : Data(nullptr), blockSize(0) {}
-Unit::Unit(char* Data, unsigned char Size, bool Copy) : Unit()
+Unit::Unit(unsigned char Size) : blockSize(Size), Data(nullptr)
 {
-
+    if (Size != 0)
+    {
+        this->Data = new char[blockSize];
+        memset(this->Data, 0, sizeof(char) * blockSize);
+    }
+}
+Unit::Unit(char* Data, unsigned char Size, bool Copy) : Data(nullptr), blockSize(Size)
+{
+    if (Copy)
+    {
+        this->Data = new char[blockSize];
+        memcpy(this->Data, Data, sizeof(char) * blockSize);
+    }
+    else 
+        this->Data = Data;
 }
 Unit::Unit(const Unit& obj) noexcept
 {

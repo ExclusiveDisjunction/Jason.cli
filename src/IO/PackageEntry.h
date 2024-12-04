@@ -23,9 +23,7 @@ private:
     std::optional<std::unique_ptr<VariableType>> data = {};
     std::weak_ptr<PackageReference> parent;
     PackageEntryIndex index;
-    bool thisModified = false;
-
-    void SetModified(bool New) noexcept;
+    bool modified = false;
 
 public:
     PackageEntry(PackageEntryIndex&& index, std::weak_ptr<PackageReference> parent);

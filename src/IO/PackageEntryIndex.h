@@ -22,28 +22,24 @@ private:
     {
         none = 0,
         load_imm = 1,
-        readonly = 2,
-        modified = 4
+        readonly = 2
     };
 
     PackageEntryKey key;
     PackageEntryType type = PackageEntryType::Variable;
     VariableTypes data_type = VariableTypes::VT_None;
     std::string name;
-    std::vector<unsigned int> pages;
     unsigned char state = 0;
-
-    void IsModified(bool New) noexcept;
+    
 public:
     PackageEntryIndex() = default;
-    PackageEntryIndex(PackageEntryKey key, PackageEntryType type, std::string name, unsigned char state, VariableTypes data_type, std::vector<unsigned int> pages) noexcept;
+    PackageEntryIndex(PackageEntryKey key, PackageEntryType type, std::string name, unsigned char state, VariableTypes data_type) noexcept;
     explicit PackageEntryIndex(std::istream& in);
     PackageEntryIndex(const PackageEntryIndex& obj) noexcept = default;
     PackageEntryIndex(PackageEntryIndex&& obj) noexcept = default;
 
     friend class PackageIndex;
     friend class PackageEntry;
-    friend class PackagePager;
     friend std::ostream& operator<<(std::ostream&, const PackageEntryIndex&) noexcept;
     friend std::istream& operator>>(std::istream&, PackageEntryIndex&);
 
@@ -53,7 +49,6 @@ public:
     [[nodiscard]] bool LoadImmediate() const noexcept;
     [[nodiscard]] bool IsReadOnly() const noexcept;
     [[nodiscard]] bool IsTemporary() const noexcept;
-    [[nodiscard]] bool IsModified() const noexcept;
     [[nodiscard]] const std::string& Name() const noexcept;
     [[nodiscard]] const PackageEntryKey& Key() const noexcept;
 

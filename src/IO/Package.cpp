@@ -77,15 +77,15 @@ std::shared_ptr<Package> Package::OpenFromDirectory(const std::filesystem::path&
      * Then we load the header, then index.
      */
 
-    std::filesystem::path header_l(dir / "header"), index_l(dir / "index"), pager_l(dir / "var");
-    FileHandle header_f(header_l), index_f(index_l), pager_f(pager_l);
+    std::filesystem::path header_l(dir / "header"), index_l(dir / "index"), pager_l(dir / "var"), pager_i_l(dir / "var_index");
+    FileHandle header_f(header_l), index_f(index_l), pager_f(pager_l), pager_i(pager_i_l);
 
     PackageHeader header(std::move(header_f));
     if (!header.Read())
         throw std::logic_error("Could not read header");
 
     PackageIndex index(std::move(index_f));
-    PackagePager pager(std::move(pager_f), sizeof(double), header.PageSize());
+    PackagePager pager(std::move(pager_f), std::move(pager_i), sizeof(double));
 
     std::shared_ptr<Package> result( new Package(dir, ID, dir.filename(), std::move(header), std::move(index), std::move(pager) ));
     result->IndexEntries();
@@ -112,14 +112,14 @@ std::shared_ptr<Package> Package::NewPackage(const std::string& name, const std:
     if (!std::filesystem::create_directory(path))
         throw std::logic_error("Unable to create directory");
 
-    std::filesystem::path header_p = path / "header", index_p = path / "index", pager_p = path / "var";
+    std::filesystem::path header_p = path / "header", index_p = path / "index", pager_p = path / "var", pager_i_p = path / "var_index";
 
     auto flags = std::ios::in | std::ios::out | std::ios::trunc;
-    FileHandle header_f(header_p, flags), index_f(index_p, flags), pager_f(pager_p, flags);
+    FileHandle header_f(header_p, flags), index_f(index_p, flags), pager_f(pager_p, flags), pager_i(pager_i_p, flags);
 
     PackageHeader header(std::move(header_f));
     PackageIndex index(std::move(index_f));
-    PackagePager pager(std::move(pager_f), sizeof(double), header.PageSize());
+    PackagePager pager(std::move(pager_f), std::move(pager_i), sizeof(double));
     if (!header.Write())
         throw std::logic_error("The header could not be written to the file system"); 
 
@@ -275,39 +275,50 @@ std::optional<PackageEntry> Package::ReleaseEntry(unsigned long ID) noexcept
         return {};
     
     PackageEntry target(std::move(*iter));
-    this->entries.erase(iter);
+    this->entries.erase(iter); //Removes from our data
 
-    return target;
+    //Note that no matter what, after this point, the item is removed from our data. 
+
+    //We will attempt to load the data, because what good is the object if there is no data?
+    if (!target.IsLoaded()) 
+    {
+        try { target.Load(); }
+        catch (...) {  } //Could not read, so will return nothing later on. We still have to clean stuff up, so we can't exit yet.
+    }
+
+    this->pager.RemoveAllocation(target.index.Key()); //Free space in the pager
+    target.parent = {}; //Remove references to this as the parent, so it cannot read or write to file.
+
+    if (!target.IsLoaded()) //Previous load failed
+        return {};
+    else
+        return target;
 }
 std::optional<PackageEntryKey> Package::AddEntry(std::string elementName, PackageEntryType type, std::unique_ptr<VariableType>&& data) noexcept
 {
     if (type != PackageEntryType::Temporary && name.empty())
         return {};
 
-    std::vector<unsigned int> pages;
-    if (data)
-        pages = this->pager.Allocate(
-            static_cast<unsigned int>(
-                ceilf(
-                    data->RequiredUnits() / static_cast<float>(this->pager.PageSize())
-                    )
-                )
-            );
-    else 
-        pages = this->pager.Allocate(1);
+    PackageEntryKey key(this->packID, this->currID + 1); //NOTE: If this function succedes, we need to truly increment currID. This is in case we fail, we can keep that key slot open.
+    unsigned needed_pages = !data ? 1 : data->RequiredUnits();
+
+    if (!this->pager.Bind(key) || this->pager.Allocate(needed_pages, key))
+        return {};
 
     PackageEntry result(
         PackageEntryIndex(
-                PackageEntryKey(this->packID, this->GetNextID()),
+                key,
                 type, 
                 std::move(elementName), 
                 0,
-                (!data ? VT_None : data->GetType()),
-                pages),
+                (!data ? VT_None : data->GetType())
+            ),
         std::weak_ptr<PackageReference>(ref));
 
     result.Data(std::move(data));
     this->entries.emplace_back( std::move(result) );
+
+    (void)this->GetNextID(); //Truly increment the ID
 
     return result.GetIndex().Key();
 }

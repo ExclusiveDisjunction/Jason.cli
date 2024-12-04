@@ -1,17 +1,6 @@
 #include "BinaryUnit.h"
 
 template<typename T>
-Unit::Unit(const T& item) : Unit()
-{
-    Allocate(item);
-}
-template<typename T>
-Unit::Unit(const std::vector<T>& items) : Unit()
-{
-    Allocate(items);
-}
-
-template<typename T>
 void Unit::Allocate(const T& obj)
 {
     if (Data)
@@ -22,7 +11,7 @@ void Unit::Allocate(const T& obj)
     memcpy(this->Data, &obj, blockSize);
 }
 template<typename T>
-void Unit::Allocate(const std::vector<T>& obj)
+void Unit::AllocateList(const std::vector<T>& obj)
 {
     if (Data)
         Deallocate();

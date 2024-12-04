@@ -29,16 +29,16 @@ PackageEntry::~PackageEntry()
 
 bool PackageEntry::WriteData(PackagePager& pager) noexcept
 {
-    pager.Bind(this->index);
+    if (!pager.Bind(this->index.key))
+        return false;
+
     bool result = false;
     if (this->data)
     {
         VariableType* obj = this->data->get();
-        if (this->index.pages.size() != obj->RequiredPages(pager.PageSize()))
-        {
-            if (!pager.Allocate(obj->RequiredPages(pager.PageSize()), this->index))
-                return false;
-        }
+        unsigned needed = obj->RequiredUnits();
+        if ( !pager.EnsureAllocation(needed) && !pager.AllocateOnBound(needed)) 
+            return false;
 
         if (obj)
         {
@@ -74,7 +74,7 @@ bool PackageEntry::WriteData() noexcept
         if (!WriteData(pager))
             return false;
         
-        this->SetModified(false);
+        this->modified = false;
         
         return true;
     }
@@ -97,7 +97,7 @@ void PackageEntry::Load()
 }
 void PackageEntry::Load(PackagePager& in)
 {
-    in.Bind(this->index);
+    in.Bind(this->index.key);
 
     std::vector<Unit> allUnits = in.ReadAllUnits();
     if (allUnits.empty() || this->index.data_type == VT_None)
@@ -155,7 +155,7 @@ void PackageEntry::Data(std::unique_ptr<VariableType>&& New) noexcept
 
     this->data = std::move(New);
     this->index.data_type = !this->data ? VT_None : (*this->data)->GetType();
-    this->SetModified(true);
+    this->modified = true;
 }
 
 bool PackageEntry::IsLoaded() const noexcept
@@ -168,12 +168,7 @@ std::optional<bool> PackageEntry::HasData() const noexcept
 }
 bool PackageEntry::IsModified() const noexcept
 {
-    return this->thisModified || this->index.IsModified();
-}
-void PackageEntry::SetModified(bool New) noexcept
-{
-    this->thisModified = New;
-    this->index.IsModified(New);
+    return this->modified;
 }
 
 void PackageEntry::LoadImmediate(bool New) noexcept 
