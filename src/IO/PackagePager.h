@@ -90,9 +90,6 @@ private:
     /// @brief Ensures that the currently bound element has a specific number of elements allocated
     bool EnsureAllocation(unsigned needed);
 
-    const std::vector<unsigned>& GetBoundPages() const;
-    std::vector<unsigned>& GetBoundPages();
-
     /// @brief Binds to a specifc package entry
     /// @param index The index to bind to
     /// @returns False if the binding results in a miss from the index.

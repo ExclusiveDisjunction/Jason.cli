@@ -265,7 +265,6 @@ bool PackagePager::EnsureAllocation(unsigned needed)
         return true;
 }
 
-
 bool PackagePager::Advance()
 {
     if (!IsBound() || IsEOF())
