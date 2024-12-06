@@ -13,16 +13,16 @@
 
 enum CommandTypeE
 {
-    Evaluate,
-    Store,
+    C_Evaluate,
+    C_Store,
 
-    Load,
-    Unload,
-    List,
-    Info,
+    C_Load,
+    C_Unload,
+    C_List,
+    C_Info,
 
-    Export,
-    Import
+    C_Export,
+    C_Import
 };
 class CommandType
 {

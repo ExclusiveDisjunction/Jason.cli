@@ -7,7 +7,7 @@
 #include <algorithm>
 
 CommandType EvaluateCommand::ThisType = CommandType(
-        CommandTypeE::Evaluate,
+        CommandTypeE::C_Evaluate,
         "Evaluate",
         "eval",
         "Evaluate an expression, and store the result in ans"

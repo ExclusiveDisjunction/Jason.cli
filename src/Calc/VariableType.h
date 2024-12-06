@@ -13,6 +13,7 @@
 
 #include "StdCalc.h"
 #include "../Core/BinaryUnit.h"
+#include "../Core/Log.h"
 
 class MATH_LIB VariableType;
 
@@ -26,7 +27,7 @@ enum VariableTypes
 std::ostream& operator<<(std::ostream& out, const VariableTypes& obj);
 std::istream& operator>>(std::istream& in, VariableTypes& obj);
 
-class MATH_LIB VariableType
+class MATH_LIB VariableType : public LoggerDisplay
 {
 public:
     virtual ~VariableType() = default;
@@ -40,6 +41,10 @@ public:
     [[nodiscard]] virtual std::string GetTypeString() const noexcept = 0; //Displays (None), (Scalar), (Vector:D), (Matrix:mxn)
 
     virtual void Print(std::ostream& out) const noexcept = 0; //Pretty prints
+    void Display(std::ostream& out) const noexcept override
+    {
+        Print(out);
+    }
 
     [[nodiscard]] static std::unique_ptr<VariableType> ApplyOperation(const VariableType& One, const VariableType& Two, char oper);
 

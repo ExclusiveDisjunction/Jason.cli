@@ -4,10 +4,11 @@
 
 #include "Log.h"
 
-Logger::Logger(const std::string& Path, LoggerLevel Level) : Out(Path, std::ios::trunc), State(LoggerLevel::LL_None), Level(Level)
+Logger logging = Logger();
+
+Logger::Logger() : Out(), State(LoggerLevel::LL_None), Level(LoggerLevel::LL_None)
 {
-    if (!Out)
-        throw std::logic_error("Cannot open file at that path.");
+    
 }
 Logger::~Logger()
 {
@@ -15,6 +16,26 @@ Logger::~Logger()
         EndLog();
 
     Out.close();
+}
+
+bool Logger::Open(const std::string& path, LoggerLevel level) 
+{
+    Out.open(path, std::ios::trunc);
+    State = LoggerLevel::LL_None;
+    Level = level;
+
+    if (Out.bad())
+    {
+        Out.close();
+        Level = LL_None;
+        return false;
+    }
+    else 
+        return true;
+}
+bool Logger::IsOpen() const noexcept 
+{
+    return Out.good();
 }
 
 bool Logger::StartLog(LoggerLevel level)

@@ -8,11 +8,16 @@ int main(int, char**)
               << "------------------" << '\n'
               << "   Version " << JASON_CURRENT_VERSION << "  " << '\n' << '\n';
 
-    Logger l("run.log");
-    l << Info << "Starting up Jason" << EndLog;
+    if (!logging.Open("run.log", LoggerLevel::LL_Debug))
+    {
+        std::cout << "Could not open log, aborting";
+        return 0;
+    }
 
-    IOTester();
+    logging << Info << "Starting up Jason" << EndLog;
 
-    l << Info << "Exiting Jason, Exit Code 0" << EndLog;
+    //IOTester();
+
+    logging << Info << "Exiting Jason, Exit Code 0" << EndLog;
     return 0;
 }

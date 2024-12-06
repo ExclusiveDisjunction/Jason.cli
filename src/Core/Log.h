@@ -19,6 +19,13 @@ enum LoggerLevel
     LL_Critical = 5
 };
 
+/// @brief A class that allows specific debugging strings for logging
+class LoggerDisplay
+{
+public:
+    virtual void Display(std::ostream& obj) const noexcept = 0;
+};
+
 class Logger
 {
 private:
@@ -30,10 +37,13 @@ private:
     LoggerLevel Level;
 
 public:
-    Logger(const std::string& Path, LoggerLevel Level = LoggerLevel::LL_Info);
+    Logger();
     Logger(const Logger& obj) = delete;
     Logger(Logger&& obj) noexcept = default;
     ~Logger();
+
+    bool Open(const std::string& path, LoggerLevel level = LoggerLevel::LL_Info);
+    bool IsOpen() const noexcept;
 
     Logger& operator=(const Logger& obj) = delete;
     Logger& operator=(Logger&& obj) noexcept = default;
@@ -53,6 +63,8 @@ public:
     template<typename T>
     void Write(const T& obj)
     {
+        if (!IsOpen())
+            throw std::logic_error("logger not open");
         if (!IsInLog())
             throw std::logic_error("Cannot insert into log when a level has not been specified.");
 
@@ -61,6 +73,8 @@ public:
     }
 
     Logger& operator<<(const std::string& obj);
+    Logger& operator<<(const LoggerDisplay& obj);
+    Logger& operator<<(Logger& (*func)(Logger&));
     template<typename T>
     requires (std::is_arithmetic_v<T> && !std::is_pointer_v<T>)
     Logger& operator<<(const T& obj)
@@ -68,8 +82,6 @@ public:
         this->Write(obj);
         return *this;
     }
-
-    Logger& operator<<(Logger& (*func)(Logger&));
 };
 
 Logger& Debug(Logger& in);
@@ -79,5 +91,7 @@ Logger& Error(Logger& in);
 Logger& Critical(Logger& in);
 
 Logger& EndLog(Logger& in);
+
+extern Logger logging;
 
 #endif
