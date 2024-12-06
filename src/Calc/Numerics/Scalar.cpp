@@ -17,10 +17,9 @@ size_t Scalar::RequiredUnits() const noexcept
 }
 std::vector<Unit> Scalar::ToBinary() const noexcept
 {
-    std::vector<Unit> result;
-    result.emplace_back(this->Data);
+    Unit data = Unit::FromVar(this->Data);
 
-    return result;
+    return {data};
 }
 Scalar Scalar::FromBinary(const std::vector<Unit>& in)
 {

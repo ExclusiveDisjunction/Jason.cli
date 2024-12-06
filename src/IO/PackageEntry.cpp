@@ -37,7 +37,7 @@ bool PackageEntry::WriteData(PackagePager& pager) noexcept
     {
         VariableType* obj = this->data->get();
         unsigned needed = obj->RequiredUnits();
-        if ( !pager.EnsureAllocation(needed) && !pager.AllocateOnBound(needed)) 
+        if (!pager.EnsureAllocation(needed)) 
             return false;
 
         if (obj)

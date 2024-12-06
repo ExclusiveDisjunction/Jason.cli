@@ -25,13 +25,13 @@ Unit::Unit(char* Data, unsigned char Size, bool Copy) : Data(nullptr), blockSize
 }
 Unit::Unit(const Unit& obj) noexcept
 {
-    this->blockSize = obj.blockSize;
-    this->Data = new char[blockSize];
-    memcpy(obj.Data, this->Data, blockSize);
+    Allocate(obj.Data, obj.blockSize, true);
 }
 Unit::Unit(Unit&& obj) noexcept : Data(std::exchange(obj.Data, nullptr)), blockSize(std::exchange(obj.blockSize, 0)) 
 {
-    
+    Allocate(obj.Data, obj.blockSize, false);
+    obj.Data = nullptr;
+    obj.blockSize = 0;
 }
 Unit::~Unit()
 {
@@ -67,10 +67,7 @@ Unit& Unit::operator=(const Unit& obj) noexcept
     if (Data)
         Deallocate();
 
-    this->blockSize = obj.blockSize;
-    this->Data = new char[blockSize];
-    memcpy(obj.Data, this->Data, blockSize);
-
+    Allocate(obj.Data, obj.blockSize, true);
     return *this;
 }
 Unit& Unit::operator=(Unit&& obj) noexcept
@@ -78,8 +75,9 @@ Unit& Unit::operator=(Unit&& obj) noexcept
     if (Data)
         Deallocate();
 
-    this->blockSize = std::exchange(obj.blockSize, 0);
-    this->Data = std::exchange(obj.Data, nullptr);
+    Allocate(obj.Data, obj.blockSize, false);
+    obj.Data = nullptr;
+    obj.blockSize = 0;
     return *this;
 }
 

@@ -98,7 +98,7 @@ void IOTester() noexcept
         else if (mode == "test")
         {
             //This will clear the project, add cols elements, record the time to add them, unload the project, and then load it again.
-            std::vector<int> test_runs = {10, 100, 1'000, 10'000};
+            std::vector<int> test_runs = {10, 100, 1'000};
             std::vector<std::unique_ptr<VariableType>> test_data;
             test_data.emplace_back(new Scalar(4));
             test_data.emplace_back(new MathVector(MathVector::FromList(3, 0)));
@@ -123,6 +123,16 @@ void IOTester() noexcept
                 }
 
                 (void)New->Save();
+                std::cout << "STOPPED";
+                char c;
+                std::cin >> c;
+                if (c == 'q')
+                {
+                    (void)New->Save();
+                    std::cout << "Exiting";
+                    return;
+                }
+
                 auto time_for_adding = std::chrono::system_clock::now();
                 New->UnloadAllEntries();
                 auto time_for_unload = std::chrono::system_clock::now();

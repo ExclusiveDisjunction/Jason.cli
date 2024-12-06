@@ -98,7 +98,7 @@ bool PackagePager::SaveIndex()
     }
     
     std::fstream& out = index.file;
-    out << "OPEN" << open_pages.size();
+    out << "OPEN" << ' ' << open_pages.size();
     for (const auto& index : open_pages.__get_container())
         out << ' ' << index;
 
@@ -198,7 +198,7 @@ std::vector<unsigned> PackagePager::RequestUnits(unsigned units)
         units--;
     }
 
-    if (units == 0) 
+    if (units != 0) 
     {
         //We still have more to satisfy
         
@@ -271,7 +271,7 @@ bool PackagePager::Advance()
         return false;
 
     binding->offset++;
-    if (binding->offset > locations[binding->key].size()) //We have reached EOF
+    if (binding->offset >= locations[binding->key].size()) //We have reached EOF
         binding->eof = true; //Note that it is ok that we advance, but we set the EOF flag. This function should only fail if the move relative failed, or the reader is not bound or in EOF.
     else 
         return MoveRelative(binding->offset);

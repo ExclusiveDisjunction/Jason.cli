@@ -33,6 +33,9 @@ Package::~Package()
 
 void Package::IndexEntries()
 {
+    if (!this->pager.ReadIndex())
+        throw std::logic_error("could not read pager index");
+
     std::vector<PackageEntryIndex> indexes = this->index.ReadIndex(this->packID);
     if (indexes.empty())
         return; 
@@ -168,6 +171,9 @@ bool Package::Save() noexcept
     //Header auto-saves
     bool result = true;
     
+    if (!this->pager.SaveIndex())
+        return false;
+
     for (auto& entry : this->entries)
     {
         if (entry.IsModified())
@@ -301,8 +307,10 @@ std::optional<PackageEntryKey> Package::AddEntry(std::string elementName, Packag
 
     PackageEntryKey key(this->packID, this->currID + 1); //NOTE: If this function succedes, we need to truly increment currID. This is in case we fail, we can keep that key slot open.
     unsigned needed_pages = !data ? 1 : data->RequiredUnits();
+    if (!this->pager.Register(key))
+        return {};
 
-    if (!this->pager.Bind(key) || this->pager.Allocate(needed_pages, key))
+    if (!this->pager.Bind(key) || !this->pager.EnsureAllocation(needed_pages))
         return {};
 
     PackageEntry result(

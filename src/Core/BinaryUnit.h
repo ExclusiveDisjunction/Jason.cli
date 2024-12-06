@@ -32,12 +32,14 @@ public:
     {
         Unit result;
         result.Allocate(item);
+        return result;
     }
     template<typename T>
     static Unit FromList(const std::vector<T>& item)
     {
         Unit result;
         result.AllocateList(item);
+        return result;
     }
 
     void Deallocate();
