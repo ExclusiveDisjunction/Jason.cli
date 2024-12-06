@@ -7,6 +7,7 @@ run_variables
 *.log
 cmake-build-debug
 cmake-build-release
+build
 CMakeFiles
 *.out
 .vscode
