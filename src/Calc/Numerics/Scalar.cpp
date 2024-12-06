@@ -6,48 +6,43 @@
 
 #include <iomanip>
 
-Scalar::Scalar(std::istream& in)
-{
-
-}
-
-[[nodiscard]] VariableTypes Scalar::GetType() const noexcept
+VariableTypes Scalar::GetType() const noexcept
 {
     return VariableTypes::VT_Scalar;
 }
-void Scalar::Sterilize(std::ostream& out) const noexcept
-{
-    out << "SCA " << this->operator double();
-}
-Scalar* Scalar::FromSterilize(const std::string& in)
-{
-    std::stringstream ss(in);
-    return FromSterilize(ss);
-}
-Scalar* Scalar::FromSterilize(std::istream& in)
-{
-    std::string header;
-    std::streampos pos = in.tellg();
-    in >> header;
-    if (header != "SCA")
-        throw std::logic_error("Cannot construct a scalar from this object.");
 
-    in.seekg(pos);
-    return new Scalar(in);
+size_t Scalar::RequiredUnits() const noexcept 
+{
+    return 1;
 }
-[[nodiscard]] std::string Scalar::GetTypeString() const noexcept
+std::vector<Unit> Scalar::ToBinary() const noexcept
+{
+    Unit data = Unit::FromVar(this->Data);
+
+    return {data};
+}
+Scalar Scalar::FromBinary(const std::vector<Unit>& in)
+{
+    if (in.empty())
+        throw std::logic_error("No data was provided");
+
+    return Scalar(in[0].Convert<double>());
+}
+std::unique_ptr<Scalar> Scalar::FromBinaryPtr(const std::vector<Unit>& in)
+{
+    return std::make_unique<Scalar>(std::move(FromBinary(in)));
+}
+std::string Scalar::GetTypeString() const noexcept
 {
     return "(Scalar)";
 }
 
-[[nodiscard]] VariableType* Scalar::MoveIntoPointer() noexcept
+std::unique_ptr<VariableType> Scalar::Clone() const noexcept
 {
-    auto* result = new Scalar(*this);
-    this->Data = 0;
-    return result;
+    return std::make_unique<Scalar>(*this);
 }
 
-[[nodiscard]] long long Scalar::ToLongNoRound() const
+long long Scalar::ToLongNoRound() const
 {
     long long Trunc = ToLongTrunc();
     double diff = static_cast<double>(Trunc) - this->Data;
@@ -58,14 +53,9 @@ Scalar* Scalar::FromSterilize(std::istream& in)
     else
         return Trunc;
 }
-[[nodiscard]] long long Scalar::ToLongTrunc() const noexcept
+long long Scalar::ToLongTrunc() const noexcept
 {
     return static_cast<long long>(this->Data);
-}
-
-constexpr Scalar::operator double() const noexcept
-{
-    return this->Data;
 }
 
 bool Scalar::operator==(const VariableType& obj) const noexcept

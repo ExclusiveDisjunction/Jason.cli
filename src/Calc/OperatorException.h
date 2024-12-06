@@ -7,6 +7,8 @@
 
 #include <iostream>
 
+#include "VariableType.h"
+
 class OperatorException : public std::logic_error
 {
 public:
@@ -23,12 +25,14 @@ public:
     {
 
     }
+    OperatorException(char oper, const VariableType& one, const VariableType& two) : OperatorException(oper, one.GetTypeString(), two.GetTypeString()) {}
     OperatorException(char oper, const std::string& operand1, const std::string& operand2, const std::string& why) :
             std::logic_error("The operator '" + std::string(1, oper) +
                              "' is not allowed on '" + operand1 + "' and '" + operand2 + "' because '" + why + '\'')
     {
 
     }
+    OperatorException(char oper, const VariableType& one, const VariableType& two, const std::string& why) : OperatorException(oper, one.GetTypeString(), two.GetTypeString(), why) {}
 };
 
 #endif //JASON_OPERATOREXCEPTION_H

@@ -6,129 +6,80 @@
 #include <random>
 #include <utility>
 
-Matrix::Matrix() : m(0), n(0), Data(nullptr)
+Matrix::Matrix() : rows(0), cols(0)
 {
-    DeAllocate();
+
 }
-Matrix::Matrix(unsigned int Rows, unsigned int Columns) noexcept : Matrix()
+Matrix::Matrix(unsigned int Rows, unsigned int Columns) noexcept : rows(Rows), cols(Columns)
 {
     Allocate(Rows, Columns, 0);
 }
-[[maybe_unused]] Matrix::Matrix(const MathVector& in) : Matrix()
+Matrix::Matrix(const MathVector& in) : Matrix()
 {
-    if (!in.IsValid())
-        DeAllocate();
+    if (in.Dim() == 0)
+        return;
     else
     {
         Allocate(in.Dim(), 1);
-        for (unsigned i = 0; i < this->m; i++)
+        for (unsigned i = 0; i < this->rows; i++)
             this->Data[i][0] = in[i];
     }
 }
-Matrix::Matrix(std::istream& in)  : Matrix()
+Matrix::Matrix(const Matrix& Other) noexcept  : cols(Other.cols), rows(Other.rows), Data(Other.Data)
 {
-    std::string header;
-    in >> header;
-    if (header != "MAT" || !in)
-        throw std::logic_error("Cannot construct a matrix from this string.");
 
-    in >> this->m;
-    in >> this->n;
-
-    if (this->m == 0 || this->n == 0)
-        DeAllocate();
-    else
-    {
-        Allocate(this->m, this->n);
-        for (unsigned i = 0; i < this->m; i++)
-        {
-            for (unsigned j = 0; j < this->n; j++)
-            {
-                if (!in)
-                    throw std::logic_error("Not enough numbers to match the dimensions.");
-
-                in >> this->Data[i][j];
-            }
-        }
-    }
 }
-Matrix::Matrix(const Matrix& Other) noexcept  : Matrix()
+Matrix::Matrix(Matrix&& Other) noexcept : cols(std::exchange(Other.cols, 0)), rows(std::exchange(Other.rows, 0)), Data(std::move(Other.Data))
 {
-    Allocate(Other.Rows(), Other.Columns());
 
-    for (unsigned int i = 0; i < m; i++)
-        for (unsigned int j = 0; j < n; j++)
-            Data[i][j] = Other.Data[i][j];
-}
-Matrix::Matrix(Matrix&& Other) noexcept  : Matrix()
-{
-    this->Data = std::exchange(Other.Data, nullptr);
-    this->m = std::exchange(Other.m, 0);
-    this->n = std::exchange(Other.n, 0);
-
-    Other.DeAllocate();
-}
-Matrix::~Matrix()
-{
-    DeAllocate();
 }
 
 Matrix& Matrix::operator=(const Matrix& Other) noexcept
 {
-    if (Data == Other.Data) //Self assignment
+    if (this == &Other)
         return *this;
 
-    if (Other.Rows() != m || Other.Columns() != n)
-        Allocate(Other.Rows(), Other.Columns());
-
-    for (unsigned int i = 0; i < m; i++)
-        for (unsigned int j = 0; j < n; j++)
-            Data[i][j] = Other.Data[i][j];
+    this->Data = Other.Data;
+    this->cols = Other.cols;
+    this->rows = Other.rows;
 
     return *this;
 }
 Matrix& Matrix::operator=(Matrix&& Other) noexcept
 {
-    this->DeAllocate();
-
-    this->Data = std::exchange(Other.Data, nullptr);
-    this->m = std::exchange(Other.m, 0);
-    this->n = std::exchange(Other.n, 0);
-
-    Other.DeAllocate();
+    this->Data = std::move(Other.Data);
+    this->cols = std::exchange(Other.cols, 0);
+    this->rows = std::exchange(Other.rows, 0);
 
     return *this;
 }
 
 void Matrix::Allocate(unsigned int NewRows, unsigned int NewColumns, double Value) noexcept
 {
-    if (NewRows != m || NewColumns != n)
+    size_t currRows = Data.size(), currCols = currRows == 0 ? 0 : Data[0].size();
+
+    if (rows == NewRows && cols == NewColumns && rows == currRows && cols == currCols) //Already that size, just set value
     {
-        DeAllocate();
+        for (auto& row : Data)
+            for (auto& element : row)
+                element = Value;
 
-        m = NewRows;
-        n = NewColumns;
-
-        Data = new double* [NewRows];
-        for (unsigned int i = 0; i < NewRows; i++)
-            Data[i] = new double[NewColumns] { Value };
+        return;
     }
-}
-void Matrix::DeAllocate() noexcept
-{
-    if (Data)
+
+    this->Data.clear();
+
+    if (NewRows > 0 && NewColumns > 0)
     {
-        for (unsigned int i = 0; i < m; i++)
-        {
-            delete[] Data[i];
-            Data[i] = nullptr;
-        }
-        delete[] Data;
+        rows = NewRows;
+        cols = NewColumns;
 
-        Data = nullptr;
+        Data.resize(cols);
+        for (auto& row : Data)
+            row.resize(cols, Value);
     }
-    m = 0;
-    n = 0;
+    else
+        cols = rows = 0;
 }
 
 Matrix Matrix::ErrorMatrix()
@@ -143,15 +94,15 @@ Matrix Matrix::Identity(unsigned int Rows, unsigned int Cols)
 {
     Matrix result(Rows, Cols);
     for (unsigned i = 0; i < Rows && i < Cols; i++)
-        result[i][i] = 1;
+        result.Access(i, i) = 1;
 
     return result;
 }
-[[maybe_unused]] Matrix Matrix::RandomMatrix(unsigned int Rows, unsigned int Columns, bool Integers)
+Matrix Matrix::RandomMatrix(unsigned int Rows, unsigned int Columns, bool Integers)
 {
-    Matrix Return(Rows, Columns);
-    if (!Return.Data)
-        throw std::logic_error("Cannot construct a matrix of zero size.");
+    Matrix result(Rows, Columns);
+    if (!result.IsValid())
+        return result;
 
     std::random_device dev;
     std::mt19937 engine(dev());
@@ -162,7 +113,7 @@ Matrix Matrix::Identity(unsigned int Rows, unsigned int Cols)
 
         for (unsigned int i = 0; i < Rows; i++)
             for (unsigned int j = 0; j < Columns; j++)
-                Return.Data[i][j] = dist(engine);
+                result.Data[i][j] = dist(engine);
     }
     else
     {
@@ -170,66 +121,95 @@ Matrix Matrix::Identity(unsigned int Rows, unsigned int Cols)
 
         for (unsigned int i = 0; i < Rows; i++)
             for (unsigned int j = 0; j < Columns; j++)
-                Return.Data[i][j] = dist(engine);
+                result.Data[i][j] = dist(engine);
     }
 
-    return Return;
+    return result;
 }
 
-VariableType* Matrix::MoveIntoPointer() noexcept
+std::unique_ptr<VariableType> Matrix::Clone() const noexcept
 {
-    auto* Return = new Matrix();
-    Return->Data = std::exchange(this->Data, nullptr);
-    Return->m = std::exchange(this->m, 0);
-    Return->n = std::exchange(this->n, 0);
-
-    this->DeAllocate();
-
-    return Return;
+    return std::make_unique<Matrix>(*this);
 }
 
-const double* Matrix::operator[](unsigned int Row) const
+const std::vector<double>& Matrix::operator[](unsigned int Row) const
 {
-    if (Row > m)
+    if (Row > rows)
         throw std::logic_error("Out of bounds");
 
     return Data[Row];
 }
-double* Matrix::operator[](unsigned int Row)
+const double& Matrix::Access(unsigned int i, unsigned int j) const
 {
-    if (Row > m)
-        throw std::logic_error("Out of bounds");
+    if (i >= rows || j >= cols) //Out of range
+        throw std::logic_error("Out of range");
 
-    return Data[Row];
+    return this->Data[i][j];
+}
+double& Matrix::Access(unsigned int i, unsigned int j)
+{
+    return const_cast<double&>( const_cast<const Matrix*>(this)->Access(i, j) );
 }
 
 VariableTypes Matrix::GetType() const noexcept
 {
     return VariableTypes::VT_Matrix;
 }
-void Matrix::Sterilize(std::ostream& out) const noexcept
+
+size_t Matrix::RequiredUnits() const noexcept
 {
-    out << "MAT " << this->m << ' ' << this->n << ' ';
-    for (unsigned i = 0; i < this->m && this->Data; i++)
-        for (unsigned j = 0; j < this->n; j++)
-            out << this->Data[i][j] << ' ';
+    return 2 + rows * cols;
 }
-[[maybe_unused]] Matrix* Matrix::FromSterilize(const std::string& sterilized)
+std::vector<Unit> Matrix::ToBinary() const noexcept
 {
-    try
+    std::vector<Unit> result;
+    result.resize(this->RequiredUnits());
+    result[0] = this->rows;
+    result[1] = this->cols;
+
+    auto curr = result.begin() + 1,  end = result.end();
+    for (const auto& row : this->Data)
     {
-        std::stringstream ss(sterilized);
-        return new Matrix(ss);
+        for (const auto& element : row)
+        {
+            *curr = element;
+            curr++;
+        }
     }
-    catch (std::logic_error& e)
+
+    return result;
+}
+Matrix Matrix::FromBinary(const std::vector<Unit>& in)
+{
+    if (in.size() < 2)
+        throw std::logic_error("No data provided");
+    
+    unsigned int rows = in[0].Convert<unsigned int>(), cols = in[1].Convert<unsigned int>();
+    if (in.size() < rows * cols + 2)
+        throw std::logic_error("Not enough data provided.");
+
+    Matrix result(rows, cols);
+    auto curr = in.begin() + 1, end = in.end();
+    unsigned i = 0;
+    for (auto& row : result.Data)
     {
-        throw e;
+        for (auto& element : row) 
+        {
+            element = curr->Convert<double>();
+            curr++;
+        }
     }
+
+    return result;
+}
+std::unique_ptr<Matrix> Matrix::FromBinaryPtr(const std::vector<Unit>& in)
+{
+    return std::make_unique<Matrix>(std::move(Matrix::FromBinary(in)));
 }
 std::string Matrix::GetTypeString() const noexcept
 {
     std::stringstream ss;
-    ss << "(Matrix:" << m << "x" << n << ")";
+    ss << "(Matrix:" << rows << "x" << cols << ")";
     return ss.str();
 }
 
@@ -243,11 +223,11 @@ Matrix Matrix::Extract(unsigned int StartI, unsigned int StartJ, unsigned int Ro
     if (RowCount == 0 || ColumnCount == 0)
         return Matrix::ErrorMatrix();
 
-    if ((StartI + RowCount - 1) > m || (StartJ + ColumnCount - 1) > n)
+    if ((StartI + RowCount - 1) > rows || (StartJ + ColumnCount - 1) > cols)
         throw std::logic_error("The index was out of range for that size.");
 
     Matrix Return(RowCount, ColumnCount);
-    if (!Return.Data)
+    if (!Return.IsValid())
         return Matrix::ErrorMatrix();
 
     for (unsigned int i = StartI, ip = 0; i < StartI + RowCount - 1; i++, ip++)
@@ -259,7 +239,7 @@ Matrix Matrix::Extract(unsigned int StartI, unsigned int StartJ, unsigned int Ro
 
 void Matrix::RowSwap(unsigned int OrigRow, unsigned int NewRow)
 {
-    if (OrigRow == NewRow || OrigRow > m || NewRow > m)
+    if (OrigRow == NewRow || OrigRow > rows || NewRow > rows)
         return;
 
     std::swap(Data[OrigRow], Data[NewRow]);
@@ -269,57 +249,56 @@ void Matrix::RowAdd(unsigned int OrigRow, double Fac, unsigned int TargetRow)
     if (Fac == 0)
         throw std::logic_error("The factor of multiplication cannot be zero.");
 
-    for (unsigned int j = 0; j < n; j++)
+    for (unsigned int j = 0; j < cols; j++)
         Data[TargetRow][j] += Data[OrigRow][j] * Fac;
 }
 
 [[maybe_unused]] double Matrix::Determinant() const
 {
-    if (this->m != this->n)
+    if (this->rows != this->cols)
         throw std::logic_error("The matrix must be square");
+
+    throw std::logic_error("Not implemented");
 
     /*
      * To do the determinant, we will have to get the minors of the matrix, and therefore requires the MatrixMinor.
      * Will be done with the addition of the matrix branch.
      */
-    return 0;
 }
 
-[[maybe_unused]] Matrix Matrix::Invert() const
+Matrix Matrix::Invert() const
 {
-    if (Rows() != Columns())
+    if (rows != cols)
         throw std::logic_error("The matrix must be square");
 
-    Matrix Id = Identity(m);
+    Matrix Id = Identity(rows);
     Matrix Aug = Id | *this;
     Aug.ReducedRowEchelonForm();
 
-    Matrix Left = Aug.Extract(0, 0, m, m), Right = Aug.Extract(0, 4, m, m);
+    Matrix Left = Aug.Extract(0, 0, rows, rows), Right = Aug.Extract(0, 4, rows, rows);
     if (Right != Id)
         return ErrorMatrix();
     else
         return Left;
 }
-[[maybe_unused]] Matrix Matrix::Transpose() const
+Matrix Matrix::Transpose() const
 {
-    Matrix Return(m, n);
-    if (!Return.Data)
-        throw std::logic_error("Cannot transpose an empty matrix.");
+    Matrix result(*this);
+    result.TransposeInplace();
 
-    for (unsigned int i = 0; i < m; i++)
-        for (unsigned int j = 0; j < n; j++)
-            Return.Data[j][i] = Data[i][j];
-
-    return Return;
+    return result;
 }
-
+void Matrix::TransposeInplace()
+{
+    for (unsigned i = 0; i < rows; i++)
+        for (unsigned j = 0; j < cols; j++)
+            std::swap(Data[i][j], Data[j][i]);
+}
 void Matrix::RowEchelonForm()
 {
     if (!this->IsValid())
         return;
 
-    unsigned rows = this->m;
-    unsigned cols = this->n;
     unsigned currentRow = 0;
 
     for (unsigned current_col = 0; current_col < cols; current_col++)
@@ -351,8 +330,6 @@ void Matrix::ReducedRowEchelonForm()
 {
     this->RowEchelonForm();
 
-    unsigned rows = this->m;
-    unsigned cols = this->n;
     unsigned lead = 0;
 
     for (unsigned r = 0; r < cols; r++)
@@ -398,7 +375,7 @@ void Matrix::ReducedRowEchelonForm()
     }
 
     unsigned int Lead = 0;
-    unsigned int Rows = this->Rows(), Columns = this->Columns();
+    unsigned int Rows = this->rows, Columns = this->cols;
     for (unsigned int r = 0; r < Rows; r++)
     {
         if (Columns < Lead)
@@ -431,21 +408,8 @@ bool Matrix::operator==(const VariableType& two) const noexcept
 {
     try
     {
-        const auto& a = *this;
-        const auto& b = dynamic_cast<const Matrix&>(two);
-
-        if (!a.IsValid() && b.IsValid()) //If both are empty then they are equal
-            return true;
-
-        if (!a.IsValid() || !b.IsValid() || a.m != b.m || a.n != b.n)
-            return false;
-
-        for (unsigned i = 0; i < a.m; i++)
-            for (unsigned j = 0; j < a.n; j++)
-                if (a.Data[i][j] != b.Data[i][j])
-                    return false;
-
-        return true;
+        const auto& conv = dynamic_cast<const Matrix&>(two);
+        return *this == conv;
     }
     catch (std::bad_cast& e)
     {
@@ -456,29 +420,24 @@ bool Matrix::operator!=(const VariableType& two) const noexcept
 {
     try
     {
-        const auto& a = *this;
-        const auto& b = dynamic_cast<const Matrix&>(two);
-
-        if (!a.IsValid() && b.IsValid()) //If both are empty then they are equal
-            return false;
-
-        if (!a.IsValid() || !b.IsValid() || a.m != b.m || a.n != b.n)
-            return true;
-
-        for (unsigned i = 0; i < a.m; i++)
-            for (unsigned j = 0; j < a.n; j++)
-                if (a.Data[i][j] != b.Data[i][j])
-                    return true;
-
-        return false;
+        const auto& conv = dynamic_cast<const Matrix&>(two);
+        return *this != conv;
     }
     catch (std::bad_cast& e)
     {
         return true;
     }
 }
+bool Matrix::operator==(const Matrix& two) const noexcept
+{
+    return this->rows == two.rows && this->cols == two.cols && this->Data == two.Data;
+}
+bool Matrix::operator!=(const Matrix& two) const noexcept
+{
+    return !(*this == two);
+}
 
-std::vector<std::pair<bool, unsigned long>> Matrix::GetColumnWidthSchematic() const
+Matrix::ColumnSchema Matrix::GetColumnWidthSchematic() const noexcept
 {
     /*
         This algorithm will find the largest width of each column, and store the result in the result value.
@@ -497,15 +456,15 @@ std::vector<std::pair<bool, unsigned long>> Matrix::GetColumnWidthSchematic() co
         [33  4    1 -2]
         [5  -44.3 2  1]
     */
-    std::vector<std::pair<bool, unsigned long>> result;
+    ColumnSchema result;
 
-    for (unsigned j = 0; j < this->n; j++)
+    for (unsigned j = 0; j < this->cols; j++)
     {
         bool negative_found = false;
         unsigned long largest_num = 0;
-        for (unsigned i = 0; i < this->m; i++)
+        for (unsigned i = 0; i < this->rows; i++)
         {
-            double curr = this->Data[i][j];
+            const double& curr = this->Data[i][j];
             if (curr < 0)
                 negative_found = true;
 
@@ -527,9 +486,9 @@ std::vector<std::pair<bool, unsigned long>> Matrix::GetColumnWidthSchematic() co
 
     return result;
 }
-bool Matrix::GetRowString(std::ostream& out, unsigned row, std::vector<std::pair<bool, unsigned long>>& schema, char open, char close) const
+bool Matrix::GetRowString(std::ostream& out, unsigned row, Matrix::ColumnSchema& schema, char open, char close) const
 {
-    if (row > this->m)
+    if (row > this->rows)
         return false;
 
     /*
@@ -540,12 +499,10 @@ bool Matrix::GetRowString(std::ostream& out, unsigned row, std::vector<std::pair
     */
 
     out << open << ' ';
-    const double* host = this->Data[row];
-    for (unsigned i = 0; i < this->n; i++)
+    const auto& host = this->Data[row];
+    for (unsigned i = 0; i < this->cols; i++)
     {
-        const auto& this_schema = schema[i];
-        bool has_negative = this_schema.first;
-        unsigned long width = this_schema.second;
+        const auto&[has_negative, width] = schema[i];
 
         double curr = host[i];
         if (curr >= 0 && has_negative)
@@ -563,7 +520,7 @@ bool Matrix::GetRowString(std::ostream& out, unsigned row, std::vector<std::pair
         {
             unsigned long diff = width - (curr_str.length()) + (curr < 0 ? 1 : 0);
             std::string space_str;
-            //if (has_negative && i != this->n - 1) //If not in last row
+            //if (has_negative && i != this->cols - 1) //If not in last row
             //   diff += (curr < 0 ? 1 : 0); //If negative, add one extra space after.
 
             for (unsigned t = 0; t < diff; t++)
@@ -575,18 +532,19 @@ bool Matrix::GetRowString(std::ostream& out, unsigned row, std::vector<std::pair
     }
 
     out << close;
-    return static_cast<bool>(out); //If out.bad(), this returns false.
+    return out.good(); //If out.bad(), this returns false.
 }
 void Matrix::Print(std::ostream& out) const noexcept
 {
     if (!this->IsValid())
     {
         out << "[ ]";
+        return;
     }
 
     auto schema = this->GetColumnWidthSchematic();
 
-    if (this->m == 1)
+    if (this->rows == 1)
     {
         if (!this->GetRowString(out, 0, schema, '[', ']'))
             std::cerr << "FAILED TO PRINT LINE 0" << std::endl;
@@ -597,10 +555,10 @@ void Matrix::Print(std::ostream& out) const noexcept
     {
         // ⌊ ⌋ ⌈ ⌉ |
 
-        for (unsigned i = 0; i < m; i++)
+        for (unsigned i = 0; i < rows; i++)
         {
             char open, close;
-            if (i == 0 || i == m - 1) //First and last rows
+            if (i == 0 || i == rows - 1) //First and last rows
             {
                 open = '[';
                 close = ']';
@@ -623,21 +581,26 @@ Matrix Matrix::operator|(const Matrix& Two) const
     if (!IsValid() || !Two.IsValid())
         throw OperatorException('|', GetTypeString(), Two.GetTypeString(), "Cannot augment empty matrix");
 
-    if (n != Two.n)
+    if (cols != Two.cols)
         throw OperatorException('|', GetTypeString(), Two.GetTypeString(), "Row dimensions do not match.");
 
-    unsigned int OneRows = m, OneColumns = n, TwoColumns = Two.n;
+    unsigned int OneRows = rows, OneColumns = cols, TwoColumns = Two.cols;
     Matrix Return(OneRows, OneColumns + TwoColumns);
 
     if (!Return.IsValid())
         throw std::exception(); //Not supposed to happen, just in case though.
 
-    for (unsigned int i = 0; i < OneRows; i++)
+    unsigned i = 0;
+    for (auto& resultRow : Return.Data)
     {
-        for (unsigned int j = 0; j < OneColumns; j++)
-            Return.Data[i][j] = Two.Data[i][j];
-        for (unsigned int j = OneColumns, jp = 0; j < OneColumns + TwoColumns; j++, jp++)
-            Return.Data[i][j] = Two.Data[i][jp];
+        unsigned int j = 0;
+        auto currElem = resultRow.begin(), end = resultRow.end();
+        for (; j < OneColumns && currElem != end; j++, currElem++)
+            *currElem = this->Data[i][j];
+        for (j = 0; j < TwoColumns && currElem != end; j++, currElem++)
+            *currElem = Two.Data[i][j];
+
+        i++;
     }
 
     return Return;
@@ -667,11 +630,11 @@ Matrix& Matrix::operator+=(const Matrix& Two)
     if (!this->IsValid() || !Two.IsValid())
         throw OperatorException('+', this->GetTypeString(), Two.GetTypeString(), "Empty Matrix");
 
-    if (this->m != Two.m || this->n != Two.n)
+    if (this->rows != Two.rows || this->cols != Two.cols)
         throw OperatorException('+', this->GetTypeString(), Two.GetTypeString(), "Dimension Mismatch");
 
-    for (unsigned i = 0; i < this->m && this->Data; i++)
-        for (unsigned j = 0; j < this->n; j++)
+    for (unsigned i = 0; i < this->rows; i++)
+        for (unsigned j = 0; j < this->cols; j++)
             this->Data[i][j] += Two.Data[i][j];
 
     return *this;
@@ -681,11 +644,11 @@ Matrix& Matrix::operator-=(const Matrix& Two)
     if (!this->IsValid() || !Two.IsValid())
         throw OperatorException('-', this->GetTypeString(), Two.GetTypeString(), "Empty Matrix");
 
-    if (this->m != Two.m || this->n != Two.n)
+    if (this->rows != Two.rows || this->cols != Two.cols)
         throw OperatorException('-', this->GetTypeString(), Two.GetTypeString(), "Dimension Mismatch");
 
-    for (unsigned i = 0; i < this->m && this->Data; i++)
-        for (unsigned j = 0; j < this->n; j++)
+    for (unsigned i = 0; i < this->rows; i++)
+        for (unsigned j = 0; j < this->cols; j++)
             this->Data[i][j] -= Two.Data[i][j];
 
     return *this;
@@ -695,17 +658,17 @@ Matrix& Matrix::operator*=(const Matrix& Two)
     if (!this->IsValid() || !Two.IsValid())
         throw OperatorException('*', this->GetTypeString(), Two.GetTypeString(), "Empty Matrix");
 
-    if (this->n != Two.m)
+    if (this->cols != Two.rows)
         throw OperatorException('*', this->GetTypeString(), Two.GetTypeString(), "Dimension mismatch");
 
-    unsigned r = this->m, c = Two.n;
+    unsigned r = this->rows, c = Two.cols;
 
-    for (unsigned i = 0; i < r && this->Data; i++)
+    for (unsigned i = 0; i < r; i++)
     {
         for (unsigned j = 0; j < c; j++)
         {
             double calc = 0; //Since this is a matrix multiplication, I cannot reset the value at Data[i][j] since it will interfere with the calculation.
-            for (unsigned k = 0; k < Two.m; k++)
+            for (unsigned k = 0; k < Two.rows; k++)
                 calc += this->Data[i][k] * Two.Data[k][j];
 
             this->Data[i][j] = calc;
@@ -721,12 +684,12 @@ Matrix& Matrix::operator*=(const Matrix& Two)
         throw OperatorException('^', this->GetTypeString(), "(Scalar)", "Empty Matrix");
 
     if (Two == 0)
-        return Matrix::Identity(this->m, this->n);
+        return Matrix::Identity(this->rows, this->cols);
     else if (Two == 1)
         return *this;
     else
     {
-        if (this->m != this->n)
+        if (this->rows != this->cols)
             throw OperatorException('^', this->GetTypeString(), "(Scalar)", "Non-square matrix does not support powers greater than 1");
 
         Matrix result(*this);
@@ -739,33 +702,18 @@ Matrix& Matrix::operator*=(const Matrix& Two)
 
 std::ostream& operator<<(std::ostream& out, const MatrixSingleLinePrint& Obj)
 {
-    const auto& Target = Obj.Target;
+    out << '[';
 
-    if (!Target.IsValid())
-        out << "[ ]";
-    else
+    for (const auto& row : Obj.Target.Data)
     {
-        out << '[';
-        unsigned r = Target.Rows(), c = Target.Columns();
+        const double& last = row.back();
+        for (const auto& elem : row)
+            out << (elem == last ? " " : ", ") << elem;
 
-        try
-        {
-            for (unsigned i = 0; i < r; i++)
-            {
-                for (unsigned j = 0; j < c; j++)
-                    out << (j == 0 ? " " : ", ") << Target[i][j];
-
-                if (i != r - 1)
-                    out << ";";
-            }
-        }
-        catch (std::logic_error& e) //This should not ever happen, but it is here as a safe-gaurd.
-        {
-            out << "Error while printing!\n";
-        }
-
-        out << ']';
+        out << ';';
     }
+
+    out << " ]";
 
     return out;
 }

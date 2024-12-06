@@ -1,22 +1,23 @@
 #include <iostream>
 
-#include "Log.h"
-//#include "Testing.h"
+#include "IOTester.h"
 
-using namespace std;
-
-
-int main(int ArgsCount, char** Args)
+int main(int, char**)
 {
-    cout << " Welcome to Jason " << '\n'
-         << "------------------" << '\n'
-         << "   Version 0.1.0  " << '\n' << '\n';
+    std::cout << " Welcome to Jason " << '\n'
+              << "------------------" << '\n'
+              << "   Version " << JASON_CURRENT_VERSION << "  " << '\n' << '\n';
 
-    Logger l("run.log");
-    l << Info << "Starting up Jason" << EndLog;
+    if (!logging.Open("run.log", LoggerLevel::LL_Debug))
+    {
+        std::cout << "Could not open log, aborting";
+        return 0;
+    }
 
-    //l << Debug << "Indexing previous variables" << EndLog;
+    logging << Info << "Starting up Jason" << EndLog;
 
-    l << Info << "Exiting Jason, Exit Code 0" << EndLog;
+    //IOTester();
+
+    logging << Info << "Exiting Jason, Exit Code 0" << EndLog;
     return 0;
 }

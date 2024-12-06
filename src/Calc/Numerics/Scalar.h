@@ -9,25 +9,23 @@
 #include "../VariableType.h"
 #include "../OperatorException.h"
 
-class MATH_LIB Scalar;
-
 class MATH_LIB Scalar : public VariableType
 {
 public:
+    Scalar() : Scalar(0) { }
     template<typename T> requires IsScalarOrDouble<T>
     explicit Scalar(const T& Item);
-    explicit Scalar(std::istream& in);
 
     double Data = 0.00;
 
     [[nodiscard]] VariableTypes GetType() const noexcept override;
     [[nodiscard]] std::string GetTypeString() const noexcept override;
-    void Sterilize(std::ostream& out) const noexcept override;
+    [[nodiscard]] size_t RequiredUnits() const noexcept override;
+    [[nodiscard]] std::vector<Unit> ToBinary() const noexcept override;
+    [[nodiscard]] static Scalar FromBinary(const std::vector<Unit>& in);
+    [[nodiscard]] static std::unique_ptr<Scalar> FromBinaryPtr(const std::vector<Unit>& in);
 
-    [[nodiscard]] VariableType* MoveIntoPointer() noexcept override;
-
-    [[nodiscard]] static Scalar* FromSterilize(const std::string& in);
-    [[nodiscard]] static Scalar* FromSterilize(std::istream& in);
+    [[nodiscard]] std::unique_ptr<VariableType> Clone() const noexcept override;
 
     template<typename T> requires IsScalarOrDouble<T>
     Scalar operator+(const T& in) const noexcept;
@@ -60,7 +58,10 @@ public:
 
     void Print(std::ostream& out) const noexcept override;
 
-    [[maybe_unused]] constexpr explicit operator double() const noexcept;
+    [[maybe_unused]] constexpr explicit operator double() const noexcept
+    {
+        return this->Data;
+    }
 };
 
 #include "ScalarT.tpp"

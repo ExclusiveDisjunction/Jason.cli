@@ -8,39 +8,49 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <optional>
+#include <memory>
 
 #include "StdCalc.h"
+#include "../Core/BinaryUnit.h"
+#include "../Core/Log.h"
 
 class MATH_LIB VariableType;
 
 enum VariableTypes
 {
-    VT_Scalar,
-    VT_Vector,
-    VT_Matrix
+    VT_Scalar = 1,
+    VT_Vector = 2,
+    VT_Matrix = 3,
+    VT_None = 0,
 };
+std::ostream& operator<<(std::ostream& out, const VariableTypes& obj);
+std::istream& operator>>(std::istream& in, VariableTypes& obj);
 
-class MATH_LIB VariableType
+class MATH_LIB VariableType : public LoggerDisplay
 {
 public:
+    virtual ~VariableType() = default;
+
     [[nodiscard]] virtual VariableTypes GetType() const noexcept = 0;
+    [[nodiscard]] virtual std::unique_ptr<VariableType> Clone() const noexcept = 0;
 
-    //Moves all information out of the current instance and makes a pointer to the corresponding type. Saves on calling the memory constructor.
-    [[nodiscard]] virtual VariableType* MoveIntoPointer() noexcept = 0;
-
-    [[nodiscard]] virtual std::string Sterilize() const noexcept; //Writes to a string value
-    virtual void Sterilize(std::ostream& out) const noexcept = 0; //Writes to a file, can be retrieved.
+    [[nodiscard]] virtual std::vector<Unit> ToBinary() const noexcept = 0;
+    [[nodiscard]] static std::unique_ptr<VariableType> FromBinary(const std::vector<Unit>& data, VariableTypes targetType);
+    [[nodiscard]] virtual size_t RequiredUnits() const noexcept = 0;
     [[nodiscard]] virtual std::string GetTypeString() const noexcept = 0; //Displays (None), (Scalar), (Vector:D), (Matrix:mxn)
-    virtual void Print(std::ostream& out) const noexcept = 0; //Pretty prints
 
-    [[nodiscard]] static VariableType* ApplyOperation(const VariableType* One, const VariableType* Two, char oper);
+    virtual void Print(std::ostream& out) const noexcept = 0; //Pretty prints
+    void Display(std::ostream& out) const noexcept override
+    {
+        Print(out);
+    }
+
+    [[nodiscard]] static std::unique_ptr<VariableType> ApplyOperation(const VariableType& One, const VariableType& Two, char oper);
 
     virtual bool operator==(const VariableType& obj) const noexcept = 0;
     virtual bool operator!=(const VariableType& obj) const noexcept = 0;
 };
-
-MATH_LIB VariableType* FromSterilized(const std::string& val) noexcept;
-MATH_LIB VariableType* FromSterilized(std::istream& in) noexcept;
 
 std::ostream& operator<<(std::ostream& out, const VariableType& Obj);
 
