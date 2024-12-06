@@ -26,14 +26,6 @@ std::unique_ptr<VariableType> VariableType::FromBinary(const std::vector<Unit>& 
     }
 }
 
-size_t VariableType::RequiredPages(unsigned PageSize) const noexcept
-{
-    if (PageSize == 0)
-        return 0;
-
-    return static_cast<size_t>(ceil(this->RequiredUnits() / static_cast<float>(PageSize)));
-}
-
 std::unique_ptr<VariableType> VariableType::ApplyOperation(const VariableType& One, const VariableType& Two, char oper)
 {
     try

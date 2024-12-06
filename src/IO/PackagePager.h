@@ -56,6 +56,7 @@ private:
 
     /// @brief Reads from the locations index to determine where all elements are.
     bool ReadIndex();
+    bool SaveIndex();
 
     /// @brief Reads a single unit bound from the currently bound item.
     /// @return The unit that is read. 

@@ -42,6 +42,13 @@ void FileHandle::Open(std::filesystem::path path , std::ios::openmode flags)
 
     this->file.seekg(0, std::ios::beg);
 }
+void FileHandle::ReOpen(std::ios::openmode flags)
+{
+    std::filesystem::path this_path = this->path;
+    Close();
+
+    Open(this_path, flags);
+}
 
 FileHandle& FileHandle::operator=(FileHandle&& obj) noexcept
 {
@@ -56,4 +63,5 @@ FileHandle& FileHandle::operator=(FileHandle&& obj) noexcept
 void FileHandle::Close() noexcept
 {
     this->file.close();
+    this->path.clear();
 }

@@ -21,6 +21,7 @@ public:
     FileHandle& operator=(FileHandle&& obj) noexcept;
 
     void Open(std::filesystem::path path, std::ios::openmode flags = (std::ios::out | std::ios::in));
+    void ReOpen(std::ios::openmode flags = (std::ios::out | std::ios::in));
     void Close() noexcept;
 
     std::filesystem::path path;
