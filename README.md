@@ -1,1 +1,3 @@
-This project is currently being re-written in Rust. It is left here as a reference for this transition. 
+# Jason CLI Old - Swift Combined Branch
+
+This branch contains the combined project of Jason CLI (swift version), and the old C++ version into one directory. Why is this kept? You never know when you need something.
