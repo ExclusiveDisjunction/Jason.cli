@@ -10,7 +10,7 @@ Matrix::Matrix() : rows(0), cols(0)
 {
 
 }
-Matrix::Matrix(unsigned int Rows, unsigned int Columns) noexcept : rows(Rows), cols(Columns)
+Matrix::Matrix(size_t Rows, size_t Columns) noexcept : rows(Rows), cols(Columns)
 {
     Allocate(Rows, Columns, 0);
 }
@@ -54,9 +54,9 @@ Matrix& Matrix::operator=(Matrix&& Other) noexcept
     return *this;
 }
 
-void Matrix::Allocate(unsigned int NewRows, unsigned int NewColumns, double Value) noexcept
+void Matrix::Allocate(size_t NewRows, size_t NewColumns, double Value) noexcept
 {
-    size_t currRows = Data.size(), currCols = currRows == 0 ? 0 : Data[0].size();
+    size_t currRows = this->Rows(), currCols = this->Columns();
 
     if (rows == NewRows && cols == NewColumns && rows == currRows && cols == currCols) //Already that size, just set value
     {
@@ -86,11 +86,11 @@ Matrix Matrix::ErrorMatrix()
 {
     return {};
 }
-Matrix Matrix::Identity(unsigned int Size)
+Matrix Matrix::Identity(size_t Size)
 {
     return Identity(Size, Size);
 }
-Matrix Matrix::Identity(unsigned int Rows, unsigned int Cols)
+Matrix Matrix::Identity(size_t Rows, size_t Cols)
 {
     Matrix result(Rows, Cols);
     for (unsigned i = 0; i < Rows && i < Cols; i++)
@@ -98,7 +98,7 @@ Matrix Matrix::Identity(unsigned int Rows, unsigned int Cols)
 
     return result;
 }
-Matrix Matrix::RandomMatrix(unsigned int Rows, unsigned int Columns, bool Integers)
+Matrix Matrix::RandomMatrix(size_t Rows, size_t Columns, bool Integers)
 {
     Matrix result(Rows, Columns);
     if (!result.IsValid())
@@ -132,21 +132,21 @@ std::unique_ptr<VariableType> Matrix::Clone() const noexcept
     return std::make_unique<Matrix>(*this);
 }
 
-const std::vector<double>& Matrix::operator[](unsigned int Row) const
+const std::vector<double>& Matrix::operator[](size_t Row) const
 {
     if (Row > rows)
         throw std::logic_error("Out of bounds");
 
     return Data[Row];
 }
-const double& Matrix::Access(unsigned int i, unsigned int j) const
+const double& Matrix::Access(size_t i, size_t j) const
 {
     if (i >= rows || j >= cols) //Out of range
         throw std::logic_error("Out of range");
 
     return this->Data[i][j];
 }
-double& Matrix::Access(unsigned int i, unsigned int j)
+double& Matrix::Access(size_t i, size_t j)
 {
     return const_cast<double&>( const_cast<const Matrix*>(this)->Access(i, j) );
 }
@@ -156,64 +156,7 @@ VariableTypes Matrix::GetType() const noexcept
     return VariableTypes::VT_Matrix;
 }
 
-size_t Matrix::RequiredUnits() const noexcept
-{
-    return 2 + rows * cols;
-}
-std::vector<Unit> Matrix::ToBinary() const noexcept
-{
-    std::vector<Unit> result;
-    result.resize(this->RequiredUnits());
-    result[0] = this->rows;
-    result[1] = this->cols;
-
-    auto curr = result.begin() + 1,  end = result.end();
-    for (const auto& row : this->Data)
-    {
-        for (const auto& element : row)
-        {
-            *curr = element;
-            curr++;
-        }
-    }
-
-    return result;
-}
-Matrix Matrix::FromBinary(const std::vector<Unit>& in)
-{
-    if (in.size() < 2)
-        throw std::logic_error("No data provided");
-    
-    unsigned int rows = in[0].Convert<unsigned int>(), cols = in[1].Convert<unsigned int>();
-    if (in.size() < rows * cols + 2)
-        throw std::logic_error("Not enough data provided.");
-
-    Matrix result(rows, cols);
-    auto curr = in.begin() + 1, end = in.end();
-    unsigned i = 0;
-    for (auto& row : result.Data)
-    {
-        for (auto& element : row) 
-        {
-            element = curr->Convert<double>();
-            curr++;
-        }
-    }
-
-    return result;
-}
-std::unique_ptr<Matrix> Matrix::FromBinaryPtr(const std::vector<Unit>& in)
-{
-    return std::make_unique<Matrix>(std::move(Matrix::FromBinary(in)));
-}
-std::string Matrix::GetTypeString() const noexcept
-{
-    std::stringstream ss;
-    ss << "(Matrix:" << rows << "x" << cols << ")";
-    return ss.str();
-}
-
-Matrix Matrix::Extract(unsigned int StartI, unsigned int StartJ, unsigned int RowCount, unsigned int ColumnCount)
+Matrix Matrix::Extract(size_t StartI, size_t StartJ, size_t RowCount, size_t ColumnCount)
 {
     /*
      * I want to split this in two parts. This function will return a MatrixExtrusion, and then the other part will
@@ -230,21 +173,21 @@ Matrix Matrix::Extract(unsigned int StartI, unsigned int StartJ, unsigned int Ro
     if (!Return.IsValid())
         return Matrix::ErrorMatrix();
 
-    for (unsigned int i = StartI, ip = 0; i < StartI + RowCount - 1; i++, ip++)
-        for (unsigned int j = StartJ, jp = 0; j < StartJ + ColumnCount - 1; j++, jp++)
+    for (size_t i = StartI, ip = 0; i < StartI + RowCount - 1; i++, ip++)
+        for (size_t j = StartJ, jp = 0; j < StartJ + ColumnCount - 1; j++, jp++)
             Return.Data[ip][jp] = Data[i][j];
 
     return Return;
 }
 
-void Matrix::RowSwap(unsigned int OrigRow, unsigned int NewRow)
+void Matrix::RowSwap(size_t OrigRow, size_t NewRow)
 {
     if (OrigRow == NewRow || OrigRow > rows || NewRow > rows)
         return;
 
     std::swap(Data[OrigRow], Data[NewRow]);
 }
-void Matrix::RowAdd(unsigned int OrigRow, double Fac, unsigned int TargetRow)
+void Matrix::RowAdd(size_t OrigRow, double Fac, size_t TargetRow)
 {
     if (Fac == 0)
         throw std::logic_error("The factor of multiplication cannot be zero.");
@@ -253,7 +196,7 @@ void Matrix::RowAdd(unsigned int OrigRow, double Fac, unsigned int TargetRow)
         Data[TargetRow][j] += Data[OrigRow][j] * Fac;
 }
 
-[[maybe_unused]] double Matrix::Determinant() const
+double Matrix::Determinant() const
 {
     if (this->rows != this->cols)
         throw std::logic_error("The matrix must be square");
@@ -374,8 +317,8 @@ void Matrix::ReducedRowEchelonForm()
         lead++;
     }
 
-    unsigned int Lead = 0;
-    unsigned int Rows = this->rows, Columns = this->cols;
+    size_t Lead = 0;
+    size_t Rows = this->rows, Columns = this->cols;
     for (unsigned int r = 0; r < Rows; r++)
     {
         if (Columns < Lead)
@@ -534,7 +477,7 @@ bool Matrix::GetRowString(std::ostream& out, unsigned row, Matrix::ColumnSchema&
     out << close;
     return out.good(); //If out.bad(), this returns false.
 }
-void Matrix::Print(std::ostream& out) const noexcept
+void Matrix::ui_dsp_fmt(std::ostream& out) const noexcept
 {
     if (!this->IsValid())
     {
@@ -575,16 +518,73 @@ void Matrix::Print(std::ostream& out) const noexcept
 
 
 }
+void Matrix::dbg_fmt(std::ostream& out) const noexcept
+{
+    out << "(Matrix:" << rows << "x" << cols << ")";
+}
+void Matrix::dsp_fmt(std::ostream& out) const noexcept
+{
+    if (!this->IsValid())
+        out << "[empty matrix]";
+    else
+    {
+        out << "[ ";
+        for (const auto& row : this->Data)
+        {
+            for (const auto& item : row)
+                out << ' ' << item;
+            out << ";";
+        }
+        out << " ]";
+    }
+}
+
+void Matrix::str_serialize(std::ostream &out) const noexcept
+{
+    out << VariableTypes::VT_Matrix << ' ' << this->rows << ' ' << this->cols;
+    for (const auto& rows : this->Data)
+        for (const auto& item : rows)
+            out << ' ' << item;
+}
+void Matrix::str_deserialize(std::istream &in)
+{
+    VariableTypes type;
+    size_t rows, cols;
+    in >> type;
+    if (type != VT_Matrix)
+        throw FormatError("expected matrix type");
+    
+    in >> rows >> cols;
+    if (rows == 0 || cols == 0)
+    {
+        *this = Matrix();
+        return;
+    }
+    
+    this->Data.resize(rows, std::vector<double>(cols));
+    size_t count = 0;
+    for (auto& row : this->Data)
+    {
+        for (auto& element : row)
+        {
+            in >> element;
+            count++;
+        }
+    }
+    
+    if (count != rows * cols)
+        throw FormatError("not enough elements provided");
+}
 
 Matrix Matrix::operator|(const Matrix& Two) const
 {
     if (!IsValid() || !Two.IsValid())
-        throw OperatorException('|', GetTypeString(), Two.GetTypeString(), "Cannot augment empty matrix");
+        throw OperatorError('|', *this, Two, "one or both is empty");
 
-    if (cols != Two.cols)
-        throw OperatorException('|', GetTypeString(), Two.GetTypeString(), "Row dimensions do not match.");
+    if (this->rows != Two.rows)
+        throw OperatorError('|', *this, Two, "row size mismatch");
 
-    unsigned int OneRows = rows, OneColumns = cols, TwoColumns = Two.cols;
+    auto OneRows = rows, OneColumns = cols, TwoColumns = Two.cols;
     Matrix Return(OneRows, OneColumns + TwoColumns);
 
     if (!Return.IsValid())
@@ -628,10 +628,10 @@ Matrix Matrix::operator*(const Matrix& Two) const
 Matrix& Matrix::operator+=(const Matrix& Two)
 {
     if (!this->IsValid() || !Two.IsValid())
-        throw OperatorException('+', this->GetTypeString(), Two.GetTypeString(), "Empty Matrix");
+        throw OperatorError('+', *this, Two, "empty matrix");
 
     if (this->rows != Two.rows || this->cols != Two.cols)
-        throw OperatorException('+', this->GetTypeString(), Two.GetTypeString(), "Dimension Mismatch");
+        throw OperatorError('+', this->GetTypeString(), Two.GetTypeString(), "dimension mismatch");
 
     for (unsigned i = 0; i < this->rows; i++)
         for (unsigned j = 0; j < this->cols; j++)
@@ -642,10 +642,10 @@ Matrix& Matrix::operator+=(const Matrix& Two)
 Matrix& Matrix::operator-=(const Matrix& Two)
 {
     if (!this->IsValid() || !Two.IsValid())
-        throw OperatorException('-', this->GetTypeString(), Two.GetTypeString(), "Empty Matrix");
+        throw OperatorError('-', *this, Two, "empty matrix");
 
     if (this->rows != Two.rows || this->cols != Two.cols)
-        throw OperatorException('-', this->GetTypeString(), Two.GetTypeString(), "Dimension Mismatch");
+        throw OperatorError('-', this->GetTypeString(), Two.GetTypeString(), "dimension mismatch");
 
     for (unsigned i = 0; i < this->rows; i++)
         for (unsigned j = 0; j < this->cols; j++)
@@ -656,12 +656,12 @@ Matrix& Matrix::operator-=(const Matrix& Two)
 Matrix& Matrix::operator*=(const Matrix& Two)
 {
     if (!this->IsValid() || !Two.IsValid())
-        throw OperatorException('*', this->GetTypeString(), Two.GetTypeString(), "Empty Matrix");
+        throw OperatorError('*', *this, Two, "empty matrix");
 
-    if (this->cols != Two.rows)
-        throw OperatorException('*', this->GetTypeString(), Two.GetTypeString(), "Dimension mismatch");
+    if (this->rows != Two.rows || this->cols != Two.cols)
+        throw OperatorError('*', this->GetTypeString(), Two.GetTypeString(), "dimension mismatch");
 
-    unsigned r = this->rows, c = Two.cols;
+    auto r = this->rows, c = Two.cols;
 
     for (unsigned i = 0; i < r; i++)
     {
@@ -678,10 +678,10 @@ Matrix& Matrix::operator*=(const Matrix& Two)
     return *this;
 }
 
-[[nodiscard]] Matrix Matrix::Pow(unsigned long long Two) const
+Matrix Matrix::Pow(unsigned long long Two) const
 {
     if (!this->IsValid())
-        throw OperatorException('^', this->GetTypeString(), "(Scalar)", "Empty Matrix");
+        throw OperatorError('^', this->GetTypeString(), "(Scalar:" + std::to_string(Two) + ")", "Empty Matrix");
 
     if (Two == 0)
         return Matrix::Identity(this->rows, this->cols);
@@ -689,8 +689,8 @@ Matrix& Matrix::operator*=(const Matrix& Two)
         return *this;
     else
     {
-        if (this->rows != this->cols)
-            throw OperatorException('^', this->GetTypeString(), "(Scalar)", "Non-square matrix does not support powers greater than 1");
+        if (!this->IsSquare())
+            throw OperatorError('^', this->GetTypeString(), "(Scalar:" + std::to_string(Two) + ")", "Non-square matrix does not support powers greater than 1");
 
         Matrix result(*this);
         for (unsigned long long i = 1; i < Two; i++)
@@ -698,22 +698,4 @@ Matrix& Matrix::operator*=(const Matrix& Two)
 
         return result;
     }
-}
-
-std::ostream& operator<<(std::ostream& out, const MatrixSingleLinePrint& Obj)
-{
-    out << '[';
-
-    for (const auto& row : Obj.Target.Data)
-    {
-        const double& last = row.back();
-        for (const auto& elem : row)
-            out << (elem == last ? " " : ", ") << elem;
-
-        out << ';';
-    }
-
-    out << " ]";
-
-    return out;
 }

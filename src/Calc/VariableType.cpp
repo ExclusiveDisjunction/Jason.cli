@@ -5,27 +5,19 @@
 #include <optional>
 #include "VariableType.h"
 
-#include "Numerics/Scalar.h"
-#include "Numerics/MathVector.h"
-#include "Numerics/Matrix.h"
+#include "Scalar.h"
+#include "Complex.h"
+#include "MathVector.h"
+#include "Matrix.h"
 
-#include "OperatorException.h"
+#include "../Core/Errors.h"
 
-std::unique_ptr<VariableType> VariableType::FromBinary(const std::vector<Unit>& data, VariableTypes targetType)
+std::string VariableType::GetTypeString() const noexcept
 {
-    switch (targetType)
-    {
-    case VT_Scalar:
-        return Scalar::FromBinaryPtr(data);
-    case VT_Vector:
-        return MathVector::FromBinaryPtr(data);
-    case VT_Matrix:
-        return Matrix::FromBinaryPtr(data);
-    default:
-        return std::unique_ptr<VariableType>();
-    }
+    return static_cast<const DebugPrint&>(*this).dbg_fmt_string(); 
 }
 
+/*
 std::unique_ptr<VariableType> VariableType::ApplyOperation(const VariableType& One, const VariableType& Two, char oper)
 {
     try
@@ -58,7 +50,7 @@ std::unique_ptr<VariableType> VariableType::ApplyOperation(const VariableType& O
                     }
                     catch (std::logic_error& e)
                     {
-                        throw OperatorException('%', A.GetTypeString(), B.GetTypeString(), "Not integers. Cannot % on real numbers.");
+                        throw OperatorError('%', A, B, "one or both operands are not integers");
                     }
                 }
                 case '^':
@@ -78,13 +70,8 @@ std::unique_ptr<VariableType> VariableType::ApplyOperation(const VariableType& O
                     return std::make_unique<MathVector>(A + B);
                 case '-':
                     return std::make_unique<MathVector>(A - B);
-                case '*':
-                case '/':
-                case '%':
-                case '^':
-                    throw OperatorException(oper, A.GetTypeString(), B.GetTypeString(), "Operation does not exist.");
                 default:
-                    throw OperatorException(oper, false);
+                    throw OperatorError(oper, A, B);
             }
         }
         else if (t1 == VT_Matrix && t2 == VT_Matrix)
@@ -100,29 +87,26 @@ std::unique_ptr<VariableType> VariableType::ApplyOperation(const VariableType& O
                     return std::make_unique<Matrix>(A - B);
                 case '*':
                     return std::make_unique<Matrix>(A * B);
-                case '/':
-                case '%':
-                case '^':
-                    throw OperatorException(oper, A.GetTypeString(), B.GetTypeString(), "Operation does not exist.");
                 default:
-                    throw OperatorException(oper, false);
+                    throw OperatorError(oper, A, B);
             }
         }
 
-        /*
-         * Now that the trivial cases are out of the way, there are the more exotic cross types.
-         * These are:
-         *  1. Scalar * Vector
-         *  2. Vector * Scalar
-         *  3. Scalar * Matrix
-         *  4. Matrix * Scalar
-         *  5. Matrix * Vector (Given d == cols)
-         *  6. Matrix ^ Scalar (Given (Sca -> N || Sca == 0)  && Matrix is square if Sca >= 2)
-         *  7. Matrix + Vector (Given dims match)
-         *  8. Vector + Matrix (Given dims match)
-         *  9. Matrix - Vector (Given dims match)
-         *  10. Vector - Matrix (Given dims match)
-        */
+        //
+        // * Now that the trivial cases are out of the way, there are the more exotic cross types.
+        // * These are:
+        // *  1. Scalar * Vector
+        // *  2. Vector * Scalar
+        // *  3. Scalar * Matrix
+        // *  4. Matrix * Scalar
+        // *  5. Matrix * Vector (Given d == cols)
+        // *  6. Matrix ^ Scalar (Given (Sca -> N || Sca == 0)  && Matrix is square if Sca >= 2)
+        // *  7. Matrix + Vector (Given dims match)
+        // *  8. Vector + Matrix (Given dims match)
+        // *  9. Matrix - Vector (Given dims match)
+        // *  10. Vector - Matrix (Given dims match)
+        //
+        
         switch (oper)
         {
             case '+':
@@ -132,7 +116,7 @@ std::unique_ptr<VariableType> VariableType::ApplyOperation(const VariableType& O
                 else if (t1 == VT_Vector && t2 == VT_Matrix)
                     return std::make_unique<Matrix>( dynamic_cast<const Matrix&>(Two) + Matrix(dynamic_cast<const MathVector&>(One)) );
                 else
-                    throw OperatorException(oper, One.GetTypeString(), Two.GetTypeString());
+                    throw OperatorError(oper, One, Two);
             }
             case '-':
             {
@@ -141,7 +125,7 @@ std::unique_ptr<VariableType> VariableType::ApplyOperation(const VariableType& O
                 else if (t1 == VT_Vector && t2 == VT_Matrix)
                     return std::make_unique<Matrix>( dynamic_cast<const Matrix&>(Two) - Matrix(dynamic_cast<const MathVector&>(One)) );
                 else
-                    throw OperatorException(oper, One.GetTypeString(), Two.GetTypeString());
+                    throw OperatorError(oper, One, Two);
             }
             case '*':
             {
@@ -156,7 +140,7 @@ std::unique_ptr<VariableType> VariableType::ApplyOperation(const VariableType& O
                 else if (t1 == VT_Matrix && t2 == VT_Vector)
                     return std::make_unique<Matrix>(dynamic_cast<const Matrix&>(One) * Matrix(dynamic_cast<const MathVector&>(Two)));
                 else
-                    throw OperatorException(oper, One.GetTypeString(), Two.GetTypeString());
+                    throw OperatorError(oper, One, Two);
             }
             case '^':
             {
@@ -169,20 +153,20 @@ std::unique_ptr<VariableType> VariableType::ApplyOperation(const VariableType& O
 
                         long long ConvB = B.ToLongNoRound();
                         if (ConvB < 0)
-                            throw OperatorException('^', One.GetTypeString(), Two.GetTypeString(), "Cannot raise matrix to a negative power.");
+                            throw OperatorError('^', One, Two, "Cannot raise matrix to a negative power.");
 
                         return std::make_unique<Matrix>(A.Pow(static_cast<unsigned long long>(ConvB)));
                     }
                     catch (std::logic_error& e)
                     {
-                        throw OperatorException('^', One.GetTypeString(), Two.GetTypeString(), "Cannot raise matrix to a non-integer power.");
+                        throw OperatorError('^', One, Two, "Cannot raise matrix to a non-integer power.");
                     }
                 }
 
-                throw OperatorException(oper, One.GetTypeString(), Two.GetTypeString());
+                throw OperatorError(oper, One, Two);
             }
             default:
-                throw OperatorException(oper, One.GetTypeString(), Two.GetTypeString());
+                throw OperatorError(oper, One, Two);
         }
 
     }
@@ -191,22 +175,51 @@ std::unique_ptr<VariableType> VariableType::ApplyOperation(const VariableType& O
         throw std::logic_error("A bad cast exception was thrown, meaning that a type lied about its ElementType");
     }
 }
-
+*/
+ 
 std::ostream& operator<<(std::ostream& out, const VariableType& obj)
 {
-    obj.Print(out);
-    return out;
+    return out << display_print(obj);
 }
 
 std::ostream& operator<<(std::ostream& out, const VariableTypes& obj)
 {
-    return (out << static_cast<unsigned>(obj));
+    switch (obj)
+    {
+        case VT_Scalar:
+            out << "SCA";
+            break;
+        case VT_Vector:
+            out << "VEC";
+            break;
+        case VT_Matrix:
+            out << "MAT";
+            break;
+        case VT_Complex:
+            out << "CMP";
+            break;
+    }
+    
+    return out;
 }
 std::istream& operator>>(std::istream& in, VariableTypes& obj)
 {
-    int val;
-    in >> val;
-
-    obj = static_cast<VariableTypes>(val);
+    char r_str[4] = {0};
+    std::string str;
+    in.read(r_str, 3);
+    
+    str = r_str;
+    
+    if (str == "SCA")
+        obj = VT_Scalar;
+    else if (str == "MAT")
+        obj = VT_Matrix;
+    else if (str == "VEC")
+        obj = VT_Vector;
+    else if (str == "CMP")
+        obj = VT_Complex;
+    else
+        throw FormatError(str, "invalid option (expected SCA, MAT, VEC, or CMP)");
+    
     return in;
 }

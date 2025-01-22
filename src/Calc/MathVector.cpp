@@ -1,12 +1,13 @@
 #include "MathVector.h"
 
 #include <utility>
+#include <ranges>
 
 MathVector::MathVector() : Data()
 {
 
 }
-MathVector::MathVector(unsigned int Dim, double Val) : MathVector()
+MathVector::MathVector(size_t Dim, double Val) : MathVector()
 {
     if (Dim == 0)
         return; //No allocations take place.
@@ -49,14 +50,14 @@ std::unique_ptr<VariableType> MathVector::Clone() const noexcept
     return std::make_unique<MathVector>(*this);
 }
 
-double& MathVector::operator[](unsigned int Index)
+double& MathVector::operator[](size_t Index)
 {
     if (Index >= Dim())
         throw std::logic_error("The index provided is invalid.");
 
     return Data[Index];
 }
-double MathVector::operator[](unsigned int Index) const
+double MathVector::operator[](size_t Index) const
 {
     if (Index >= Dim())
         throw std::logic_error("The index provided is invalid.");
@@ -85,79 +86,53 @@ double MathVector::Angle() const
     return atan(Magnitude());
 }
 
-size_t MathVector::RequiredUnits() const noexcept 
+void MathVector::dbg_fmt(std::ostream& out) const noexcept
 {
-    return 1 + this->Data.size();
-}
-std::vector<Unit> MathVector::ToBinary() const noexcept
-{
-    std::vector<Unit> result;
-    result.resize(this->RequiredUnits());
-    result[0] = this->Dim();
-
-    auto curr = result.begin() + 1,  end = result.end();
-    for (const auto& item : this->Data)
-    {
-        *curr = item;
-        curr++;
-    }
-
-    return result;
-}
-MathVector MathVector::FromBinary(const std::vector<Unit>& in)
-{
-    if (in.empty())
-        throw std::logic_error("No data provided");
-    
-    unsigned int dim = in[0].Convert<unsigned int>();
-    if (in.size() < dim + 1)
-        throw std::logic_error("Not enough data provided.");
-
-    MathVector result(dim);
-    auto curr = in.begin() + 1, end = in.end();
-    unsigned i = 0;
-    while (curr != end)
-    {
-        result[i] = curr->Convert<double>();
-        i++;
-        curr++;
-    }
-
-    return result;
-}
-std::unique_ptr<MathVector> MathVector::FromBinaryPtr(const std::vector<Unit>& in) 
-{
-    return std::make_unique<MathVector>(std::move(MathVector::FromBinary(in)));
-}
-VariableTypes MathVector::GetType() const noexcept
-{
-    return VariableTypes::VT_Vector;
-}
-std::string MathVector::GetTypeString() const noexcept
-{
-    std::stringstream ss;
-    ss << "(Vector:";
+    out << "(Vector:";
     if (!this->IsValid())
-        ss << "Err)";
+        out << "Err)";
     else
-        ss << this->Dim();
-    ss << ")";
-
-    return ss.str();
+        out << this->Dim();
+    out << ")";
 }
-void MathVector::Print(std::ostream& out) const noexcept
+void MathVector::dsp_fmt(std::ostream& out) const noexcept
 {
     out << "{ ";
-    size_t d = this->Data.size();
+    size_t d = this->Dim();
     for (unsigned i = 0; i < d; i++)
         out << this->Data[i] << (i == d - 1 ? " " : ", ");
     out << '}';
+}
+void MathVector::str_serialize(std::ostream &out) const noexcept
+{
+    out << VariableTypes::VT_Vector << ' ' << this->Data.size();
+    for (const auto& item : this->Data)
+        out << ' ' << item;
+}
+void MathVector::str_deserialize(std::istream &in)
+{
+    VariableTypes type;
+    size_t dim;
+    in >> type;
+    if (type != VT_Vector)
+        throw FormatError("expected vector type");
+    
+    in >> dim;
+    this->Data.resize(dim);
+    
+    size_t i;
+    auto iter = this->Data.begin(), end = this->Data.end();
+    for (i = 0; i < dim && in && iter != end; i++, iter++)
+        in >> *iter;
+    
+    if (i != dim)
+        throw FormatError("not enough arguments");
 }
 
 MathVector MathVector::CrossProduct(const MathVector& One, const MathVector& Two)
 {
     if (Two.Dim() != One.Dim())
-        throw OperatorException('X', One.GetTypeString(), Two.GetTypeString(), "Cannot cross vectors with different dimensions.");
+        throw OperatorError('X', One, Two, "cannot cross vectors with different dimensions");
 
     MathVector A, B;
     switch (One.Dim())
@@ -171,7 +146,7 @@ MathVector MathVector::CrossProduct(const MathVector& One, const MathVector& Two
         B = Two;
         break;
     default:
-        throw OperatorException('X', One.GetTypeString(), Two.GetTypeString(), "Cannot cross with these dimensions.");
+        throw OperatorError('X', One, Two, "cross is only defined for d={2,3}");
     }
 
     return MathVector::FromList((A[1] * B[2]) - (A[2] * B[1]), (A[2] * B[0]) - (A[0] * B[2]), (A[0] * B[1]) - (A[1] * B[0])); //Uses the cross product equation.
@@ -179,35 +154,73 @@ MathVector MathVector::CrossProduct(const MathVector& One, const MathVector& Two
 double MathVector::DotProduct(const MathVector& One, const MathVector& Two)
 {
     if (One.Dim() != Two.Dim())
-        throw std::logic_error("The dimensions of the two vectors do not match.");
-
+        throw OperatorError("dot", One, Two, "dimension mismatch");
+    
     double Return = 0.0;
     for (auto i = One.Data.begin(), j = Two.Data.begin(); i != One.Data.end() && j != Two.Data.end(); i++, j++)
-        Return += *i + *j;
+        Return += (*i) * (*j);
 
     return Return;
 }
 
 MathVector MathVector::operator+(const MathVector& in) const
 {
-    MathVector result(*this);
-    result += in;
-    return result;
+    //Because our vectors can be added with different dimensions, we cannot call +=.
+    
+    if (this->Dim() == in.Dim())
+    {
+        MathVector result(*this);
+        result += in;
+        return result;
+    }
+    else
+    {
+        MathVector result(this->Dim() >= in.Dim() ? *this : in);
+        const MathVector& lesser = (this->Dim() < in.Dim() ? *this : in);
+        
+        auto result_iter = result.Data.begin();
+        for (const auto& item : lesser.Data)
+        {
+            *result_iter += item;
+            result_iter++;
+        }
+        
+        return result;
+    }
 }
 MathVector MathVector::operator-(const MathVector& in) const
 {
-    MathVector result(*this);
-    result -= in;
-    return result;
+    //Because our vectors can be added with different dimensions, we cannot call -=.
+    
+    if (this->Dim() == in.Dim())
+    {
+        MathVector result(*this);
+        result -= in;
+        return result;
+    }
+    else
+    {
+        MathVector result(this->Dim() >= in.Dim() ? *this : in);
+        const MathVector& lesser = (this->Dim() < in.Dim() ? *this : in);
+        
+        auto result_iter = result.Data.begin();
+        for (const auto& item : lesser.Data)
+        {
+            *result_iter -= item;
+            result_iter++;
+        }
+        
+        return result;
+    }
 }
 
 MathVector& MathVector::operator+=(const MathVector& in)
 {
     if (!this->IsValid() || !in.IsValid())
-        throw OperatorException('+', *this, in, "Cannot combine error vectors.");
+        throw OperatorError('+', *this, in, "cannot combine error vectors");
 
     if (this->Dim() != in.Dim())
-        throw OperatorException('+', *this, in, "Dimension mismatch");
+        throw OperatorError('+', *this, in, "dimension mismatch");
 
     auto i = this->Data.begin();
     auto j = in.Data.begin();
@@ -220,10 +233,10 @@ MathVector& MathVector::operator+=(const MathVector& in)
 MathVector& MathVector::operator-=(const MathVector& in)
 {
     if (!this->IsValid() || !in.IsValid())
-        throw OperatorException('-', *this, in, "Cannot combine error vectors.");
+        throw OperatorError('-', *this, in, "cannot combine error vectors");
 
     if (this->Dim() != in.Dim())
-        throw OperatorException('-', *this, in, "Dimension mismatch");
+        throw OperatorError('-', *this, in, "dimension mismatch");
 
     auto i = this->Data.begin();
     auto j = in.Data.begin();
